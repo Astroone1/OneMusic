@@ -1,0 +1,26 @@
+[
+  {
+    "title": "想要你知道",
+    "artist": "许亚童",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=2e6ff60560f210da10b946a7014f70bf",
+        "label": "酷狗完整流"
+      }
+    ],
+    "badgeText": "⚡ 锁定(酷狗完整流)"
+  },
+  {
+    "title": "过客",
+    "artist": "周思涵",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=18770862510931326",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445665094",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 秒播 (04:30 · B站音源)"
+  }
+]
