@@ -79,7 +79,6 @@
             color: var(--text-primary);
         }
 
-        /* 修复手机端搜索框溢出：设置 min-width: 0 与 flex 收缩 */
         .search-bar {
             display: flex;
             align-items: center;
@@ -228,7 +227,6 @@
             box-shadow: 0 4px 10px var(--accent-glow);
         }
 
-        /* 云同步按钮与上中下纯文字三栏菜单 */
         .cloud-wrap {
             position: relative;
             display: none;
@@ -420,7 +418,6 @@
         }
         .fav-btn:hover { transform: scale(1.18); }
 
-        /* 底部播放栏：支持上下滑动切歌 */
         .player-bar {
             position: fixed;
             bottom: 0;
@@ -433,7 +430,6 @@
             padding: 8px 16px 12px 16px;
             z-index: 35;
             box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
-            touch-action: pan-x;
         }
 
         .player-inner {
@@ -485,7 +481,6 @@
             min-width: 0;
             flex: 1;
             cursor: pointer;
-            transition: transform 0.22s ease, opacity 0.22s ease;
         }
 
         .np-cover {
@@ -554,7 +549,6 @@
             background: #f0f9ff;
         }
 
-        /* 参照图2/图3设计的圆润播放/暂停主按钮 */
         .play-pause-circle {
             width: 46px;
             height: 46px;
@@ -579,7 +573,6 @@
             display: block;
         }
 
-        /* 歌词全屏/抽屉视图 */
         .lyric-overlay {
             position: fixed;
             inset: 0;
@@ -639,7 +632,6 @@
             align-items: center;
             text-align: center;
             gap: 14px;
-            touch-action: pan-x;
         }
 
         .lyric-big-cover {
@@ -691,7 +683,6 @@
             transform: scale(1.03);
         }
 
-        /* 云链接配置弹窗 */
         .modal-mask {
             position: fixed;
             inset: 0;
@@ -850,7 +841,7 @@
         <div class="banner-card">
             <div class="banner-info">
                 <h2 id="bannerTitle">华语榜 TOP 热歌</h2>
-                <p id="bannerDesc">收藏时自动记录采集链，手机端在底部栏上下滑动可切歌</p>
+                <p id="bannerDesc">支持耳机线控：单击暂停/播放，双击下一首</p>
             </div>
             <div class="banner-actions">
                 <select id="bbBoardSelect" class="sub-source-select" style="display:none;" onchange="changeBillboardChart()">
@@ -882,14 +873,14 @@
         <div class="song-list" id="songList"></div>
     </main>
 
-    <!-- PC & 手机自适应歌词浮层 -->
+    <!-- 歌词浮层 -->
     <div class="lyric-overlay" id="lyricOverlay">
         <div class="lyric-header">
             <span style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);">🎵 实时同步歌词</span>
             <button class="lyric-close-btn" onclick="toggleLyricOverlay()">收起歌词 ✕</button>
         </div>
         <div class="lyric-body">
-            <div class="lyric-art-col" id="lyricArtCol">
+            <div class="lyric-art-col">
                 <img src="https://picsum.photos/seed/music/300/300" class="lyric-big-cover" id="lyricCover" alt="cover">
                 <div>
                     <div class="lyric-song-title" id="lyricTitle">未在播放</div>
@@ -902,7 +893,7 @@
         </div>
     </div>
 
-    <!-- 云链接弹窗：空白手动填写 -->
+    <!-- 云链接弹窗 -->
     <div class="modal-mask" id="cloudModal" onclick="closeCloudConfigModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h3>公开仓库云链接</h3>
@@ -934,8 +925,8 @@
         </div>
     </div>
 
-    <!-- 底部播放控制栏（无上一首/下一首按钮，支持手机上下滑动切歌） -->
-    <div class="player-bar" id="playerBar">
+    <!-- 底部播放栏 -->
+    <div class="player-bar">
         <div class="player-inner">
             <div class="progress-wrap">
                 <span id="curTime">00:00</span>
@@ -943,18 +934,17 @@
                 <span id="durTime">00:00</span>
             </div>
             <div class="player-main">
-                <div class="np-left" id="npLeft" onclick="toggleLyricOverlay()" title="点击展开歌词 / 上下滑动切歌">
+                <div class="np-left" onclick="toggleLyricOverlay()" title="点击展开歌词">
                     <img src="https://picsum.photos/seed/music/100/100" class="np-cover" id="npCover" alt="cover">
                     <div class="np-meta">
                         <div class="np-title" id="npTitle">点击任意歌曲开始播放</div>
-                        <div class="np-lyric-mini" id="npStatus">手机端上下滑动底栏可切歌</div>
+                        <div class="np-lyric-mini" id="npStatus">支持耳机单击暂停/双击下一首</div>
                     </div>
                 </div>
                 <div class="np-controls">
                     <button class="ctrl-btn lyric-toggle" onclick="toggleLyricOverlay()" title="展开/收起歌词">词</button>
                     <button class="fav-btn" id="npFavBtn" onclick="toggleCurrentFav()" title="收藏当前播放歌曲">🤍</button>
                     <button class="play-pause-circle" id="playBtn" onclick="togglePlay()" title="播放/暂停">
-                        <!-- 默认显示图2风格的圆润三角形播放图标 -->
                         <svg id="playIconSvg" viewBox="0 0 24 24">
                             <path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>
                         </svg>
@@ -984,12 +974,11 @@
         const MIN_VALID_DURATION = 65;
 
         const MARKETS = {
-            cn: { title: "华语榜 TOP 热歌", desc: "聚合源 + B站联动 · 手机端在底栏上下滑动切歌", playlistId: "3778678" },
+            cn: { title: "华语榜 TOP 热歌", desc: "聚合源 + B站联动 · 耳机线控双击切歌", playlistId: "3778678" },
             jp: { title: "日语榜 Oricon 精选", desc: "日本公信榜直连 + ACG 翻唱/Live 联动", playlistId: "60131" },
             bb: { title: "欧美榜 权威热单", desc: "欧美流行全网穿透 · 自动调度完整音轨", playlistId: "60198" }
         };
 
-        // 图2与图3风格的圆润 SVG 路径
         const SVG_PLAY_PATH = `<path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>`;
         const SVG_PAUSE_PATH = `<rect x="7" y="6" width="3.6" height="12" rx="1.8"/><rect x="13.4" y="6" width="3.6" height="12" rx="1.8"/>`;
 
@@ -1813,7 +1802,6 @@
                 playingIndex = 0;
             }
             if (!playingQueue.length) return;
-            animateSwipeFeedback(18);
             playSongInQueue((playingIndex - 1 + playingQueue.length) % playingQueue.length);
         }
 
@@ -1823,54 +1811,10 @@
                 playingIndex = -1;
             }
             if (!playingQueue.length) return;
-            animateSwipeFeedback(-18);
             playSongInQueue((playingIndex + 1) % playingQueue.length);
         }
 
-        function animateSwipeFeedback(offsetY) {
-            const npLeft = document.getElementById('npLeft');
-            if (!npLeft) return;
-            npLeft.style.transform = `translateY(${offsetY}px)`;
-            npLeft.style.opacity = '0.4';
-            setTimeout(() => {
-                npLeft.style.transform = 'translateY(0)';
-                npLeft.style.opacity = '1';
-            }, 180);
-        }
-
-        /* ================= 手机端上下滑动切歌监听 ================= */
-        function bindVerticalSwipeSwitch(el) {
-            if (!el) return;
-            let startY = 0;
-            let startX = 0;
-
-            el.addEventListener('touchstart', (e) => {
-                if (e.touches.length !== 1) return;
-                startY = e.touches[0].clientY;
-                startX = e.touches[0].clientX;
-            }, { passive: true });
-
-            el.addEventListener('touchend', (e) => {
-                if (!e.changedTouches.length) return;
-                const dy = e.changedTouches[0].clientY - startY;
-                const dx = e.changedTouches[0].clientX - startX;
-
-                // 垂直滑动距离大于 32px 且明显大于水平滑动（避免误触进度条拖动）
-                if (Math.abs(dy) > 32 && Math.abs(dy) > Math.abs(dx) * 1.2) {
-                    if (dy < 0) {
-                        // 往上滑 -> 下一首
-                        nextSong();
-                    } else {
-                        // 往下滑 -> 上一首
-                        prevSong();
-                    }
-                }
-            }, { passive: true });
-        }
-
-        bindVerticalSwipeSwitch(document.getElementById('playerBar'));
-        bindVerticalSwipeSwitch(document.getElementById('lyricArtCol'));
-
+        /* ================= 耳机线控事件绑定（Media Session API） ================= */
         function updateMediaSession(song) {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
@@ -1878,6 +1822,10 @@
                     artist: song.artist,
                     artwork: [{ src: song.cover, sizes: '300x300', type: 'image/jpeg' }]
                 });
+
+                // 耳机线控/媒体按键动作映射
+                navigator.mediaSession.setActionHandler('play', () => { audio.play(); setPlayButtonVisual(true); });
+                navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPlayButtonVisual(false); });
                 navigator.mediaSession.setActionHandler('previoustrack', prevSong);
                 navigator.mediaSession.setActionHandler('nexttrack', nextSong);
             }
