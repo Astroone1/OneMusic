@@ -1,27 +1,82 @@
 [
   {
-    "title": "都是你的",
-    "artist": "RAiNBOW计划/林姝涵",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3273246117001205",
+    "title": "DESERVE",
+    "artist": "BABYMONSTER",
+    "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e5/57/b5/e557b507-2668-752b-4260-34af04ea0d7b/8809519881528_cover.jpg/300x300bb.png",
+    "sources": [],
+    "badgeText": "已收藏"
+  },
+  {
+    "title": "世界末日",
+    "artist": "Young 7",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1441514325",
         "label": "B站音源"
-      },
-      {
-        "url": "https://api.i-meto.com/meting/api?server=kugou&type=url&id=c3a51a2806f4eaad744d81196c3f610a&auth=4c91af3a69f01ff499307a81a22e1762833dcd4a",
-        "label": "酷狗完整流"
-      },
-      {
-        "url": "https://api.i-meto.com/meting/api?server=tencent&type=url&id=001zNuoj04embV&auth=f957ea3877fa037a7edc20db8024fb967f5ef495",
-        "label": "QQ完整流"
-      },
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
-        "label": "网易完整流"
       }
     ],
     "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "过渡期",
+    "artist": "宋念宇",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166730782749",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=25780143",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "安蒐蕊",
+    "artist": "ᅟᅟㅤ",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172077273572",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3335999694",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 秒播 (04:16 · B站音源)"
+  },
+  {
+    "title": "今天的祝福明天的孤独",
+    "artist": "本多RuRu",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170409954834",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=207257",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "想要你知道",
+    "artist": "许亚童",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=2e6ff60560f210da10b946a7014f70bf",
+        "label": "酷狗完整流"
+      }
+    ],
+    "badgeText": "⚡ 锁定(酷狗完整流)"
+  },
+  {
+    "title": "过客",
+    "artist": "周思涵",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=18770862510931326",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445665094",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 秒播 (04:30 · B站音源)"
   },
   {
     "title": "【周杰伦 | demo】百万级录音棚听《纽约地铁》【Hi-Res】",
@@ -816,87 +871,27 @@
     "badgeText": "⚡ 锁定(B站音源)"
   },
   {
-    "title": "想要你知道",
-    "artist": "许亚童",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=2e6ff60560f210da10b946a7014f70bf",
-        "label": "酷狗完整流"
-      }
-    ],
-    "badgeText": "⚡ 锁定(酷狗完整流)"
-  },
-  {
-    "title": "过客",
-    "artist": "周思涵",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=18770862510931326",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445665094",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 秒播 (04:30 · B站音源)"
-  },
-  {
     "title": "都是你的",
-    "artist": "林姝涵/RAiNBOW计划",
-    "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=f8a3f2bf613aba0ca7b575f5c168f0ad",
+    "artist": "RAiNBOW计划/林姝涵",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3273246117001205",
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
         "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 秒播 (04:36 · B站音源)"
-  },
-  {
-    "title": "世界末日",
-    "artist": "Young 7",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
-    "sources": [
+      },
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1441514325",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 锁定(B站音源)"
-  },
-  {
-    "title": "过渡期",
-    "artist": "宋念宇",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166730782749",
-    "sources": [
+        "url": "https://api.i-meto.com/meting/api?server=kugou&type=url&id=c3a51a2806f4eaad744d81196c3f610a&auth=4c91af3a69f01ff499307a81a22e1762833dcd4a",
+        "label": "酷狗完整流"
+      },
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=25780143",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 锁定(B站音源)"
-  },
-  {
-    "title": "安蒐蕊",
-    "artist": "ᅟᅟㅤ",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172077273572",
-    "sources": [
+        "url": "https://api.i-meto.com/meting/api?server=tencent&type=url&id=001zNuoj04embV&auth=f957ea3877fa037a7edc20db8024fb967f5ef495",
+        "label": "QQ完整流"
+      },
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3335999694",
-        "label": "B站音源"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "label": "网易完整流"
       }
     ],
-    "badgeText": "⚡ 秒播 (04:16 · B站音源)"
-  },
-  {
-    "title": "今天的祝福明天的孤独",
-    "artist": "本多RuRu",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170409954834",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=207257",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 锁定(B站音源)"
+    "badgeText": "⚡ 胆机3D (03:20 · B站音源)"
   }
 ]
