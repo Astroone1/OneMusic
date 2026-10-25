@@ -1,5 +1,29 @@
 [
   {
+    "title": "都是你的",
+    "artist": "RAiNBOW计划/林姝涵",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3273246117001205",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "label": "B站音源"
+      },
+      {
+        "url": "https://api.i-meto.com/meting/api?server=kugou&type=url&id=c3a51a2806f4eaad744d81196c3f610a&auth=4c91af3a69f01ff499307a81a22e1762833dcd4a",
+        "label": "酷狗完整流"
+      },
+      {
+        "url": "https://api.i-meto.com/meting/api?server=tencent&type=url&id=001zNuoj04embV&auth=f957ea3877fa037a7edc20db8024fb967f5ef495",
+        "label": "QQ完整流"
+      },
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "label": "网易完整流"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
     "title": "【周杰伦 | demo】百万级录音棚听《纽约地铁》【Hi-Res】",
     "artist": "JLRS-jayfm",
     "cover": "https://api.qijieya.cn/meting/?server=tencent&type=pic&id=",
