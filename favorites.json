@@ -1,5 +1,65 @@
 [
   {
+    "title": "都是你的",
+    "artist": "林姝涵/RAiNBOW计划",
+    "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=f8a3f2bf613aba0ca7b575f5c168f0ad",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "世界末日",
+    "artist": "Young 7",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1441514325",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "过渡期",
+    "artist": "宋念宇",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166730782749",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=25780143",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "安蒐蕊",
+    "artist": "ᅟᅟㅤ",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172077273572",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3335999694",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 秒播 (04:16 · B站音源)"
+  },
+  {
+    "title": "今天的祝福明天的孤独",
+    "artist": "本多RuRu",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170409954834",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=207257",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
     "title": "想要你知道",
     "artist": "许亚童",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
