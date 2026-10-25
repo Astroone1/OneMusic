@@ -174,7 +174,7 @@
             background: linear-gradient(135deg, #f0f9ff 0%, #fff1f2 100%);
             border: 1px solid #bae6fd;
             border-radius: 14px;
-            padding: 14px 18px;
+            padding: 12px 18px;
             margin-bottom: 14px;
             display: flex;
             justify-content: space-between;
@@ -185,14 +185,9 @@
         }
 
         .banner-info h2 {
-            font-size: 1.08rem;
-            margin-bottom: 3px;
+            font-size: 1.05rem;
+            font-weight: 700;
             color: var(--text-primary);
-        }
-
-        .banner-info p {
-            font-size: 0.76rem;
-            color: var(--text-secondary);
         }
 
         .banner-actions {
@@ -227,6 +222,7 @@
             box-shadow: 0 4px 10px var(--accent-glow);
         }
 
+        /* 云同步按钮与上中下纯文字三栏菜单 */
         .cloud-wrap {
             position: relative;
             display: none;
@@ -418,6 +414,7 @@
         }
         .fav-btn:hover { transform: scale(1.18); }
 
+        /* 底部播放栏 */
         .player-bar {
             position: fixed;
             bottom: 0;
@@ -549,6 +546,7 @@
             background: #f0f9ff;
         }
 
+        /* 圆润播放/暂停主按钮 */
         .play-pause-circle {
             width: 46px;
             height: 46px;
@@ -573,6 +571,7 @@
             display: block;
         }
 
+        /* 歌词全屏/抽屉视图 */
         .lyric-overlay {
             position: fixed;
             inset: 0;
@@ -683,6 +682,7 @@
             transform: scale(1.03);
         }
 
+        /* 云链接配置弹窗 */
         .modal-mask {
             position: fixed;
             inset: 0;
@@ -840,10 +840,17 @@
     <main>
         <div class="banner-card">
             <div class="banner-info">
-                <h2 id="bannerTitle">华语榜 TOP 热歌</h2>
-                <p id="bannerDesc">支持耳机线控：单击暂停/播放，双击下一首</p>
+                <h2 id="bannerTitle">华语榜</h2>
             </div>
             <div class="banner-actions">
+                <!-- 华语榜：三大权威平台切换 -->
+                <select id="cnBoardSelect" class="sub-source-select" onchange="changeCnChart()">
+                    <option value="qq_daily">QQ音乐 · 每日流行</option>
+                    <option value="netease_daily">网易云 · 华语精选</option>
+                    <option value="spotify_cn">Spotify · 华语风向</option>
+                </select>
+
+                <!-- 欧美榜切换 -->
                 <select id="bbBoardSelect" class="sub-source-select" style="display:none;" onchange="changeBillboardChart()">
                     <option value="60198">Billboard 公告牌周榜</option>
                     <option value="2809513713">欧美热歌全量榜</option>
@@ -873,27 +880,27 @@
         <div class="song-list" id="songList"></div>
     </main>
 
-    <!-- 歌词浮层 -->
+    <!-- PC & 手机自适应歌词浮层 -->
     <div class="lyric-overlay" id="lyricOverlay">
         <div class="lyric-header">
-            <span style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);">🎵 实时同步歌词</span>
-            <button class="lyric-close-btn" onclick="toggleLyricOverlay()">收起歌词 ✕</button>
+            <span style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);">🎵 歌词</span>
+            <button class="lyric-close-btn" onclick="toggleLyricOverlay()">收起 ✕</button>
         </div>
         <div class="lyric-body">
             <div class="lyric-art-col">
                 <img src="https://picsum.photos/seed/music/300/300" class="lyric-big-cover" id="lyricCover" alt="cover">
                 <div>
-                    <div class="lyric-song-title" id="lyricTitle">未在播放</div>
-                    <div class="lyric-song-artist" id="lyricArtist">点击任意歌曲开始聆听</div>
+                    <div class="lyric-song-title" id="lyricTitle">OneMusic</div>
+                    <div class="lyric-song-artist" id="lyricArtist"></div>
                 </div>
             </div>
             <div class="lyric-scroll-col" id="lyricScrollBox">
-                <div class="lyric-line active">点击任意歌曲播放，自动加载同步歌词</div>
+                <div class="lyric-line active">暂无歌词</div>
             </div>
         </div>
     </div>
 
-    <!-- 云链接弹窗 -->
+    <!-- 云链接弹窗：空白手动填写 -->
     <div class="modal-mask" id="cloudModal" onclick="closeCloudConfigModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h3>公开仓库云链接</h3>
@@ -925,7 +932,7 @@
         </div>
     </div>
 
-    <!-- 底部播放栏 -->
+    <!-- 底部播放控制栏 -->
     <div class="player-bar">
         <div class="player-inner">
             <div class="progress-wrap">
@@ -934,16 +941,16 @@
                 <span id="durTime">00:00</span>
             </div>
             <div class="player-main">
-                <div class="np-left" onclick="toggleLyricOverlay()" title="点击展开歌词">
+                <div class="np-left" onclick="toggleLyricOverlay()" title="展开歌词">
                     <img src="https://picsum.photos/seed/music/100/100" class="np-cover" id="npCover" alt="cover">
                     <div class="np-meta">
-                        <div class="np-title" id="npTitle">点击任意歌曲开始播放</div>
-                        <div class="np-lyric-mini" id="npStatus">支持耳机单击暂停/双击下一首</div>
+                        <div class="np-title" id="npTitle">OneMusic</div>
+                        <div class="np-lyric-mini" id="npStatus"></div>
                     </div>
                 </div>
                 <div class="np-controls">
-                    <button class="ctrl-btn lyric-toggle" onclick="toggleLyricOverlay()" title="展开/收起歌词">词</button>
-                    <button class="fav-btn" id="npFavBtn" onclick="toggleCurrentFav()" title="收藏当前播放歌曲">🤍</button>
+                    <button class="ctrl-btn lyric-toggle" onclick="toggleLyricOverlay()" title="歌词">词</button>
+                    <button class="fav-btn" id="npFavBtn" onclick="toggleCurrentFav()" title="收藏">🤍</button>
                     <button class="play-pause-circle" id="playBtn" onclick="togglePlay()" title="播放/暂停">
                         <svg id="playIconSvg" viewBox="0 0 24 24">
                             <path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>
@@ -963,20 +970,21 @@
             "https://api.i-meto.com/meting/api"
         ];
 
+        // B站音源默认固定排在第二位
         const UPSTREAM_PLATFORMS = [
+            { code: 'kuwo',     label: '酷我完整流' },
             { code: 'bilibili', label: 'B站音源' },
-            { code: 'kuwo',    label: '酷我完整流' },
-            { code: 'kugou',   label: '酷狗完整流' },
-            { code: 'tencent', label: 'QQ完整流' },
-            { code: 'netease', label: '网易完整流' }
+            { code: 'kugou',    label: '酷狗完整流' },
+            { code: 'tencent',  label: 'QQ完整流' },
+            { code: 'netease',  label: '网易完整流' }
         ];
 
         const MIN_VALID_DURATION = 65;
 
         const MARKETS = {
-            cn: { title: "华语榜 TOP 热歌", desc: "聚合源 + B站联动 · 耳机线控双击切歌", playlistId: "3778678" },
-            jp: { title: "日语榜 Oricon 精选", desc: "日本公信榜直连 + ACG 翻唱/Live 联动", playlistId: "60131" },
-            bb: { title: "欧美榜 权威热单", desc: "欧美流行全网穿透 · 自动调度完整音轨", playlistId: "60198" }
+            cn: { title: "华语榜" },
+            jp: { title: "日语榜", playlistId: "60131" },
+            bb: { title: "欧美榜", playlistId: "60198" }
         };
 
         const SVG_PLAY_PATH = `<path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>`;
@@ -1019,6 +1027,9 @@
 
         function setPlayButtonVisual(isPlaying) {
             playIconSvg.innerHTML = isPlaying ? SVG_PAUSE_PATH : SVG_PLAY_PATH;
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+            }
         }
 
         async function requestMeting(paramsStr, timeout = 5500) {
@@ -1130,7 +1141,7 @@
                     artist: song.artist,
                     cover: song.cover,
                     sources: lockedSources.map(s => ({ url: s.url, label: s.label })),
-                    badgeText: lockedSources.length > 0 ? `⚡ 锁定(${lockedSources[0].label})` : '已记录采集链',
+                    badgeText: lockedSources.length > 0 ? `⚡ 锁定(${lockedSources[0].label})` : '已收藏',
                     verifiedFull: true
                 });
             }
@@ -1217,7 +1228,7 @@
             }
 
             const branch = cfg.branch || 'main';
-            npStatus.innerText = "正在连接公开仓并拉取 favorites.json...";
+            npStatus.innerText = "正在拉取云端配置...";
 
             try {
                 const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repoName}/contents/${CLOUD_JSON_FILE}?ref=${encodeURIComponent(branch)}`;
@@ -1271,10 +1282,10 @@
                 setCloudLightStatus(true);
                 hasCloudDownloadedAndMerged = true;
                 document.getElementById('cloudUploadBtn').disabled = false;
-                npStatus.innerText = `✅ 云链接与下行整合成功 (共 ${favorites.length} 首)，已解锁云上传`;
+                npStatus.innerText = `✅ 已同步 (${favorites.length} 首)`;
             } catch (err) {
                 setCloudLightStatus(false);
-                npStatus.innerText = `⚠️ 云连接失败: ${err.message}`;
+                npStatus.innerText = `⚠️ 云连接失败`;
                 alert(`云连接或下行失败：${err.message}`);
             }
         }
@@ -1294,7 +1305,7 @@
             }
 
             const branch = cfg.branch || 'main';
-            npStatus.innerText = "⬆️ 正在上传 favorites.json 至公开仓...";
+            npStatus.innerText = "⬆️ 正在上传至公开仓...";
 
             try {
                 const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repoName}/contents/${CLOUD_JSON_FILE}`;
@@ -1341,10 +1352,10 @@
                 }
 
                 setCloudLightStatus(true);
-                npStatus.innerText = `🎉 云上传成功！已同步 ${cleanPayload.length} 首歌曲配置`;
+                npStatus.innerText = `🎉 云上传成功 (${cleanPayload.length} 首)`;
                 alert(`云上传成功！已同步 ${cleanPayload.length} 首收藏配置至 ${cfg.owner}/${cfg.repoName}`);
             } catch (err) {
-                npStatus.innerText = `❌ 云上传失败: ${err.message}`;
+                npStatus.innerText = `❌ 云上传失败`;
                 alert(`云上传失败：${err.message}\n（提示：GitHub 公开仓库写入文件要求在「云链接」中填入有效 Token）`);
             }
         }
@@ -1416,7 +1427,7 @@
             if (token === activePlayToken && currentLyrics.length === 0) {
                 renderLyricsDOM([
                     { time: 0, text: `${song.title} - ${song.artist}` },
-                    { time: 2, text: "纯音乐或暂未匹配到时间轴歌词，请尽情聆听 🎵" }
+                    { time: 2, text: "纯音乐或暂无时间轴歌词" }
                 ]);
             }
         }
@@ -1461,7 +1472,7 @@
             }
         }
 
-        /* ================= 榜单与播放核心 ================= */
+        /* ================= 榜单切换与华语三大源加载 ================= */
         async function switchTab(tabKey) {
             currentTab = tabKey;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1469,26 +1480,102 @@
             if (activeBtn) activeBtn.classList.add('active');
 
             const isFav = (tabKey === 'fav');
+            const isCN = (tabKey === 'cn');
             const isBB = (tabKey === 'bb');
+
             document.getElementById('cloudWrap').style.display = isFav ? 'inline-block' : 'none';
+            document.getElementById('cnBoardSelect').style.display = isCN ? 'inline-block' : 'none';
             document.getElementById('bbBoardSelect').style.display = isBB ? 'inline-block' : 'none';
 
             if (tabKey === 'fav') {
                 document.getElementById('bannerTitle').innerText = "❤️ 我的收藏";
-                document.getElementById('bannerDesc').innerText = "已记录专属采集链 · 支持右侧云标志进行公开仓同步";
                 viewList = [...favorites];
                 renderList();
             } else if (tabKey === 'search') {
-                document.getElementById('bannerTitle').innerText = "🔍 聚合搜索结果";
-                document.getElementById('bannerDesc').innerText = "多源并发检索结果 · 收藏时自动锁定当前可用采集链";
+                document.getElementById('bannerTitle').innerText = "🔍 搜索结果";
                 viewList = [...searchResults];
                 renderList();
+            } else if (tabKey === 'cn') {
+                document.getElementById('bannerTitle').innerText = "华语榜";
+                await changeCnChart();
+            } else if (tabKey === 'bb') {
+                document.getElementById('bannerTitle').innerText = "欧美榜";
+                await changeBillboardChart();
             } else {
                 document.getElementById('bannerTitle').innerText = MARKETS[tabKey].title;
-                document.getElementById('bannerDesc').innerText = MARKETS[tabKey].desc;
-                const pid = isBB ? document.getElementById('bbBoardSelect').value : MARKETS[tabKey].playlistId;
-                await loadMarketPlaylist(pid, isBB);
+                await loadMarketPlaylist(MARKETS[tabKey].playlistId, false);
             }
+        }
+
+        async function changeCnChart() {
+            const val = document.getElementById('cnBoardSelect').value;
+            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在加载华语精选...</div>`;
+
+            // 1. QQ音乐 · 每日流行
+            if (val === 'qq_daily') {
+                let data = await requestMeting(`server=tencent&type=playlist&id=3645269962`);
+                if (!data.length) {
+                    data = await requestMeting(`server=netease&type=playlist&id=2884035`);
+                }
+                if (data.length > 0) {
+                    viewList = data.slice(0, 45).map(item => ({
+                        title: item.name || item.title || "未知曲目",
+                        artist: item.artist || item.author || "未知歌手",
+                        cover: item.pic || "https://picsum.photos/seed/music/100/100",
+                        sources: item.url ? [{ url: item.url, label: "QQ音乐源" }] : [],
+                        badgeText: "QQ流行"
+                    }));
+                    renderList();
+                    return;
+                }
+            }
+
+            // 2. 网易云 · 华语精选 (云音乐飙升/新锐精选)
+            if (val === 'netease_daily') {
+                const data = await requestMeting(`server=netease&type=playlist&id=19723756`);
+                if (data.length > 0) {
+                    viewList = data.slice(0, 45).map(item => ({
+                        title: item.name || item.title || "未知曲目",
+                        artist: item.artist || item.author || "未知歌手",
+                        cover: item.pic || "https://picsum.photos/seed/music/100/100",
+                        sources: item.url ? [{ url: item.url, label: "网易精选" }] : [],
+                        badgeText: "网易精选"
+                    }));
+                    renderList();
+                    return;
+                }
+            }
+
+            // 3. Spotify · 华语风向 (优先拉取 Mandopop Now 同步源，或 Apple 华语区官方流)
+            if (val === 'spotify_cn') {
+                const spSync = await requestMeting(`server=netease&type=playlist&id=5059642708`);
+                if (spSync.length > 0) {
+                    viewList = spSync.slice(0, 45).map(item => ({
+                        title: item.name || item.title || "未知曲目",
+                        artist: item.artist || item.author || "未知歌手",
+                        cover: item.pic || "https://picsum.photos/seed/music/100/100",
+                        sources: item.url ? [{ url: item.url, label: "Spotify同步" }] : [],
+                        badgeText: "Spotify华语"
+                    }));
+                    renderList();
+                    return;
+                }
+                try {
+                    const res = await fetch('https://itunes.apple.com/tw/rss/topsongs/limit=40/json');
+                    const json = await res.json();
+                    viewList = (json.feed.entry || []).map(item => ({
+                        title: item['im:name'].label,
+                        artist: item['im:artist'].label,
+                        cover: item['im:image'][2].label,
+                        sources: [],
+                        badgeText: "华语风向"
+                    }));
+                    renderList();
+                    return;
+                } catch (e) {}
+            }
+
+            await loadMarketPlaylist("19723756", false);
         }
 
         async function changeBillboardChart() {
@@ -1522,7 +1609,7 @@
                     artist: item.artist || item.author || "未知歌手",
                     cover: item.pic || "https://picsum.photos/seed/music/100/100",
                     sources: [{ url: item.url, label: "榜单源" }],
-                    badgeText: isBillboard ? "欧美穿透源" : "Meting聚合"
+                    badgeText: isBillboard ? "欧美热榜" : "官方榜"
                 }));
                 renderList();
             } else {
@@ -1537,7 +1624,7 @@
             document.getElementById('tab-search').style.display = 'inline-block';
             switchTab('search');
 
-            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--accent);">正在并发检索「${keyword}」...</div>`;
+            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--accent);">正在检索「${keyword}」...</div>`;
 
             const tasks = UPSTREAM_PLATFORMS.map(plat =>
                 requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(keyword)}`, 6000)
@@ -1651,6 +1738,7 @@
             document.getElementById('lyricTitle').innerText = song.title;
             document.getElementById('lyricArtist').innerText = song.artist;
 
+            updateMediaSession(song);
             fetchLyricsForSong(song, myToken);
 
             const favMatch = favorites.find(f => isSameSong(f, song));
@@ -1662,14 +1750,14 @@
             if (combinedSources.length > 0) {
                 for (let srcObj of combinedSources) {
                     if (myToken !== activePlayToken) return;
-                    npStatus.innerText = `⚡ 直连采集链 [${srcObj.label}]...`;
+                    npStatus.innerText = `⚡ 直连 [${srcObj.label}]...`;
                     const check = await verifyAndPlayStream(srcObj.url, myToken);
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
                         song.badgeText = `⚡ 秒播 (${formatTime(check.duration)} · ${srcObj.label})`;
                         renderList();
-                        npStatus.innerText = `⚡ 直连秒播 (${formatTime(check.duration)}) · ${srcObj.label}`;
+                        npStatus.innerText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
                         updateMediaSession(song);
                         return;
                     }
@@ -1678,7 +1766,7 @@
 
             if (myToken !== activePlayToken) return;
 
-            npStatus.innerText = `正在全网穿透寻找完整音源...`;
+            npStatus.innerText = `正在匹配音源...`;
             const cleanTitle = song.title.replace(/\(.*?\)|（.*?）/g, '').trim();
             const cleanArtist = song.artist.split(/[\/&,、]/)[0].trim();
             const query = `${cleanTitle} ${cleanArtist}`.trim();
@@ -1696,24 +1784,47 @@
 
             if (myToken !== activePlayToken) return;
 
-            const candidatePool = [...gdSources];
+            // 构建穿透候选池：确保 B站来源默认固定排在第二优先级
+            const primaryNonBili = [];
+            const biliCandidates = [];
+            const otherCandidates = [];
+
+            if (gdSources.length > 0) {
+                primaryNonBili.push(gdSources[0]);
+            }
+
             settledMeting.forEach(res => {
                 if (res.status === 'fulfilled' && Array.isArray(res.value.list)) {
+                    const isBili = res.value.plat.code === 'bilibili';
                     res.value.list.slice(0, 2).forEach(match => {
                         if (match && match.url) {
-                            candidatePool.push({
+                            const item = {
                                 url: match.url,
                                 label: res.value.plat.label,
                                 pic: match.pic
-                            });
+                            };
+                            if (isBili) {
+                                biliCandidates.push(item);
+                            } else if (primaryNonBili.length === 0) {
+                                primaryNonBili.push(item);
+                            } else {
+                                otherCandidates.push(item);
+                            }
                         }
                     });
                 }
             });
 
+            const candidatePool = [
+                ...primaryNonBili,
+                ...biliCandidates,
+                ...gdSources.slice(1),
+                ...otherCandidates
+            ];
+
             for (let cand of candidatePool) {
                 if (myToken !== activePlayToken) return;
-                npStatus.innerText = `检验音源 [${cand.label}]...`;
+                npStatus.innerText = `检验 [${cand.label}]...`;
                 const check = await verifyAndPlayStream(cand.url, myToken);
 
                 if (check.ok) {
@@ -1727,16 +1838,16 @@
                         document.getElementById('lyricCover').src = cand.pic;
                     }
                     renderList();
-                    npStatus.innerText = `✓ 正在播放 (${formatTime(check.duration)}) · ${cand.label}`;
+                    npStatus.innerText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
                     updateMediaSession(song);
                     return;
                 }
             }
 
             if (myToken === activePlayToken) {
-                song.badgeText = "⚠️ 暂无完整源";
+                song.badgeText = "⚠️ 暂无音源";
                 renderList();
-                npStatus.innerText = `《${song.title}》未找到有效音频，自动切歌...`;
+                npStatus.innerText = `未找到可用音频，自动切歌...`;
                 setTimeout(() => { if (myToken === activePlayToken) nextSong(); }, 1200);
             }
         }
@@ -1814,21 +1925,55 @@
             playSongInQueue((playingIndex + 1) % playingQueue.length);
         }
 
-        /* ================= 耳机线控事件绑定（Media Session API） ================= */
-        function updateMediaSession(song) {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: song.title,
-                    artist: song.artist,
-                    artwork: [{ src: song.cover, sizes: '300x300', type: 'image/jpeg' }]
-                });
+        function setupHeadsetMediaSession() {
+            if (!('mediaSession' in navigator)) return;
 
-                // 耳机线控/媒体按键动作映射
-                navigator.mediaSession.setActionHandler('play', () => { audio.play(); setPlayButtonVisual(true); });
-                navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPlayButtonVisual(false); });
-                navigator.mediaSession.setActionHandler('previoustrack', prevSong);
-                navigator.mediaSession.setActionHandler('nexttrack', nextSong);
+            const actionHandlers = [
+                ['play', () => {
+                    if (!currentPlayingSong && viewList.length > 0) {
+                        startPlayFromView(0);
+                    } else {
+                        audio.play();
+                        setPlayButtonVisual(true);
+                    }
+                }],
+                ['pause', () => {
+                    audio.pause();
+                    setPlayButtonVisual(false);
+                }],
+                ['nexttrack', () => {
+                    nextSong();
+                }],
+                ['previoustrack', () => {
+                    prevSong();
+                }],
+                ['seekto', (details) => {
+                    if (details.seekTime && audio.duration) {
+                        audio.currentTime = details.seekTime;
+                    }
+                }]
+            ];
+
+            for (const [action, handler] of actionHandlers) {
+                try {
+                    navigator.mediaSession.setActionHandler(action, handler);
+                } catch (e) {}
             }
+        }
+
+        function updateMediaSession(song) {
+            if (!('mediaSession' in navigator) || !song) return;
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: song.title,
+                artist: song.artist,
+                album: 'OneMusic',
+                artwork: [
+                    { src: song.cover, sizes: '96x96', type: 'image/jpeg' },
+                    { src: song.cover, sizes: '256x256', type: 'image/jpeg' },
+                    { src: song.cover, sizes: '512x512', type: 'image/jpeg' }
+                ]
+            });
+            setupHeadsetMediaSession();
         }
 
         function formatTime(sec) {
@@ -1844,6 +1989,16 @@
                 curTimeEl.innerText = formatTime(audio.currentTime);
                 durTimeEl.innerText = formatTime(audio.duration);
                 syncLyricProgress(audio.currentTime);
+
+                if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+                    try {
+                        navigator.mediaSession.setPositionState({
+                            duration: audio.duration,
+                            playbackRate: audio.playbackRate || 1,
+                            position: audio.currentTime
+                        });
+                    } catch (e) {}
+                }
             }
         });
 
@@ -1858,6 +2013,7 @@
 
         audio.addEventListener('ended', nextSong);
 
+        setupHeadsetMediaSession();
         loadFavorites();
         switchTab('cn');
     </script>
