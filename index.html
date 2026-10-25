@@ -520,26 +520,6 @@
             flex-shrink: 0;
         }
 
-        .dsp-btn {
-            background: #f5f3ff;
-            border: 1px solid #ddd6fe;
-            color: var(--purple);
-            height: 36px;
-            padding: 0 11px;
-            border-radius: 999px;
-            font-size: 0.74rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .dsp-btn.active {
-            background: linear-gradient(135deg, #7c3aed, #0284c7);
-            color: #ffffff;
-            border-color: transparent;
-            box-shadow: 0 3px 12px rgba(124, 58, 237, 0.3);
-        }
-
         .ctrl-btn {
             background: #f1f5f9;
             border: 1px solid var(--border-color);
@@ -566,9 +546,15 @@
             background: #f0f9ff;
         }
 
+        .ctrl-btn.mode-active {
+            background: #fff1f2;
+            color: var(--fav-red);
+            border-color: #fecdd3;
+        }
+
         .play-pause-circle {
-            width: 46px;
-            height: 46px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--accent);
             border: none;
@@ -584,9 +570,32 @@
             transform: scale(0.93);
         }
         .play-pause-circle svg {
-            width: 22px;
-            height: 22px;
+            width: 21px;
+            height: 21px;
             fill: #ffffff;
+            display: block;
+        }
+
+        .next-btn-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            padding: 0;
+        }
+        .next-btn-circle:hover {
+            background: #e2e8f0;
+        }
+        .next-btn-circle svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-primary);
             display: block;
         }
 
@@ -804,7 +813,6 @@
             .search-btn { padding: 6px 13px; font-size: 0.78rem; }
             main { padding: 12px 12px 115px 12px; }
             .badge { display: none; }
-            .dsp-btn { padding: 0 8px; font-size: 0.7rem; }
             .lyric-body {
                 grid-template-columns: 1fr;
                 gap: 12px;
@@ -863,15 +871,11 @@
                 <h2 id="bannerTitle">华语榜</h2>
             </div>
             <div class="banner-actions">
-                <!-- 华语权威榜单：每个榜单拥有独立曲库，绝不重复混同 -->
+                <!-- 1. 华语榜精简为：原生Meting、Apple台湾、Apple香港 -->
                 <select id="cnBoardSelect" class="sub-source-select" onchange="changeCnChart()">
                     <option value="meting_hot">原生 Meting · 华语热歌榜</option>
                     <option value="apple_tw">Apple Music · 台湾流行榜</option>
-                    <option value="apple_hk">Apple Music · 香港粤语/流行榜</option>
-                    <option value="apple_sg">Apple Music · 新加坡华语榜</option>
-                    <option value="apple_cn">Apple Music · 中国大陆流行榜</option>
-                    <option value="top_hktw">中国 TOP 排行榜 · 港台榜</option>
-                    <option value="top_mainland">中国 TOP 排行榜 · 内地榜</option>
+                    <option value="apple_hk">Apple Music · 香港流行榜</option>
                 </select>
 
                 <!-- 欧美榜切换 -->
@@ -879,7 +883,7 @@
                     <option value="60198">Billboard 公告牌周榜</option>
                     <option value="2809513713">欧美热歌全量榜</option>
                     <option value="180106">UK 英国官方单曲榜</option>
-                    <option value="apple_us">Apple Music 美区 Top 100</option>
+                    <option value="apple_us">Apple Music 美区榜</option>
                 </select>
 
                 <button class="play-all-btn" onclick="playAllInView()">▶ 全部连播</button>
@@ -956,7 +960,7 @@
         </div>
     </div>
 
-    <!-- 底部播放控制栏 -->
+    <!-- 底部播放控制栏（保留全局随机播放开关 + 下一首键） -->
     <div class="player-bar">
         <div class="player-inner">
             <div class="progress-wrap">
@@ -973,7 +977,7 @@
                     </div>
                 </div>
                 <div class="np-controls">
-                    <button class="dsp-btn active" id="dspBtn" onclick="cycleDspPreset()" title="切换母带声音滤镜">🎛️ 胆机3D母带</button>
+                    <button class="ctrl-btn" id="modeToggleBtn" onclick="toggleShuffleMode()" title="切换顺序/随机播放">🔁</button>
                     <button class="ctrl-btn lyric-toggle" onclick="toggleLyricOverlay()" title="歌词">词</button>
                     <button class="fav-btn" id="npFavBtn" onclick="toggleCurrentFav()" title="收藏">🤍</button>
                     <button class="play-pause-circle" id="playBtn" onclick="togglePlay()" title="播放/暂停">
@@ -981,14 +985,18 @@
                             <path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>
                         </svg>
                     </button>
+                    <button class="next-btn-circle" onclick="nextSong()" title="下一首">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 双轨音频内核：audioDsp 负责挂载 30Hz切底噪+电子管暖声+3D声场滤镜，audioRaw 负责防盗链直通兜底 -->
-    <audio id="audioDsp" crossorigin="anonymous" preload="metadata"></audio>
-    <audio id="audioRaw" preload="metadata"></audio>
+    <!-- 单一原生 <audio> 内核：彻底保障手机切后台、看其他非音源 APP、锁屏时 100% 持续连播不断流 -->
+    <audio id="audio" preload="metadata" playsinline></audio>
 
     <script>
         const METING_ENDPOINTS = [
@@ -997,10 +1005,10 @@
             "https://api.i-meto.com/meting/api"
         ];
 
-        // 穿透采集链优先级：B站固定排第二
+        // 穿透采集链优先级：B站第一，其余依次递推
         const UPSTREAM_PLATFORMS = [
-            { code: 'kuwo',     label: '酷我320k' },
             { code: 'bilibili', label: 'B站音源' },
+            { code: 'kuwo',     label: '酷我320k' },
             { code: 'kugou',    label: '酷狗320k' },
             { code: 'tencent',  label: 'QQ320k' },
             { code: 'netease',  label: '网易320k' }
@@ -1026,6 +1034,7 @@
         let playingQueue = [];
         let playingIndex = -1;
         let currentPlayingSong = null;
+        let isShuffleMode = false;
 
         let searchResults = [];
         let favorites = [];
@@ -1038,10 +1047,7 @@
         let currentLyrics = [];
         let activeLyricIndex = -1;
 
-        const audioDsp = document.getElementById('audioDsp');
-        const audioRaw = document.getElementById('audioRaw');
-        let activeAudio = audioDsp;
-
+        const audio = document.getElementById('audio');
         const songListEl = document.getElementById('songList');
         const npCover = document.getElementById('npCover');
         const npTitle = document.getElementById('npTitle');
@@ -1052,227 +1058,23 @@
         const curTimeEl = document.getElementById('curTime');
         const durTimeEl = document.getElementById('durTime');
 
-        /* ================= 30Hz切底噪 + 电子管暖声 + 3D声场拓宽滤镜引擎 ================= */
-        const DSP_PRESETS = [
-            {
-                key: 'tube_3d',
-                label: '🎛️ 胆机3D母带',
-                hpFreq: 32,
-                low65: 4.2,
-                mud250: -1.8,
-                vocal3k: 2.2,
-                air12k: 3.6,
-                tubeDrive: 0.24,
-                stereoWidth: 0.36
-            },
-            {
-                key: 'warm_vocal',
-                label: '🎛️ 胆机暖人声',
-                hpFreq: 35,
-                low65: 2.0,
-                mud250: -2.4,
-                vocal3k: 3.8,
-                air12k: 2.8,
-                tubeDrive: 0.32,
-                stereoWidth: 0.22
-            },
-            {
-                key: 'wide_bass',
-                label: '🎛️ 3D超重低音',
-                hpFreq: 30,
-                low65: 6.5,
-                mud250: -2.0,
-                vocal3k: 1.2,
-                air12k: 3.0,
-                tubeDrive: 0.20,
-                stereoWidth: 0.48
-            },
-            {
-                key: 'direct',
-                label: '🎛️ 原声直通',
-                hpFreq: 20,
-                low65: 0,
-                mud250: 0,
-                vocal3k: 0,
-                air12k: 0,
-                tubeDrive: 0,
-                stereoWidth: 0
-            }
-        ];
-
-        let dspPresetIndex = 0;
-        let audioCtx = null;
-        let dspNodes = null;
-
-        function makeTubeWarmthCurve(driveAmount) {
-            const n = 8192;
-            const curve = new Float32Array(n);
-            if (!driveAmount || driveAmount <= 0.001) {
-                for (let i = 0; i < n; i++) {
-                    curve[i] = (i * 2) / n - 1;
-                }
-                return curve;
-            }
-            const k = driveAmount * 2.6;
-            const asym = driveAmount * 0.09;
-            const norm = Math.tanh(k);
-            for (let i = 0; i < n; i++) {
-                const x = (i * 2) / n - 1;
-                const evenHarmonic = asym * (x * x - 0.35);
-                curve[i] = Math.tanh(k * x) / norm + evenHarmonic * (1 - Math.abs(x));
-            }
-            return curve;
-        }
-
-        function ensureWebAudioDSP() {
-            if (audioCtx) {
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume().catch(() => {});
-                }
-                return;
-            }
-            try {
-                const Ctx = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new Ctx();
-                const source = audioCtx.createMediaElementSource(audioDsp);
-
-                const subsonicHP = audioCtx.createBiquadFilter();
-                subsonicHP.type = 'highpass';
-                subsonicHP.frequency.value = 32;
-                subsonicHP.Q.value = 0.707;
-
-                const lowShelf65 = audioCtx.createBiquadFilter();
-                lowShelf65.type = 'lowshelf';
-                lowShelf65.frequency.value = 65;
-
-                const mudCut250 = audioCtx.createBiquadFilter();
-                mudCut250.type = 'peaking';
-                mudCut250.frequency.value = 250;
-                mudCut250.Q.value = 1.2;
-
-                const vocalPeak3k = audioCtx.createBiquadFilter();
-                vocalPeak3k.type = 'peaking';
-                vocalPeak3k.frequency.value = 3200;
-                vocalPeak3k.Q.value = 1.0;
-
-                const airShelf12k = audioCtx.createBiquadFilter();
-                airShelf12k.type = 'highshelf';
-                airShelf12k.frequency.value = 12000;
-
-                const tubeShaper = audioCtx.createWaveShaper();
-                tubeShaper.oversample = '4x';
-
-                const splitter = audioCtx.createChannelSplitter(2);
-                const merger = audioCtx.createChannelMerger(2);
-
-                const dryGainL = audioCtx.createGain();
-                const dryGainR = audioCtx.createGain();
-
-                const sideHPFilterL = audioCtx.createBiquadFilter();
-                sideHPFilterL.type = 'highpass';
-                sideHPFilterL.frequency.value = 220;
-
-                const sideHPFilterR = audioCtx.createBiquadFilter();
-                sideHPFilterR.type = 'highpass';
-                sideHPFilterR.frequency.value = 220;
-
-                const haasDelayL = audioCtx.createDelay(0.05);
-                haasDelayL.delayTime.value = 0.0085;
-                const haasDelayR = audioCtx.createDelay(0.05);
-                haasDelayR.delayTime.value = 0.0095;
-
-                const crossFeedLtoR = audioCtx.createGain();
-                const crossFeedRtoL = audioCtx.createGain();
-
-                const compressor = audioCtx.createDynamicsCompressor();
-                compressor.threshold.value = -15;
-                compressor.knee.value = 18;
-                compressor.ratio.value = 2.6;
-                compressor.attack.value = 0.006;
-                compressor.release.value = 0.18;
-
-                const makeupGain = audioCtx.createGain();
-                makeupGain.gain.value = 1.05;
-
-                source.connect(subsonicHP);
-                subsonicHP.connect(lowShelf65);
-                lowShelf65.connect(mudCut250);
-                mudCut250.connect(vocalPeak3k);
-                vocalPeak3k.connect(airShelf12k);
-                airShelf12k.connect(tubeShaper);
-
-                tubeShaper.connect(splitter);
-
-                splitter.connect(dryGainL, 0);
-                splitter.connect(dryGainR, 1);
-                dryGainL.connect(merger, 0, 0);
-                dryGainR.connect(merger, 0, 1);
-
-                splitter.connect(sideHPFilterL, 0);
-                sideHPFilterL.connect(haasDelayL);
-                haasDelayL.connect(crossFeedLtoR);
-                crossFeedLtoR.connect(merger, 0, 1);
-
-                splitter.connect(sideHPFilterR, 1);
-                sideHPFilterR.connect(haasDelayR);
-                haasDelayR.connect(crossFeedRtoL);
-                crossFeedRtoL.connect(merger, 0, 0);
-
-                merger.connect(compressor);
-                compressor.connect(makeupGain);
-                makeupGain.connect(audioCtx.destination);
-
-                dspNodes = {
-                    subsonicHP,
-                    lowShelf65,
-                    mudCut250,
-                    vocalPeak3k,
-                    airShelf12k,
-                    tubeShaper,
-                    crossFeedLtoR,
-                    crossFeedRtoL,
-                    makeupGain
-                };
-
-                applyDspPreset();
-            } catch (e) {
-                console.warn("WebAudio DSP 初始化受限:", e);
-            }
-        }
-
-        function applyDspPreset() {
-            const preset = DSP_PRESETS[dspPresetIndex];
-            const btn = document.getElementById('dspBtn');
-            if (btn) {
-                btn.innerText = preset.label;
-                btn.classList.toggle('active', preset.key !== 'direct');
-            }
-            if (!dspNodes) return;
-
-            dspNodes.subsonicHP.frequency.value = preset.hpFreq;
-            dspNodes.lowShelf65.gain.value = preset.low65;
-            dspNodes.mudCut250.gain.value = preset.mud250;
-            dspNodes.vocal3k = preset.vocal3k;
-            dspNodes.vocalPeak3k.gain.value = preset.vocal3k;
-            dspNodes.airShelf12k.gain.value = preset.air12k;
-            dspNodes.tubeShaper.curve = makeTubeWarmthCurve(preset.tubeDrive);
-
-            dspNodes.crossFeedLtoR.gain.value = -preset.stereoWidth;
-            dspNodes.crossFeedRtoL.gain.value = -preset.stereoWidth;
-            dspNodes.makeupGain.gain.value = preset.key === 'direct' ? 1.0 : 1.06;
-        }
-
-        function cycleDspPreset() {
-            ensureWebAudioDSP();
-            dspPresetIndex = (dspPresetIndex + 1) % DSP_PRESETS.length;
-            applyDspPreset();
-        }
-
         function setPlayButtonVisual(isPlaying) {
             playIconSvg.innerHTML = isPlaying ? SVG_PAUSE_PATH : SVG_PLAY_PATH;
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
             }
+        }
+
+        // 全局底部随机播放开关（对所有榜单和收藏列表生效）
+        function toggleShuffleMode() {
+            isShuffleMode = !isShuffleMode;
+            const modeBtn = document.getElementById('modeToggleBtn');
+            if (modeBtn) {
+                modeBtn.innerText = isShuffleMode ? '🔀' : '🔁';
+                modeBtn.classList.toggle('mode-active', isShuffleMode);
+                modeBtn.title = isShuffleMode ? '当前：随机播放' : '当前：顺序循环';
+            }
+            npStatus.innerText = isShuffleMode ? "🔀 已开启全局随机播放" : "🔁 已开启全局顺序循环";
         }
 
         async function requestMeting(paramsStr, timeout = 5500) {
@@ -1318,7 +1120,7 @@
             return results;
         }
 
-        /* ================= 收藏与云同步模块 ================= */
+        /* ================= 收藏与穿透互补自动覆写采集链模块 ================= */
         function loadFavorites() {
             try {
                 const raw = localStorage.getItem(FAV_STORAGE_KEY) || localStorage.getItem("MUSIC_HUB_FAVORITES_V5");
@@ -1361,6 +1163,26 @@
             return getSongFingerprint(songA.title, songA.artist) === getSongFingerprint(songB.title, songB.artist);
         }
 
+        // 穿透互补核心：只要某首已收藏歌曲播放成功，永远将其收藏记录更新为最后一次实际播放成功的采集链
+        function syncFavoriteLatestChain(song, latestSourceObj, durationSec) {
+            if (!song || !latestSourceObj || !latestSourceObj.url) return;
+            const fp = getSongFingerprint(song.title, song.artist);
+            const favIdx = favorites.findIndex(f => getSongFingerprint(f.title, f.artist) === fp);
+            if (favIdx > -1) {
+                const cleanChain = { url: latestSourceObj.url, label: latestSourceObj.label || '直连链' };
+                favorites[favIdx].sources = [cleanChain];
+                favorites[favIdx].badgeText = `⚡ 锁定(${cleanChain.label})`;
+                favorites[favIdx].verifiedFull = true;
+                if (song.cover && !song.cover.includes('picsum.photos')) {
+                    favorites[favIdx].cover = song.cover;
+                }
+                saveFavorites();
+                if (currentTab === 'fav') {
+                    viewList = [...favorites];
+                }
+            }
+        }
+
         function toggleFavorite(song, event) {
             if (event) event.stopPropagation();
             if (!song) return;
@@ -1375,8 +1197,8 @@
                 if (currentPlayingSong && isSameSong(currentPlayingSong, song)) {
                     if (activeWorkingChain) {
                         lockedSources = [activeWorkingChain];
-                    } else if (activeAudio.src) {
-                        lockedSources = [{ url: activeAudio.src, label: "直连链" }];
+                    } else if (audio.src) {
+                        lockedSources = [{ url: audio.src, label: "直连链" }];
                     }
                 }
                 favorites.unshift({
@@ -1683,8 +1505,8 @@
                 div.className = `lyric-line ${idx === 0 ? 'active' : ''}`;
                 div.innerText = item.text;
                 div.onclick = () => {
-                    if (activeAudio.duration && item.time >= 0) {
-                        activeAudio.currentTime = item.time;
+                    if (audio.duration && item.time >= 0) {
+                        audio.currentTime = item.time;
                     }
                 };
                 box.appendChild(div);
@@ -1715,78 +1537,69 @@
             }
         }
 
-        /* ================= 修复版 Apple 各区独立采样器（绝不混同兜底） ================= */
-        async function fetchAppleRegionalChart(region, badgeLabel) {
-            // 通道 1：对于 tw / hk / sg / us，优先请求原生支持 CORS 的 iTunes Store Top Songs RSS
-            if (region !== 'cn') {
-                try {
-                    const iTunesUrl = `https://itunes.apple.com/${region}/rss/topsongs/limit=45/json`;
-                    const res = await fetch(iTunesUrl);
-                    if (res.ok) {
-                        const json = await res.json();
-                        const entries = (json && json.feed && json.feed.entry) || [];
-                        if (Array.isArray(entries) && entries.length > 0) {
-                            return entries.map(item => {
-                                const imgs = item['im:image'] || [];
-                                const rawCover = imgs.length ? imgs[imgs.length - 1].label : "https://picsum.photos/seed/music/300/300";
-                                return {
-                                    title: item['im:name'] ? item['im:name'].label : "未知歌曲",
-                                    artist: item['im:artist'] ? item['im:artist'].label : "未知歌手",
-                                    cover: rawCover.replace(/170x170/g, '300x300'),
-                                    sources: [],
-                                    badgeText: badgeLabel
-                                };
-                            });
-                        }
-                    }
-                } catch (e) {}
-            }
+        /* ================= Apple 官方直连采样器（无第三方代理） ================= */
+        function parseAppleRssEntries(entries, badgeLabel) {
+            if (!Array.isArray(entries) || entries.length === 0) return [];
+            return entries.map(item => {
+                const imgs = item['im:image'] || [];
+                const rawCover = imgs.length ? imgs[imgs.length - 1].label : "https://picsum.photos/seed/music/300/300";
+                return {
+                    title: item['im:name'] ? item['im:name'].label : "未知歌曲",
+                    artist: item['im:artist'] ? item['im:artist'].label : "未知歌手",
+                    cover: rawCover.replace(/170x170/g, '300x300'),
+                    sources: [],
+                    badgeText: badgeLabel
+                };
+            });
+        }
 
-            // 通道 2：通过透明 CORS 代理拉取 Apple Music 官方实时流媒体榜（支持 cn / tw / hk / sg / us 全区）
-            const appleRssTarget = `https://rss.applemarketingtools.com/api/v2/${region}/music/most-played/45/songs.json`;
-            const proxyUrls = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(appleRssTarget)}`,
-                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(appleRssTarget)}`
-            ];
+        function fetchAppleViaJsonp(region, badgeLabel) {
+            return new Promise((resolve) => {
+                const cbName = `appleRssCb_${region}_${Date.now()}`;
+                const script = document.createElement('script');
+                const timer = setTimeout(() => {
+                    cleanup();
+                    resolve([]);
+                }, 6000);
 
-            for (let pUrl of proxyUrls) {
-                try {
-                    const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 5000);
-                    const res = await fetch(pUrl, { signal: controller.signal });
+                function cleanup() {
                     clearTimeout(timer);
-                    if (!res.ok) continue;
-                    const json = await res.json();
-                    const results = json && json.feed && json.feed.results;
-                    if (Array.isArray(results) && results.length > 0) {
-                        return results.map(item => ({
-                            title: item.name || "未知歌曲",
-                            artist: item.artistName || "未知歌手",
-                            cover: (item.artworkUrl100 || "https://picsum.photos/seed/music/300/300").replace(/100x100/g, '300x300'),
-                            sources: [],
-                            badgeText: badgeLabel
-                        }));
-                    }
-                } catch (e) {}
-            }
+                    delete window[cbName];
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                }
 
-            // 通道 3：如果用户网络无法访问境外 Apple 接口，为不同地区映射各自完全独立的地区榜单 ID，绝不共用同一个 3778678！
-            const regionalFallbackMap = {
-                'tw': { id: '64016',      badge: '港台流行榜' },
-                'hk': { id: '1978921795', badge: '香港粤语榜' },
-                'sg': { id: '2809577409', badge: '新马华语榜' },
-                'cn': { id: '112504',     badge: '中国内地榜' },
-                'us': { id: '60198',      badge: '美国公告牌' }
-            };
-            const fb = regionalFallbackMap[region] || { id: '19723756', badge: badgeLabel };
-            const data = await requestMeting(`server=netease&type=playlist&id=${fb.id}`);
-            return data.slice(0, 45).map(item => ({
-                title: item.name || item.title || "未知曲目",
-                artist: item.artist || item.author || "未知歌手",
-                cover: item.pic || "https://picsum.photos/seed/music/300/300",
-                sources: [],
-                badgeText: fb.badge
-            }));
+                window[cbName] = (data) => {
+                    cleanup();
+                    const entries = data && data.feed && data.feed.entry;
+                    resolve(parseAppleRssEntries(entries, badgeLabel));
+                };
+
+                script.onerror = () => {
+                    cleanup();
+                    resolve([]);
+                };
+
+                script.src = `https://itunes.apple.com/${region}/rss/topsongs/limit=45/json?callback=${cbName}`;
+                document.body.appendChild(script);
+            });
+        }
+
+        async function fetchAppleOfficialChart(region, badgeLabel) {
+            try {
+                const url = `https://itunes.apple.com/${region}/rss/topsongs/limit=45/json`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    const json = await res.json();
+                    const entries = json && json.feed && json.feed.entry;
+                    const parsed = parseAppleRssEntries(entries, badgeLabel);
+                    if (parsed.length > 0) return parsed;
+                }
+            } catch (e) {}
+
+            const jsonpList = await fetchAppleViaJsonp(region, badgeLabel);
+            if (jsonpList.length > 0) return jsonpList;
+
+            return [];
         }
 
         async function switchTab(tabKey) {
@@ -1825,43 +1638,27 @@
 
         async function changeCnChart() {
             const val = document.getElementById('cnBoardSelect').value;
-            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在采样榜单目录...</div>`;
+            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在直连采样榜单...</div>`;
 
             if (val === 'apple_tw') {
-                viewList = await fetchAppleRegionalChart('tw', 'Apple台湾榜');
+                viewList = await fetchAppleOfficialChart('tw', 'Apple台湾榜');
                 renderList();
                 return;
             }
             if (val === 'apple_hk') {
-                viewList = await fetchAppleRegionalChart('hk', 'Apple香港榜');
-                renderList();
-                return;
-            }
-            if (val === 'apple_sg') {
-                viewList = await fetchAppleRegionalChart('sg', 'Apple新加坡榜');
-                renderList();
-                return;
-            }
-            if (val === 'apple_cn') {
-                viewList = await fetchAppleRegionalChart('cn', 'Apple大陆榜');
+                viewList = await fetchAppleOfficialChart('hk', 'Apple香港榜');
                 renderList();
                 return;
             }
 
-            const metingBoardMap = {
-                'meting_hot':   { id: '3778678', label: 'Meting热歌榜' },
-                'top_hktw':     { id: '64016',   label: 'TOP港台榜' },
-                'top_mainland': { id: '112504',  label: 'TOP内地榜' }
-            };
-            const target = metingBoardMap[val] || metingBoardMap['meting_hot'];
-            await loadMarketPlaylist(target.id, target.label);
+            await loadMarketPlaylist('3778678', 'Meting华语榜');
         }
 
         async function changeBillboardChart() {
             const val = document.getElementById('bbBoardSelect').value;
             if (val === 'apple_us') {
-                songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在采样 Apple Music 美区榜...</div>`;
-                viewList = await fetchAppleRegionalChart('us', 'Apple美区榜');
+                songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在直连采样 Apple 美区榜...</div>`;
+                viewList = await fetchAppleOfficialChart('us', 'Apple美区榜');
                 renderList();
                 return;
             }
@@ -1981,14 +1778,18 @@
         }
 
         function playAllInView() {
-            if (viewList.length > 0) {
-                startPlayFromView(0);
+            if (viewList.length === 0) return;
+            playingQueue = [...viewList];
+            if (isShuffleMode) {
+                const randIdx = Math.floor(Math.random() * playingQueue.length);
+                playSongInQueue(randIdx);
+            } else {
+                playSongInQueue(0);
             }
         }
 
         function startPlayFromView(idx) {
             if (!viewList[idx]) return;
-            ensureWebAudioDSP();
             playingQueue = [...viewList];
             playSongInQueue(idx);
         }
@@ -2025,10 +1826,10 @@
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
-                        const dspTag = check.dspActive ? "胆机3D" : "320k直通";
-                        song.badgeText = `⚡ ${dspTag} (${formatTime(check.duration)} · ${srcObj.label})`;
+                        song.badgeText = `⚡ 320k直通 (${formatTime(check.duration)} · ${srcObj.label})`;
+                        syncFavoriteLatestChain(song, srcObj, check.duration);
                         renderList();
-                        npStatus.innerText = `⚡ ${dspTag} · ${formatTime(check.duration)} · ${srcObj.label}`;
+                        npStatus.innerText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
                         updateMediaSession(song);
                         return;
                     }
@@ -2055,7 +1856,6 @@
 
             if (myToken !== activePlayToken) return;
 
-            // 构建穿透候选池：酷我/GD第一，B站固定第二，其余依次递推
             const primaryNonBili = [];
             const biliCandidates = [];
             const otherCandidates = [];
@@ -2087,8 +1887,8 @@
             });
 
             const candidatePool = [
-                ...primaryNonBili,
                 ...biliCandidates,
+                ...primaryNonBili,
                 ...gdSources.slice(1),
                 ...otherCandidates
             ];
@@ -2099,18 +1899,19 @@
                 const check = await verifyAndPlayStream(cand.url, myToken);
 
                 if (check.ok) {
-                    song.sources = [{ url: cand.url, label: cand.label }];
+                    const latestChain = { url: cand.url, label: cand.label };
+                    song.sources = [latestChain];
                     song.verifiedFull = true;
-                    activeWorkingChain = cand;
-                    const dspTag = check.dspActive ? "胆机3D" : "320k直通";
-                    song.badgeText = `✓ ${dspTag} (${formatTime(check.duration)} · ${cand.label})`;
+                    activeWorkingChain = latestChain;
+                    song.badgeText = `✓ 320k直通 (${formatTime(check.duration)} · ${cand.label})`;
                     if (cand.pic && song.cover.includes('picsum.photos')) {
                         song.cover = cand.pic;
                         npCover.src = cand.pic;
                         document.getElementById('lyricCover').src = cand.pic;
                     }
+                    syncFavoriteLatestChain(song, latestChain, check.duration);
                     renderList();
-                    npStatus.innerText = `✓ ${dspTag} · ${formatTime(check.duration)} · ${cand.label}`;
+                    npStatus.innerText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
                     updateMediaSession(song);
                     return;
                 }
@@ -2124,13 +1925,9 @@
             }
         }
 
-        function stopBothAudios() {
-            audioDsp.pause();
-            audioRaw.pause();
-        }
-
-        function attemptSingleAudioElement(el, url, token, timeoutMs = 4500) {
+        function verifyAndPlayStream(url, token) {
             return new Promise((resolve) => {
+                if (!url) return resolve({ ok: false, reason: 'empty' });
                 let settled = false;
                 const finish = (res) => {
                     if (settled) return;
@@ -2139,74 +1936,48 @@
                     resolve(res);
                 };
 
-                const timer = setTimeout(() => finish({ ok: false, reason: 'timeout' }), timeoutMs);
+                const timer = setTimeout(() => finish({ ok: false, reason: 'timeout' }), 5000);
 
                 const onLoadedMetadata = () => {
                     if (token !== activePlayToken) return finish({ ok: false, reason: 'cancelled' });
-                    const dur = el.duration;
+                    const dur = audio.duration;
                     if (dur && isFinite(dur) && dur <= MIN_VALID_DURATION) {
-                        el.pause();
-                        el.removeAttribute('src');
+                        audio.pause();
+                        audio.removeAttribute('src');
                         return finish({ ok: false, reason: 'trial_30s', duration: dur });
                     }
-                    el.play().then(() => {
+                    audio.play().then(() => {
+                        setPlayButtonVisual(true);
                         finish({ ok: true, duration: dur || 200 });
                     }).catch(() => finish({ ok: false, reason: 'play_error' }));
                 };
 
-                const onError = () => finish({ ok: false, reason: 'cors_or_network_error' });
+                const onError = () => finish({ ok: false, reason: 'network_error' });
 
                 const cleanup = () => {
                     clearTimeout(timer);
-                    el.removeEventListener('loadedmetadata', onLoadedMetadata);
-                    el.removeEventListener('error', onError);
+                    audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+                    audio.removeEventListener('error', onError);
                 };
 
-                el.pause();
-                el.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
-                el.addEventListener('error', onError, { once: true });
-                el.src = url;
-                el.load();
+                audio.pause();
+                audio.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+                audio.addEventListener('error', onError, { once: true });
+                audio.src = url;
+                audio.load();
             });
         }
 
-        async function verifyAndPlayStream(url, token) {
-            if (!url) return { ok: false, reason: 'empty' };
-            stopBothAudios();
-            ensureWebAudioDSP();
-
-            // 1. 优先尝试带 CORS 的 audioDsp（满血挂载 30Hz切底噪 + 电子管暖声 + 3D声场拓宽）
-            const dspTry = await attemptSingleAudioElement(audioDsp, url, token, 3600);
-            if (dspTry.ok) {
-                activeAudio = audioDsp;
-                setPlayButtonVisual(true);
-                return { ok: true, duration: dspTry.duration, dspActive: true };
-            }
-            if (dspTry.reason === 'trial_30s' || dspTry.reason === 'cancelled') {
-                return dspTry;
-            }
-
-            // 2. 若音源 CDN 未配置 CORS 头，无缝切换 audioRaw 320k 原生直通播放
-            const rawTry = await attemptSingleAudioElement(audioRaw, url, token, 4500);
-            if (rawTry.ok) {
-                activeAudio = audioRaw;
-                setPlayButtonVisual(true);
-                return { ok: true, duration: rawTry.duration, dspActive: false };
-            }
-            return rawTry;
-        }
-
         function togglePlay() {
-            ensureWebAudioDSP();
             if (!currentPlayingSong && viewList.length > 0) {
                 startPlayFromView(0);
                 return;
             }
-            if (activeAudio.paused) {
-                activeAudio.play();
+            if (audio.paused) {
+                audio.play();
                 setPlayButtonVisual(true);
             } else {
-                activeAudio.pause();
+                audio.pause();
                 setPlayButtonVisual(false);
             }
         }
@@ -2217,7 +1988,15 @@
                 playingIndex = 0;
             }
             if (!playingQueue.length) return;
-            playSongInQueue((playingIndex - 1 + playingQueue.length) % playingQueue.length);
+            if (isShuffleMode && playingQueue.length > 1) {
+                let nextIdx = playingIndex;
+                while (nextIdx === playingIndex) {
+                    nextIdx = Math.floor(Math.random() * playingQueue.length);
+                }
+                playSongInQueue(nextIdx);
+            } else {
+                playSongInQueue((playingIndex - 1 + playingQueue.length) % playingQueue.length);
+            }
         }
 
         function nextSong() {
@@ -2226,7 +2005,15 @@
                 playingIndex = -1;
             }
             if (!playingQueue.length) return;
-            playSongInQueue((playingIndex + 1) % playingQueue.length);
+            if (isShuffleMode && playingQueue.length > 1) {
+                let nextIdx = playingIndex;
+                while (nextIdx === playingIndex) {
+                    nextIdx = Math.floor(Math.random() * playingQueue.length);
+                }
+                playSongInQueue(nextIdx);
+            } else {
+                playSongInQueue((playingIndex + 1) % playingQueue.length);
+            }
         }
 
         function setupHeadsetMediaSession() {
@@ -2237,19 +2024,19 @@
                     if (!currentPlayingSong && viewList.length > 0) {
                         startPlayFromView(0);
                     } else {
-                        activeAudio.play();
+                        audio.play();
                         setPlayButtonVisual(true);
                     }
                 }],
                 ['pause', () => {
-                    activeAudio.pause();
+                    audio.pause();
                     setPlayButtonVisual(false);
                 }],
                 ['nexttrack', () => nextSong()],
                 ['previoustrack', () => prevSong()],
                 ['seekto', (details) => {
-                    if (details.seekTime && activeAudio.duration) {
-                        activeAudio.currentTime = details.seekTime;
+                    if (details.seekTime && audio.duration) {
+                        audio.currentTime = details.seekTime;
                     }
                 }]
             ];
@@ -2283,44 +2070,32 @@
             return `${m}:${s}`;
         }
 
-        function bindAudioEvents(el) {
-            el.addEventListener('timeupdate', () => {
-                if (el !== activeAudio) return;
-                if (el.duration && el.duration > MIN_VALID_DURATION) {
-                    progressBar.value = (el.currentTime / el.duration) * 100;
-                    curTimeEl.innerText = formatTime(el.currentTime);
-                    durTimeEl.innerText = formatTime(el.duration);
-                    syncLyricProgress(el.currentTime);
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration && audio.duration > MIN_VALID_DURATION) {
+                progressBar.value = (audio.currentTime / audio.duration) * 100;
+                curTimeEl.innerText = formatTime(audio.currentTime);
+                durTimeEl.innerText = formatTime(audio.duration);
+                syncLyricProgress(audio.currentTime);
 
-                    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-                        try {
-                            navigator.mediaSession.setPositionState({
-                                duration: el.duration,
-                                playbackRate: el.playbackRate || 1,
-                                position: el.currentTime
-                            });
-                        } catch (e) {}
-                    }
+                if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+                    try {
+                        navigator.mediaSession.setPositionState({
+                            duration: audio.duration,
+                            playbackRate: audio.playbackRate || 1,
+                            position: audio.currentTime
+                        });
+                    } catch (e) {}
                 }
-            });
+            }
+        });
 
-            el.addEventListener('pause', () => {
-                if (el === activeAudio) setPlayButtonVisual(false);
-            });
-            el.addEventListener('play', () => {
-                if (el === activeAudio) setPlayButtonVisual(true);
-            });
-            el.addEventListener('ended', () => {
-                if (el === activeAudio) nextSong();
-            });
-        }
-
-        bindAudioEvents(audioDsp);
-        bindAudioEvents(audioRaw);
+        audio.addEventListener('pause', () => setPlayButtonVisual(false));
+        audio.addEventListener('play', () => setPlayButtonVisual(true));
+        audio.addEventListener('ended', () => nextSong());
 
         progressBar.addEventListener('input', () => {
-            if (activeAudio.duration) {
-                activeAudio.currentTime = (progressBar.value / 100) * activeAudio.duration;
+            if (audio.duration) {
+                audio.currentTime = (progressBar.value / 100) * audio.duration;
             }
         });
 
