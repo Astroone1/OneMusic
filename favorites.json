@@ -1,47 +1,73 @@
 [
   {
-    "title": "星河坠落",
-    "artist": "橘子听海",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168630575137",
+    "title": "错过",
+    "artist": "KeyKey",
+    "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2050582408",
-        "label": "MT-NETEASE"
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=13980c070f4c978b28c853aa85e0e50b",
+        "label": "MT-KUGOU·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE)",
-    "playedAt": 1793030539339,
-    "playedLabel": "MT-NETEASE"
+    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)",
+    "playedAt": 1793042260847,
+    "playedLabel": "MT-KUGOU·自动"
   },
   {
-    "title": "没有谎言的世界",
-    "artist": "火晚晴",
-    "cover": "http://p4.music.126.net/JQT7EoL6twnXcUvE4junng==/109951172798101269.jpg",
+    "title": "请相信",
+    "artist": "Nova / 伯爵Johnny",
+    "cover": "http://p4.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3353183412",
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=5241871",
         "label": "MT-NETEASE·自动"
       }
     ],
     "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
-    "playedAt": 1793028566204,
+    "playedAt": 1793042257371,
     "playedLabel": "MT-NETEASE·自动"
   },
   {
-    "title": "DESERVE",
-    "artist": "BABYMONSTER",
-    "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e5/57/b5/e557b507-2668-752b-4260-34af04ea0d7b/8809519881528_cover.jpg/300x300bb.png",
+    "title": "当爱情经过的时候",
+    "artist": "周艳泓",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170974663020",
     "sources": [
       {
-        "url": "https://m701.music.126.net/20261026235730/b25d29f41173590bea15b68bfc5e03e2/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/83873421687/4323/6505/f88c/2b46646d7ab9e9ad98eb82a588bb6973.mp3",
-        "label": "GD-NETEASE·320k"
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=9151674022bce3ee5288b1d299fb0b68",
+        "label": "MT-KUGOU·自动"
       }
     ],
-    "gdSource": "netease",
-    "gdId": "3453836283",
-    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)",
-    "playedAt": 1793028751851,
-    "playedLabel": "GD-NETEASE·320k"
+    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)",
+    "playedAt": 1793019277221,
+    "playedLabel": "MT-KUGOU·自动"
+  },
+  {
+    "title": "纽约地铁",
+    "artist": "周杰伦",
+    "cover": "https://api.qijieya.cn/meting/?server=tencent&type=pic&id=",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=tencent&type=url&id=000r7yLQ1sHMJ5",
+        "label": "QQ音乐"
+      }
+    ],
+    "badgeText": "⚡ 上次可播(QQ音乐)",
+    "playedAt": 1793018796621,
+    "playedLabel": "QQ音乐"
+  },
+  {
+    "title": "想要你知道",
+    "artist": "许亚童",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=32507551",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 0,
+    "playedLabel": ""
   },
   {
     "title": "都是你的",
@@ -58,18 +84,18 @@
     "playedLabel": "MT-NETEASE·自动"
   },
   {
-    "title": "不是",
-    "artist": "Tik",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164111609300",
+    "title": "过客",
+    "artist": "周思涵",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=18770862510931326",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1437018539",
-        "label": "B站音源"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445664107",
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
-    "playedAt": 1793029267200,
-    "playedLabel": "B站音源"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "playedAt": 0,
+    "playedLabel": ""
   },
   {
     "title": "谢谢爱",
@@ -940,34 +966,6 @@
     "playedLabel": ""
   },
   {
-    "title": "想要你知道",
-    "artist": "许亚童",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=32507551",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 上次可播(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
-  },
-  {
-    "title": "过客",
-    "artist": "周思涵",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=18770862510931326",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445664107",
-        "label": "MT-NETEASE·自动"
-      }
-    ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
-    "playedAt": 0,
-    "playedLabel": ""
-  },
-  {
     "title": "世界末日",
     "artist": "Young 7",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
@@ -1024,6 +1022,64 @@
     "playedLabel": ""
   },
   {
+    "title": "DESERVE",
+    "artist": "BABYMONSTER",
+    "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e5/57/b5/e557b507-2668-752b-4260-34af04ea0d7b/8809519881528_cover.jpg/300x300bb.png",
+    "sources": [
+      {
+        "url": "https://m701.music.126.net/20261026235730/b25d29f41173590bea15b68bfc5e03e2/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/83873421687/4323/6505/f88c/2b46646d7ab9e9ad98eb82a588bb6973.mp3",
+        "label": "GD-NETEASE·320k"
+      }
+    ],
+    "gdSource": "netease",
+    "gdId": "3453836283",
+    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)",
+    "playedAt": 1793028751851,
+    "playedLabel": "GD-NETEASE·320k"
+  },
+  {
+    "title": "不是",
+    "artist": "Tik",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164111609300",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1437018539",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793029267200,
+    "playedLabel": "B站音源"
+  },
+  {
+    "title": "没有谎言的世界",
+    "artist": "火晚晴",
+    "cover": "http://p4.music.126.net/JQT7EoL6twnXcUvE4junng==/109951172798101269.jpg",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3353183412",
+        "label": "MT-NETEASE·自动"
+      }
+    ],
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "playedAt": 1793028566204,
+    "playedLabel": "MT-NETEASE·自动"
+  },
+  {
+    "title": "星河坠落",
+    "artist": "橘子听海",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168630575137",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2050582408",
+        "label": "MT-NETEASE"
+      }
+    ],
+    "badgeText": "⚡ 上次可播(MT-NETEASE)",
+    "playedAt": 1793030539339,
+    "playedLabel": "MT-NETEASE"
+  },
+  {
     "title": "是 你",
     "artist": "苏艺馨Chency",
     "cover": "http://p3.music.126.net/5DDWHorLCeUQ6rck8zpAWA==/109951168268683558.jpg",
@@ -1036,61 +1092,5 @@
     "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
     "playedAt": 1793027947457,
     "playedLabel": "MT-NETEASE·自动"
-  },
-  {
-    "title": "请相信",
-    "artist": "Nova / 伯爵Johnny",
-    "cover": "http://p4.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=5241871",
-        "label": "MT-NETEASE·自动"
-      }
-    ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
-    "playedAt": 1793015100544,
-    "playedLabel": "MT-NETEASE·自动"
-  },
-  {
-    "title": "当爱情经过的时候",
-    "artist": "周艳泓",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170974663020",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=9151674022bce3ee5288b1d299fb0b68",
-        "label": "MT-KUGOU·自动"
-      }
-    ],
-    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)",
-    "playedAt": 1793019277221,
-    "playedLabel": "MT-KUGOU·自动"
-  },
-  {
-    "title": "纽约地铁",
-    "artist": "周杰伦",
-    "cover": "https://api.qijieya.cn/meting/?server=tencent&type=pic&id=",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=tencent&type=url&id=000r7yLQ1sHMJ5",
-        "label": "QQ音乐"
-      }
-    ],
-    "badgeText": "⚡ 上次可播(QQ音乐)",
-    "playedAt": 1793018796621,
-    "playedLabel": "QQ音乐"
-  },
-  {
-    "title": "错过",
-    "artist": "KeyKey",
-    "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=13980c070f4c978b28c853aa85e0e50b",
-        "label": "MT-KUGOU·自动"
-      }
-    ],
-    "badgeText": "⚡ 锁定(MT-KUGOU·自动)",
-    "playedAt": 1793023918442,
-    "playedLabel": "MT-KUGOU·自动"
   }
 ]
