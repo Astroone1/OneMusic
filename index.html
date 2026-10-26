@@ -394,6 +394,39 @@
             flex-shrink: 0;
         }
 
+        /* 私人 FM：与「全部连播」同排，点一下直接开始播 */
+        .fm-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-sunken);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 7px 13px;
+            border-radius: var(--r-sm);
+            font-size: var(--fs-sm);
+            font-weight: var(--fw-medium);
+            font-family: inherit;
+            cursor: pointer;
+            transition: background var(--dur-fast) var(--ease),
+                        border-color var(--dur-fast) var(--ease),
+                        opacity var(--dur-fast) var(--ease);
+        }
+
+        .fm-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-strong);
+        }
+
+        .fm-btn:disabled { opacity: .6; cursor: wait; }
+
+        .fm-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+            flex-shrink: 0;
+        }
+
         .cloud-wrap {
             position: relative;
             display: none;
@@ -1264,6 +1297,7 @@
         .private-qr-status { text-align:center; font-size:var(--fs-sm); color:var(--text-2); line-height:1.6; }
         .private-config-note { color:var(--text-2); font-size:var(--fs-xs); line-height:1.7; }
         .private-config-note a { color:var(--accent); }
+        .private-rec-tip { color:var(--text-2); font-size:var(--fs-xs); line-height:1.6; }
         #platformSyncToast.is-loading::before {
             content: ""; display: inline-block; flex: 0 0 15px; width: 15px; height: 15px;
             border: 2px solid var(--accent-border, #b7dcf7); border-top-color: var(--accent, #0b7fd4);
@@ -1570,35 +1604,111 @@
         border-bottom-color: var(--danger-border);
       }
 
-      /* ---------- 2. 主页播放栏：只保留一个放大的播放键 ---------- */
-      /* 用 flex 顺序把播放键推到最右，其余控件整体隐藏 */
+      /* ---------- 2. 主页播放栏：上一首 / 播放 / 下一首 三键 ---------- */
       .player-bar .np-controls {
         display: flex;
         align-items: center;
-        gap: 0;
+        gap: 6px;
       }
 
+      /* 模式与收藏在播放栏里保持隐藏，播放栏只留传输键 */
       .player-bar .np-controls > .ctrl-btn,
-      .player-bar .np-controls > .skip-btn-circle,
       .player-bar .np-controls > .fav-btn {
         display: none;
       }
 
-      .player-bar .play-pause-circle {
-        width: 56px;
-        height: 56px;
-        margin: 0;
-        border-radius: 50%;
-        background: var(--text);
-        box-shadow: 0 4px 14px rgba(61, 49, 36, .18);
+      /* 上一首 / 下一首与主播放键的样式在下方统一声明（浅底深色、透明底） */
+
+      .player-bar .player-main { align-items: center; }
+
+      .player-bar .player-main { align-items: center; }
+
+      /* 播放栏不加自己的底色：与页面同色，只留一条分隔线。
+         因为是浅底，按键图形改用深色；按键本身仍是纯透明（无填充、无毛玻璃）。 */
+      .player-bar {
+        background: var(--bg);
+        border-top: 1px solid var(--border);
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
 
-      .player-bar .play-pause-circle:hover { background: #3b4039; }
+      /* 进度条 / 时间 / 音量恢复页面配色 */
+      .player-bar .progress-wrap { color: var(--text-3); }
+      .player-bar .progress-bar { background: var(--track); }
+      .player-bar .progress-bar::-webkit-slider-thumb { background: var(--accent); border-color: var(--bg); }
+      .player-bar .progress-bar::-moz-range-thumb { background: var(--accent); border-color: var(--bg); }
+      .player-bar .volume-wrap { border-left-color: var(--border); }
+      .player-bar .volume-btn { color: var(--text-3); }
+      .player-bar .volume-btn:hover { background: var(--bg-hover); color: var(--text); }
+      .player-bar .volume-bar { background: var(--track); }
+      .player-bar .volume-bar::-webkit-slider-thumb { background: var(--text-2); }
+      .player-bar .volume-bar::-moz-range-thumb { background: var(--text-2); }
+      .player-bar .np-title { color: var(--text); }
+      .player-bar .np-lyric-mini { color: var(--text-2); }
+      .player-bar .np-cover { border-color: var(--border); }
+      .player-bar .penetrate-btn {
+        background: var(--bg-elev);
+        border-color: var(--border-strong);
+        color: var(--accent);
+      }
+
+      /* 上一首 / 下一首：透明底，黑色图形 */
+      .player-bar .np-controls > .skip-btn-circle {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: transparent;
+        border: 0;
+        color: #000;
+        padding: 0;
+        cursor: pointer;
+        filter: none;
+        transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+      }
+
+      .player-bar .np-controls > .skip-btn-circle:hover {
+        background: transparent;
+        color: #000;
+        opacity: .62;
+      }
+
+      .player-bar .np-controls > .skip-btn-circle:active { transform: scale(.92); }
+
+      .player-bar .np-controls > .skip-btn-circle svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        display: block;
+      }
+
+      /* 主播放键：黑色描边圆环，内部纯透明 */
+      .player-bar .play-pause-circle {
+        width: 52px;
+        height: 52px;
+        margin: 0 2px;
+        border: 1.5px solid #000;
+        border-radius: 50%;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        color: #000;
+        filter: none;
+      }
+
+      .player-bar .play-pause-circle:hover {
+        background: transparent;
+        border-color: #000;
+        opacity: .78;
+      }
 
       .player-bar .play-pause-circle svg {
-        width: 24px;
-        height: 24px;
-        fill: var(--bg-elev);
+        width: 22px;
+        height: 22px;
+        fill: #000;
       }
 
       .player-bar .player-main { align-items: center; }
@@ -1698,8 +1808,11 @@
         .market-nav .tab-btn { padding: 8px 4px; font-size: 12px; gap: 4px; }
         .market-nav .tab-btn svg { width: 13px; height: 13px; }
 
-        .player-bar .play-pause-circle { width: 52px; height: 52px; }
-        .player-bar .play-pause-circle svg { width: 22px; height: 22px; }
+        .player-bar .play-pause-circle { width: 48px; height: 48px; }
+        .player-bar .play-pause-circle svg { width: 20px; height: 20px; }
+        .player-bar .np-controls { gap: 2px; }
+        .player-bar .np-controls > .skip-btn-circle { width: 34px; height: 34px; }
+        .player-bar .np-controls > .skip-btn-circle svg { width: 16px; height: 16px; }
 
         .lyric-controls { padding: 11px 16px calc(13px + env(safe-area-inset-bottom, 0px)); }
         .lyric-controls .lc-btn { height: 40px; }
@@ -1710,6 +1823,542 @@
 
       @media (prefers-reduced-motion: reduce) {
         .lyric-controls .lc-btn { transition: none; }
+      }
+    </style>
+
+    <style id="onemusic-v4-lyric-refresh">
+      /* ============================================================
+         v4 · 歌词页改版
+         左列：封面 → 歌名/歌手 → 进度 → 控制键（居中）
+         右列：歌词左对齐、当前行暖红高亮，底部渐隐
+         背景：当前封面大幅模糊铺底 + 暖色玻璃遮罩
+         按键：全部纯白；主播放键圆圈内部纯透明（无底色/无毛玻璃）
+         ============================================================ */
+
+      .lyric-overlay {
+        padding: 0;
+        padding-bottom: 0;
+        background: var(--bg);
+      }
+
+      /* ---------- 封面虚化背景层 ---------- */
+      .lyric-bg {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .lyric-bg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(58px) saturate(128%) brightness(.9);
+        transform: scale(1.3);
+        opacity: .95;
+      }
+
+      .lyric-bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        /* 暖灰压暗层：无论封面明暗，都把背景稳定在中等亮度，
+           这样白色按键/文字和红色高亮行始终可读 */
+        background: linear-gradient(180deg,
+          rgba(56, 50, 43, .26) 0%,
+          rgba(46, 41, 35, .34) 45%,
+          rgba(38, 34, 29, .46) 100%);
+      }
+
+      /* ---------- 内层容器 ---------- */
+      .lyric-inner {
+        position: relative;
+        z-index: 1;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: var(--page-max);
+        margin: 0 auto;
+        padding: 16px var(--sp-5) 0;
+        min-height: 0;
+      }
+
+      .lyric-header {
+        margin: 0 0 14px;
+        padding: 0;
+        padding-bottom: 10px;
+        gap: var(--sp-3);
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* 桌面端不需要返回箭头，只保留「歌词 + 收起」 */
+      .lyric-back-btn { display: none; }
+
+      .lyric-header-label {
+        font-size: var(--fs-md);
+        color: rgba(255, 255, 255, .66);
+      }
+
+      .lyric-header-label svg { color: rgba(255, 255, 255, .55); }
+
+      .lyric-close-btn {
+        height: 28px;
+        padding: 0 11px;
+        gap: 5px;
+        background: rgba(255, 255, 255, .14);
+        border-color: rgba(255, 255, 255, .30);
+        color: #fff;
+        font-size: var(--fs-sm);
+        box-shadow: none;
+      }
+
+      .lyric-close-btn:hover {
+        background: rgba(255, 255, 255, .24);
+        color: #fff;
+      }
+
+      /* 手机端三栏头部的左返回箭头 */
+      .lyric-back-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+        filter: drop-shadow(0 1px 1px rgba(45, 38, 30, .22));
+        transition: opacity .15s ease;
+      }
+
+      .lyric-back-btn svg {
+        width: 19px;
+        height: 19px;
+        display: block;
+      }
+
+      .lyric-back-btn:hover { opacity: .75; }
+
+      /* ---------- 两列主体 ---------- */
+      .lyric-body {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+        gap: 56px;
+        align-items: stretch;
+        margin: 0 auto;
+        padding-bottom: 18px;
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      /* ---------- 左列 ---------- */
+      .lyric-art-col {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+        gap: 14px;
+        min-width: 0;
+        /* 覆盖旧版手机端白卡式的信息块 */
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        /* 封面顶部与歌词列首行大致齐平 */
+        padding-top: 2px;
+      }
+
+      .lyric-big-cover {
+        width: 100%;
+        max-width: 320px;
+        aspect-ratio: 1;
+        height: auto;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 18px 40px rgba(61, 49, 36, .18);
+        background: var(--bg-sunken);
+        flex: 0 0 auto;
+      }
+
+      .lyric-art-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 2px;
+      }
+
+      .lyric-song-title {
+        font-family: var(--font-editorial);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.3;
+        letter-spacing: -.02em;
+        color: #fff;
+        text-shadow: 0 1px 3px rgba(30, 25, 20, .25);
+      }
+
+      .lyric-song-artist {
+        font-size: var(--fs-sm);
+        color: rgba(255, 255, 255, .62);
+      }
+
+      /* ---------- 进度条 ---------- */
+      .lyric-progress {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex: 0 0 auto;
+        margin-top: 4px;
+      }
+
+      .lyric-progress .lp-time {
+        flex: 0 0 auto;
+        width: 34px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        color: rgba(255, 255, 255, .72);
+        text-shadow: 0 1px 2px rgba(30, 25, 20, .22);
+      }
+
+      .lyric-progress .lp-time.end { text-align: right; }
+
+      .lyric-progress input[type=range] {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 14px;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        -webkit-appearance: none;
+        appearance: none;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .lyric-progress input[type=range]::-webkit-slider-runnable-track {
+        height: 2px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, .38);
+      }
+
+      .lyric-progress input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 9px;
+        height: 9px;
+        margin-top: -3.5px;
+        border-radius: 50%;
+        background: #fffdf8;
+        border: 0;
+        box-shadow: 0 0 0 1px rgba(43, 43, 38, .16), 0 1px 3px rgba(43, 43, 38, .22);
+      }
+
+      .lyric-progress input[type=range]::-moz-range-track {
+        height: 2px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, .38);
+      }
+
+      .lyric-progress input[type=range]::-moz-range-thumb {
+        width: 9px;
+        height: 9px;
+        border: 0;
+        border-radius: 50%;
+        background: #fffdf8;
+      }
+
+      /* ---------- 控制条：内联在左列，不再是固定底栏 ---------- */
+      .lyric-controls,
+      body.lyric-open .lyric-controls {
+        position: static;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2px;
+        flex: 0 0 auto;
+        margin-top: 8px;
+        padding: 0;
+        background: none;
+        border: 0;
+        box-shadow: none;
+        z-index: auto;
+        width: 100%;
+        max-width: 320px;
+      }
+
+      body.lyric-open .player-bar { display: none; }
+
+      .lyric-controls .lc-btn {
+        flex: 0 0 auto;
+        width: 40px;
+        height: 40px;
+        max-width: none;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: var(--r-full);
+        background: transparent;
+        /* 所有按键统一纯白 */
+        color: #fff;
+        cursor: pointer;
+        transition: opacity .15s ease, transform .15s ease;
+        filter: drop-shadow(0 1px 1px rgba(45, 38, 30, .20));
+      }
+
+      .lyric-controls .lc-btn:hover {
+        background: transparent;
+        color: #fff;
+        opacity: .74;
+      }
+
+      .lyric-controls .lc-btn:active { transform: scale(.94); }
+
+      .lyric-controls .lc-btn svg {
+        width: 19px;
+        height: 19px;
+        display: block;
+      }
+
+      /* 顺序 / 随机：同一按钮内两个图标互斥 */
+      .lyric-controls .lc-mode .ico-shuffle { display: none; }
+      .lyric-controls .lc-mode.is-shuffle .ico-repeat { display: none; }
+      .lyric-controls .lc-mode.is-shuffle .ico-shuffle { display: block; }
+
+      .lyric-controls .lc-mode.is-shuffle { color: #fff; }
+
+      /* 红心：只有「已收藏」用暖红点色，未收藏保持白色 */
+      .lyric-controls .lc-fav svg { width: 18px; height: 18px; }
+      .lyric-controls .lc-fav .ico-heart-fill { display: none; }
+      .lyric-controls .lc-fav.is-fav { color: var(--accent); }
+      .lyric-controls .lc-fav.is-fav .ico-heart { display: none; }
+      .lyric-controls .lc-fav.is-fav .ico-heart-fill { display: block; }
+
+      /* 主播放键：白色描边圆环，内部纯透明（无填充、无毛玻璃） */
+      .lyric-controls .lc-play {
+        width: 48px;
+        height: 48px;
+        margin: 0 2px;
+        border: 1.5px solid #fff;
+        border-radius: 50%;
+        background: transparent;
+        color: #fff;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        filter: drop-shadow(0 1px 2px rgba(45, 38, 30, .22));
+      }
+
+      .lyric-controls .lc-play:hover {
+        background: transparent;
+        border-color: #fff;
+        color: #fff;
+        opacity: .82;
+      }
+
+      .lyric-controls .lc-play svg {
+        width: 21px;
+        height: 21px;
+        fill: currentColor;
+      }
+
+      /* 播放/暂停图标不居中偏差修正 */
+      .lyric-controls .lc-play #lyricPlayIconSvg { transform: translateX(1px); }
+
+      /* ---------- 右列歌词 ---------- */
+      .lyric-scroll-col {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0 6px 34vh;
+        scroll-behavior: smooth;
+        text-align: left;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-mask-image: linear-gradient(180deg,
+          #000 0, #000 calc(100% - 110px), transparent 100%);
+        mask-image: linear-gradient(180deg,
+          #000 0, #000 calc(100% - 110px), transparent 100%);
+      }
+
+      .lyric-scroll-col::-webkit-scrollbar { display: none; }
+
+      .lyric-line {
+        padding: 6px 4px;
+        font-size: var(--fs-md);
+        line-height: 1.45;
+        color: rgba(255, 255, 255, .56);
+        border-radius: 0;
+        background: none;
+        cursor: pointer;
+        transition: color var(--dur) var(--ease), opacity var(--dur) var(--ease);
+        text-shadow: 0 1px 2px rgba(30, 25, 20, .18);
+      }
+
+      .lyric-line:hover { color: rgba(255, 255, 255, .82); }
+
+      .lyric-line.active {
+        font-size: var(--fs-md);
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      /* ---------- 平板 / 手机 ---------- */
+      @media (max-width: 860px) {
+        .lyric-body { gap: 32px; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); }
+        .lyric-big-cover { max-width: 260px; }
+      }
+
+      @media (max-width: 720px) {
+        .lyric-inner {
+          padding: 6px 16px 0;
+        }
+
+        /* 手机头部：返回箭头（左）/ 歌词（中）/ 收起（右）三栏 */
+        .lyric-header {
+          display: grid;
+          grid-template-columns: 34px minmax(0, 1fr) 34px;
+          align-items: center;
+          gap: 4px;
+          margin-bottom: 6px;
+          padding-bottom: 4px;
+        }
+
+        .lyric-back-btn { display: inline-flex; }
+
+        .lyric-header-label {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 15px;
+          color: rgba(255, 255, 255, .74);
+          text-shadow: 0 1px 2px rgba(30, 25, 20, .25);
+        }
+
+        .lyric-header-label svg { display: none; }
+
+        /* 手机端「收起」只留图标，避免文字被挤出屏幕 */
+        .lyric-close-btn {
+          width: 34px;
+          height: 34px;
+          padding: 0;
+          gap: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: 0;
+          box-shadow: none;
+          color: #fff;
+          font-size: 0;
+          filter: drop-shadow(0 1px 1px rgba(45, 38, 30, .22));
+        }
+
+        .lyric-close-btn:hover { background: transparent; color: #fff; opacity: .78; }
+        .lyric-close-btn svg { width: 16px; height: 16px; }
+
+        .lyric-body {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 0;
+          padding-bottom: 4px;
+        }
+
+        /* 手机：封面 → 歌名/歌手 → 进度 → 控制行，整体居中 */
+        .lyric-art-col {
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 12px;
+          padding: 2px 0 0;
+        }
+
+        .lyric-big-cover {
+          width: 172px;
+          max-width: 172px;
+          border-radius: 11px;
+          box-shadow: 0 14px 30px rgba(61, 49, 36, .20);
+        }
+
+        .lyric-art-meta { align-items: center; gap: 3px; }
+        .lyric-song-title { font-size: 18px; font-weight: 600; }
+        .lyric-song-artist { font-size: 12px; color: rgba(45, 38, 30, .46); }
+
+        .lyric-progress {
+          width: 100%;
+          max-width: 340px;
+          margin-top: 2px;
+          gap: 8px;
+        }
+
+        .lyric-progress .lp-time {
+          width: 36px;
+          font-size: 11px;
+          color: #fff;
+          text-shadow: 0 1px 2px rgba(45, 38, 30, .22);
+        }
+
+        .lyric-progress input[type=range]::-webkit-slider-runnable-track {
+          height: 2px;
+          background: rgba(255, 255, 255, .42);
+        }
+
+        .lyric-progress input[type=range]::-moz-range-track {
+          height: 2px;
+          background: rgba(255, 255, 255, .42);
+        }
+
+        /* 控制行：模式 / 上一首 / 播放 / 下一首 / 红心，均分并居中 */
+        .lyric-controls,
+        body.lyric-open .lyric-controls {
+          margin-top: 6px;
+          max-width: 340px;
+          justify-content: space-between;
+        }
+
+        .lyric-controls .lc-btn { width: 40px; height: 40px; }
+        .lyric-controls .lc-btn svg { width: 21px; height: 21px; }
+        .lyric-controls .lc-play { width: 54px; height: 54px; }
+        .lyric-controls .lc-play svg { width: 21px; height: 21px; }
+        .lyric-controls .lc-fav svg { width: 19px; height: 19px; }
+
+        /* 歌词：手机端居中排版，当前行暖红 */
+        .lyric-scroll-col {
+          padding: 16px 2px 34vh;
+          text-align: center;
+          -webkit-mask-image: linear-gradient(180deg,
+            #000 0, #000 calc(100% - 84px), transparent 100%);
+          mask-image: linear-gradient(180deg,
+            #000 0, #000 calc(100% - 84px), transparent 100%);
+        }
+
+        .lyric-line {
+          padding: 7px 2px;
+          font-size: 15px;
+          line-height: 1.75;
+          color: rgba(255, 255, 255, .62);
+        }
+
+        .lyric-line:hover { color: rgba(255, 255, 255, .84); }
+
+        .lyric-line.active {
+          font-size: 15px;
+          color: var(--accent);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .lyric-controls .lc-btn,
+        .lyric-line { transition: none; }
       }
     </style>
 
@@ -1761,6 +2410,16 @@
             <path d="M5 5l14 14M19 5L5 19"></path>
         </symbol>
 
+        <symbol id="ico-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 15l6-6 6 6"></path>
+        </symbol>
+
+        <symbol id="ico-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 5l-7 7 7 7"></path>
+        </symbol>
+
         <symbol id="ico-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 2l3 3-3 3"></path>
@@ -1803,6 +2462,15 @@
 
         <symbol id="ico-cloud" viewBox="0 0 24 24" fill="currentColor" stroke="none">
             <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+        </symbol>
+
+        <symbol id="ico-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="2.5"></circle>
+            <path d="M7.8 16.2a6 6 0 0 1 0-8.4"></path>
+            <path d="M16.2 7.8a6 6 0 0 1 0 8.4"></path>
+            <path d="M4.9 19.1a10 10 0 0 1 0-14.2"></path>
+            <path d="M19.1 4.9a10 10 0 0 1 0 14.2"></path>
         </symbol>
     </svg>
 
@@ -1848,6 +2516,12 @@
                     <svg aria-hidden="true"><use href="#ico-play"></use></svg>全部连播
                 </button>
 
+                <!-- 私人 FM：官方 App 也是一遍播放一遍换歌，这里点一下直接开始播 -->
+                <button class="fm-btn" id="fmBtn" onclick="startPrivateFmNow()"
+                        title="网易云私人 FM（点一下直接播放）">
+                    <svg aria-hidden="true"><use href="#ico-radio"></use></svg>私人 FM
+                </button>
+
                 <div class="cloud-wrap" id="cloudWrap">
                     <button class="cloud-trigger-btn" id="cloudTriggerBtn" onclick="toggleCloudMenu(event)" title="云同步">
                         <svg aria-hidden="true"><use href="#ico-cloud"></use></svg>
@@ -1863,19 +2537,16 @@
             </div>
         </div>
 
-        <section class="private-rec-panel" id="privateRecPanel" aria-label="私人推荐">
+        <section class="private-rec-panel" id="privateRecPanel" aria-label="网易云音乐账号设置">
             <div class="private-rec-accounts">
                 <div class="private-rec-account">
                     <div class="private-rec-account-main">
                         <div class="private-rec-account-head"><strong>网易云音乐</strong><span class="private-rec-status" id="neteasePrivateStatus">未登录</span></div>
                         <div class="private-rec-actions">
                             <button class="private-rec-btn primary" onclick="startNeteaseQrLogin()">扫码登录</button>
-                            <button class="private-rec-btn" onclick="loadNeteaseDailyRecommendation()">每日推荐</button>
-                            <button class="private-rec-btn" onclick="loadNeteasePersonalFM()">私人 FM</button>
                             <button class="private-rec-btn" id="neteaseVerifyBtn" onclick="checkNeteaseSessionNow()">校验登录态</button>
                             <button class="private-rec-btn" onclick="logoutPrivateProvider('netease')">退出登录</button>
                         </div>
-                        <div id="neteaseSessionDetail" style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:6px;"></div>
                     </div>
                 </div>
             </div>
@@ -1884,48 +2555,78 @@
         <div class="song-list" id="songList"></div>
     </main>
 
-    <!-- 歌词全屏视图 -->
+    <!-- 歌词全屏视图：封面虚化背景 + 左（封面/信息/进度/控制条）+ 右（歌词） -->
     <div class="lyric-overlay" id="lyricOverlay">
-        <div class="lyric-header">
-            <span class="lyric-header-label">
-                <svg aria-hidden="true"><use href="#ico-music"></use></svg>歌词
-            </span>
-            <button class="lyric-close-btn" onclick="toggleLyricOverlay()">
-                <svg aria-hidden="true"><use href="#ico-x"></use></svg>收起
-            </button>
+        <div class="lyric-bg" aria-hidden="true">
+            <img id="lyricBgImg" src="https://picsum.photos/seed/music/600/600" alt="">
         </div>
-        <div class="lyric-body">
-            <div class="lyric-art-col">
-                <img src="https://picsum.photos/seed/music/300/300" class="lyric-big-cover" id="lyricCover" alt="封面">
-                <div>
-                    <div class="lyric-song-title" id="lyricTitle">OneMusic</div>
-                    <div class="lyric-song-artist" id="lyricArtist"></div>
+
+        <div class="lyric-inner">
+            <div class="lyric-header">
+                <button class="lyric-back-btn" onclick="toggleLyricOverlay()" title="返回" aria-label="返回">
+                    <svg aria-hidden="true"><use href="#ico-chevron-left"></use></svg>
+                </button>
+                <span class="lyric-header-label">
+                    <svg aria-hidden="true"><use href="#ico-music"></use></svg>歌词
+                </span>
+                <button class="lyric-close-btn" onclick="toggleLyricOverlay()">
+                    <svg aria-hidden="true"><use href="#ico-chevron-up"></use></svg>收起
+                </button>
+            </div>
+
+            <div class="lyric-body">
+                <div class="lyric-art-col">
+                    <img src="https://picsum.photos/seed/music/300/300" class="lyric-big-cover" id="lyricCover" alt="封面">
+
+                    <div class="lyric-art-meta">
+                        <div class="lyric-song-title" id="lyricTitle">OneMusic</div>
+                        <div class="lyric-song-artist" id="lyricArtist"></div>
+                    </div>
+
+                    <!-- 进度：与设计稿一致，位于封面信息与控制条之间 -->
+                    <div class="lyric-progress">
+                        <span class="lp-time" id="lyricCurTime">00:00</span>
+                        <input type="range" id="lyricProgressBar" value="0" min="0" max="100"
+                               step="0.1" aria-label="播放进度">
+                        <span class="lp-time end" id="lyricDurTime">00:00</span>
+                    </div>
+
+                    <!-- 控制条：顺序 / 上一首 / 透明播放键 / 下一首 / 红心 -->
+                    <div class="lyric-controls" id="lyricControls">
+                        <button class="lc-btn lc-mode" id="lyricModeBtn" onclick="toggleShuffleMode()"
+                                title="当前：顺序循环" aria-label="切换顺序或随机播放">
+                            <svg class="ico-repeat" aria-hidden="true"><use href="#ico-repeat"></use></svg>
+                            <svg class="ico-shuffle" aria-hidden="true"><use href="#ico-shuffle"></use></svg>
+                        </button>
+
+                        <button class="lc-btn" onclick="prevSong()" title="上一首" aria-label="上一首">
+                            <svg aria-hidden="true"><use href="#ico-skip-prev"></use></svg>
+                        </button>
+
+                        <button class="lc-btn lc-play" id="lyricPlayBtn" onclick="togglePlay()"
+                                title="播放/暂停" aria-label="播放或暂停">
+                            <svg id="lyricPlayIconSvg" viewBox="0 0 24 24">
+                                <path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>
+                            </svg>
+                        </button>
+
+                        <button class="lc-btn" onclick="nextSong()" title="下一首" aria-label="下一首">
+                            <svg aria-hidden="true"><use href="#ico-skip-next"></use></svg>
+                        </button>
+
+                        <button class="lc-btn lc-fav" id="lyricFavBtn" onclick="toggleCurrentFav()"
+                                title="收藏" aria-label="收藏当前歌曲">
+                            <svg class="ico-heart" aria-hidden="true"><use href="#ico-heart"></use></svg>
+                            <svg class="ico-heart-fill" aria-hidden="true"><use href="#ico-heart-fill"></use></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lyric-scroll-col" id="lyricScrollBox">
+                    <div class="lyric-line active">暂无歌词</div>
                 </div>
             </div>
-            <div class="lyric-scroll-col" id="lyricScrollBox">
-                <div class="lyric-line active">暂无歌词</div>
-            </div>
         </div>
-    </div>
-
-    <!-- 歌词模式专属控制条：播放模式 / 上一首 / 播放 / 下一首 -->
-    <div class="lyric-controls" id="lyricControls">
-        <button class="lc-btn lc-mode" id="lyricModeBtn" onclick="toggleShuffleMode()"
-                title="当前：顺序循环" aria-label="切换顺序或随机播放">
-            <svg class="ico-repeat" aria-hidden="true"><use href="#ico-repeat"></use></svg>
-            <svg class="ico-shuffle" aria-hidden="true"><use href="#ico-shuffle"></use></svg>
-        </button>
-        <button class="lc-btn" onclick="prevSong()" title="上一首" aria-label="上一首">
-            <svg aria-hidden="true"><use href="#ico-skip-prev"></use></svg>
-        </button>
-        <button class="lc-btn lc-play" id="lyricPlayBtn" onclick="togglePlay()" title="播放/暂停" aria-label="播放或暂停">
-            <svg id="lyricPlayIconSvg" viewBox="0 0 24 24">
-                <path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>
-            </svg>
-        </button>
-        <button class="lc-btn" onclick="nextSong()" title="下一首" aria-label="下一首">
-            <svg aria-hidden="true"><use href="#ico-skip-next"></use></svg>
-        </button>
     </div>
 
     <!-- 云链接弹窗 -->
@@ -2168,12 +2869,15 @@
 
         function renderNowPlaying(song) {
             if (!song) return;
-            npCover.src = song.cover || 'https://picsum.photos/seed/music/100/100';
+            const coverSrc = song.cover || 'https://picsum.photos/seed/music/100/100';
+            npCover.src = coverSrc;
             npTitle.innerText = `${song.title || '未知歌曲'} - ${song.artist || '未知歌手'}`;
             const lyricCover = document.getElementById('lyricCover');
             const lyricTitle = document.getElementById('lyricTitle');
             const lyricArtist = document.getElementById('lyricArtist');
-            if (lyricCover) lyricCover.src = song.cover || 'https://picsum.photos/seed/music/100/100';
+            const lyricBgImg = document.getElementById('lyricBgImg');
+            if (lyricCover) lyricCover.src = coverSrc;
+            if (lyricBgImg) lyricBgImg.src = coverSrc;
             if (lyricTitle) lyricTitle.innerText = song.title || '未知歌曲';
             if (lyricArtist) lyricArtist.innerText = song.artist || '未知歌手';
         }
@@ -2388,6 +3092,12 @@
             const liked = currentPlayingSong ? isSongFavorited(currentPlayingSong) : false;
             npFavBtn.classList.toggle('is-fav', liked);
             npFavBtn.title = liked ? '取消收藏' : '收藏';
+            // 歌词页红心：跟随同一收藏状态
+            const lyricFavBtn = document.getElementById('lyricFavBtn');
+            if (lyricFavBtn) {
+                lyricFavBtn.classList.toggle('is-fav', liked);
+                lyricFavBtn.title = liked ? '取消收藏' : '收藏';
+            }
         }
 
         function getSongFingerprint(title, artist) {
@@ -2867,6 +3577,29 @@
                 if (icon) icon.innerHTML = audio.paused ? SVG_PLAY_PATH : SVG_PAUSE_PATH;
                 const lyricModeBtn = document.getElementById('lyricModeBtn');
                 if (lyricModeBtn) lyricModeBtn.classList.toggle('is-shuffle', isShuffleMode);
+                // 同步封面虚化背景与歌词页进度条/红心
+                const lyricBgImg = document.getElementById('lyricBgImg');
+                const lyricCover = document.getElementById('lyricCover');
+                if (lyricBgImg && lyricCover) lyricBgImg.src = lyricCover.src;
+                syncLyricProgressBar();
+                updateFavCountUI();
+            }
+        }
+
+        /* 歌词页进度条：与主进度条共用一个播放内核，双向同步 */
+        function syncLyricProgressBar() {
+            const lpBar = document.getElementById('lyricProgressBar');
+            const lpCur = document.getElementById('lyricCurTime');
+            const lpDur = document.getElementById('lyricDurTime');
+            if (!lpBar) return;
+            if (audio.duration && audio.duration > MIN_VALID_DURATION) {
+                lpBar.value = (audio.currentTime / audio.duration) * 100;
+                if (lpCur) lpCur.innerText = formatTime(audio.currentTime);
+                if (lpDur) lpDur.innerText = formatTime(audio.duration);
+            } else {
+                lpBar.value = 0;
+                if (lpCur) lpCur.innerText = formatTime(audio.currentTime);
+                if (lpDur) lpDur.innerText = '00:00';
             }
         }
 
@@ -3326,7 +4059,15 @@
                             clearNeteaseAuthSuspect();
                             stopPrivateQrPolling(); refreshPrivateStatus();
                             document.getElementById('privateQrStatus').textContent = '登录成功，正在读取每日推荐…';
-                            setTimeout(() => { closePrivateLoginModal(); loadNeteaseDailyRecommendation(); }, 600);
+                            // 从收藏页登录时不要在用户眼皮下强制跳页：静默刷新登录态即可
+                            setTimeout(() => {
+                                closePrivateLoginModal();
+                                if (document.body.contains(document.getElementById('lyricOverlay')) && currentTab === 'fav') {
+                                    loadNeteaseDailyRecommendation({ preserveTab: true, silent: true });
+                                } else {
+                                    loadNeteaseDailyRecommendation();
+                                }
+                            }, 600);
                         } else if (code && code !== 801) {
                             const msg = data?.message || data?.msg || payload?.message;
                             if (msg) document.getElementById('privateQrStatus').textContent = String(msg);
@@ -3345,14 +4086,16 @@
         }
 
         async function loadNeteaseDailyRecommendation(options = {}) {
+            // preserveTab: 仅刷新登录态/列表，不切换标签页（扫码完成后在收藏页静默刷新时使用）
+            const preserveTab = options.preserveTab === true;
             const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
             if (!cookie) {
                 setPrivateMessage('网易云尚未登录。请先点“扫码登录”；没有登录凭据时不会请求账号级推荐。');
-                if (currentTab === 'private') songListEl.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-secondary);">请先登录网易云音乐，再读取每日推荐。</div>`;
+                if (!preserveTab && currentTab === 'private') songListEl.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-secondary);">请先登录网易云音乐，再读取每日推荐。</div>`;
                 return;
             }
-            if (currentTab !== 'private') switchTab('private');
-            songListEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary);">正在读取网易云私人每日推荐…</div>`;
+            if (!preserveTab && currentTab !== 'private') switchTab('private');
+            if (!preserveTab) songListEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary);">正在读取网易云私人每日推荐…</div>`;
             setPrivateMessage('请求网易云当前账号的每日推荐中…');
             try {
                 const payload = await privateFetchJSON(privateApiUrl('netease', '/recommend/songs', { cookie, timestamp: Date.now() }), {}, 9500);
@@ -3441,6 +4184,24 @@
                     markNeteaseAuthSuspect(error.message || '鉴权未通过', getPrivateApiBase('netease'));
                 }
                 refreshPrivateStatus();
+            }
+        }
+
+        /* 点「私人 FM」直接播放：不要求用户先切到私人推荐页。
+           网易云 FM 一次返回约 3 首，播到批末由 nextSong 自动续下一批。 */
+        async function startPrivateFmNow() {
+            const btn = document.getElementById('fmBtn');
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (!cookie) {
+                setPrivateMessage('网易云尚未登录。请在「收藏」页点“扫码登录”后再使用私人 FM。');
+                switchTab('fav');
+                return;
+            }
+            if (btn) { btn.disabled = true; }
+            try {
+                await loadNeteasePersonalFM({ autoplay: true, preserveTab: true });
+            } finally {
+                if (btn) btn.disabled = false;
             }
         }
 
@@ -3535,12 +4296,15 @@
             const isFav = (tabKey === 'fav');
             const isPrivate = (tabKey === 'private');
             document.getElementById('cloudWrap').style.display = isFav ? 'inline-block' : 'none';
-            document.getElementById('privateRecPanel').classList.toggle('is-visible', isPrivate);
+            // 网易云账号设置在「收藏」页展示；私人推荐页只保留推荐列表本身
+            document.getElementById('privateRecPanel').classList.toggle('is-visible', isFav);
 
             if (tabKey === 'fav') {
                 document.getElementById('bannerTitle').innerText = "我的收藏";
                 viewList = [...favorites];
                 renderList();
+                // 网易云账号面板挂在收藏页，进入时刷新一次登录态与提示
+                refreshPrivateStatus();
             } else if (tabKey === 'search') {
                 document.getElementById('bannerTitle').innerText = "搜索结果";
                 viewList = [...searchResults];
@@ -3780,6 +4544,7 @@
             progressBar.value = 0;
             curTimeEl.innerText = '00:00';
             durTimeEl.innerText = '00:00';
+            syncLyricProgressBar();
             triedSourceUrls = new Set();
             triedSourceIds = new Set();
             activePenetrationCandidates = [];
@@ -4383,6 +5148,7 @@
                 curTimeEl.innerText = formatTime(audio.currentTime);
                 durTimeEl.innerText = formatTime(audio.duration);
                 syncLyricProgress(audio.currentTime);
+                syncLyricProgressBar();
 
                 if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
                     try {
@@ -4416,8 +5182,21 @@
         progressBar.addEventListener('input', () => {
             if (audio.duration) {
                 audio.currentTime = (progressBar.value / 100) * audio.duration;
+                syncLyricProgressBar();
             }
         });
+
+        // 歌词页内进度条：拖动同样驱动同一个 audio 内核
+        const lyricProgressBar = document.getElementById('lyricProgressBar');
+        if (lyricProgressBar) {
+            lyricProgressBar.addEventListener('input', () => {
+                if (audio.duration) {
+                    audio.currentTime = (lyricProgressBar.value / 100) * audio.duration;
+                    progressBar.value = lyricProgressBar.value;
+                    curTimeEl.innerText = formatTime(audio.currentTime);
+                }
+            });
+        }
 
         setupHeadsetMediaSession();
         loadFavorites();
