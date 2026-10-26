@@ -1872,8 +1872,10 @@
                             <button class="private-rec-btn primary" onclick="startNeteaseQrLogin()">扫码登录</button>
                             <button class="private-rec-btn" onclick="loadNeteaseDailyRecommendation()">每日推荐</button>
                             <button class="private-rec-btn" onclick="loadNeteasePersonalFM()">私人 FM</button>
+                            <button class="private-rec-btn" id="neteaseVerifyBtn" onclick="checkNeteaseSessionNow()">校验登录态</button>
                             <button class="private-rec-btn" onclick="logoutPrivateProvider('netease')">退出登录</button>
                         </div>
+                        <div id="neteaseSessionDetail" style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:6px;"></div>
                     </div>
                 </div>
             </div>
@@ -2985,6 +2987,96 @@
         const PRIVATE_OFFICIAL_FAV_SYNC_KEY = 'ONEMUSIC_SYNC_OFFICIAL_FAVORITES_V1';
         const DEFAULT_NETEASE_API_BASE = 'https://ncm.zhenxin.me';
         const PRIVATE_NETEASE_ACTIVE_BASE_KEY = 'ONEMUSIC_PRIVATE_NETEASE_ACTIVE_BASE_V1';
+        // 登录态元数据：登录时间、来源实例、最后一次校验结果
+        const PRIVATE_NETEASE_SESSION_KEY = 'ONEMUSIC_PRIVATE_NETEASE_SESSION_V1';
+
+        /* ---------- 登录态持久化与健康检查 ---------- */
+        function readNeteaseSession() {
+            try {
+                const raw = localStorage.getItem(PRIVATE_NETEASE_SESSION_KEY);
+                if (!raw) return null;
+                const s = JSON.parse(raw);
+                return (s && typeof s === 'object') ? s : null;
+            } catch (e) { return null; }
+        }
+
+        function writeNeteaseSession(patch) {
+            const cur = readNeteaseSession() || {};
+            const next = Object.assign({}, cur, patch, { updatedAt: Date.now() });
+            try { localStorage.setItem(PRIVATE_NETEASE_SESSION_KEY, JSON.stringify(next)); } catch (e) {}
+            return next;
+        }
+
+        // Cookie 是否还在
+        function hasNeteaseCookie() {
+            return !!localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+        }
+
+        // 标记一次鉴权异常，但绝不删除 Cookie。
+        // 只有用户主动"退出登录"时才清除凭据。
+        function markNeteaseAuthSuspect(reason, base) {
+            const s = writeNeteaseSession({
+                suspectAt: Date.now(),
+                suspectReason: String(reason || '').slice(0, 200),
+                suspectBase: base || ''
+            });
+            return s;
+        }
+
+        function clearNeteaseAuthSuspect() {
+            const cur = readNeteaseSession();
+            if (!cur) return;
+            delete cur.suspectAt;
+            delete cur.suspectReason;
+            delete cur.suspectBase;
+            try { localStorage.setItem(PRIVATE_NETEASE_SESSION_KEY, JSON.stringify(cur)); } catch (e) {}
+        }
+
+        // 登录态摘要，供界面展示
+        function describeNeteaseSession() {
+            const s = readNeteaseSession();
+            const hasCookie = hasNeteaseCookie();
+            if (!hasCookie) return { state: 'none', text: '未登录' };
+            if (!s) return { state: 'unknown', text: '已保存登录（无时间记录）' };
+            if (s.suspectAt) {
+                const mins = Math.max(1, Math.round((Date.now() - s.suspectAt) / 60000));
+                return {
+                    state: 'suspect',
+                    text: `登录态待验证（${mins} 分钟前请求异常：${s.suspectReason || '鉴权未通过'}）`
+                };
+            }
+            const loggedAt = Number(s.loggedAt) || 0;
+            const days = loggedAt ? Math.floor((Date.now() - loggedAt) / 86400000) : -1;
+            return {
+                state: 'ok',
+                text: days >= 0 ? `已登录（${days === 0 ? '今天' : days + ' 天前'}保存）` : '已登录'
+            };
+        }
+
+        // 主动校验登录态：请求一次账号信息，成功则清除可疑标记
+        async function verifyNeteaseSession() {
+            if (!hasNeteaseCookie()) return { ok: false, reason: 'no_cookie' };
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            try {
+                const payload = await privateFetchJSON(
+                    privateApiUrl('netease', '/login/status', { cookie, timestamp: Date.now() }),
+                    {}, 8000
+                );
+                const data = payload?.data || payload;
+                const account = data?.account || data?.profile;
+                if (account) {
+                    clearNeteaseAuthSuspect();
+                    refreshPrivateStatus();
+                    return { ok: true, account };
+                }
+                // 没拿到账号：只标记，不删 Cookie
+                markNeteaseAuthSuspect('校验未返回账号信息', getPrivateApiBase('netease'));
+                return { ok: false, reason: 'no_account' };
+            } catch (e) {
+                markNeteaseAuthSuspect(e.message || '校验请求失败', getPrivateApiBase('netease'));
+                return { ok: false, reason: 'request_failed' };
+            }
+        }
         // 来源：ZMusic 文档列出的公开 NeteaseCloudMusicApi 兼容实例。
         // 这里只对二维码 key 请求做并发探测；拿到可用实例后，创建二维码、轮询与每日推荐均使用同一实例。
         const PUBLIC_NETEASE_API_BASES = [
@@ -3074,11 +3166,39 @@
         }
 
         function refreshPrivateStatus() {
-            const nCookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            const info = describeNeteaseSession();
             const nStatus = document.getElementById('neteasePrivateStatus');
             if (nStatus) {
-                nStatus.textContent = nCookie ? '已保存登录态' : '未登录';
-                nStatus.classList.toggle('connected', !!nCookie);
+                nStatus.textContent = info.state === 'none'
+                    ? '未登录'
+                    : (info.state === 'suspect' ? '待验证' : '已保存登录态');
+                nStatus.classList.toggle('connected', info.state === 'ok');
+                nStatus.title = info.text;
+            }
+            // 详情行（若页面存在）
+            const detail = document.getElementById('neteaseSessionDetail');
+            if (detail) {
+                detail.textContent = info.text;
+                detail.style.color = info.state === 'suspect' ? 'var(--fav-red)' : '';
+            }
+        }
+
+        // 手动触发登录态校验
+        async function checkNeteaseSessionNow() {
+            const btn = document.getElementById('neteaseVerifyBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '校验中…'; }
+            try {
+                const r = await verifyNeteaseSession();
+                if (r.ok) {
+                    setPrivateMessage('登录态有效');
+                } else if (r.reason === 'no_cookie') {
+                    setPrivateMessage('尚未登录，请先扫码');
+                } else {
+                    setPrivateMessage('登录态校验未通过，已保留凭据，可稍后重试或切换接口实例', true);
+                }
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '校验登录态'; }
+                refreshPrivateStatus();
             }
         }
 
@@ -3144,8 +3264,10 @@
         function logoutPrivateProvider(provider) {
             if (provider !== 'netease') return;
             stopPrivateQrPolling();
+            // 这是唯一会清除登录凭据的入口
             localStorage.removeItem(PRIVATE_NETEASE_COOKIE_KEY);
             localStorage.removeItem(PRIVATE_NETEASE_USER_KEY);
+            localStorage.removeItem(PRIVATE_NETEASE_SESSION_KEY);
             refreshPrivateStatus();
             setPrivateMessage('已退出网易云登录。本地收藏不会删除。');
         }
@@ -3194,6 +3316,14 @@
                             localStorage.setItem(PRIVATE_NETEASE_COOKIE_KEY, normalizedCookie);
                             const profile = data?.profile || payload?.profile || {};
                             localStorage.setItem(PRIVATE_NETEASE_USER_KEY, JSON.stringify({ nickname: profile.nickname || '', id: profile.userId || '' }));
+                            // 记录本次登录的时间与来源实例，供后续展示与排查
+                            writeNeteaseSession({
+                                loggedAt: Date.now(),
+                                loginBase: getPrivateApiBase('netease'),
+                                nickname: profile.nickname || '',
+                                userId: profile.userId || ''
+                            });
+                            clearNeteaseAuthSuspect();
                             stopPrivateQrPolling(); refreshPrivateStatus();
                             document.getElementById('privateQrStatus').textContent = '登录成功，正在读取每日推荐…';
                             setTimeout(() => { closePrivateLoginModal(); loadNeteaseDailyRecommendation(); }, 600);
@@ -3246,7 +3376,10 @@
                 console.warn('[OneMusic] 网易云私人推荐失败', error);
                 songListEl.innerHTML = `<div style="text-align:center;padding:30px 18px;color:var(--fav-red);line-height:1.8;">网易云私人推荐读取失败：${escapePrivateText(error.message || String(error))}</div>`;
                 setPrivateMessage(error.message || '读取失败', true);
-                if (/登录态已失效/.test(error.message || '')) localStorage.removeItem(PRIVATE_NETEASE_COOKIE_KEY);
+                if (/登录态已失效/.test(error.message || '')) {
+                    // 只标记为可疑，保留 Cookie 供重试；仅用户主动退出才清除凭据
+                    markNeteaseAuthSuspect(error.message || '鉴权未通过', getPrivateApiBase('netease'));
+                }
                 refreshPrivateStatus();
             }
         }
@@ -3303,7 +3436,10 @@
                 console.warn('[OneMusic] 网易云私人 FM 读取失败', error);
                 if (!preserveTab) songListEl.innerHTML = `<div style="text-align:center;padding:30px 18px;color:var(--fav-red);line-height:1.8;">网易云私人 FM 读取失败：${escapePrivateText(error.message || String(error))}</div>`;
                 setPrivateMessage(error.message || '私人 FM 读取失败', true);
-                if (/登录态已失效/.test(error.message || '')) localStorage.removeItem(PRIVATE_NETEASE_COOKIE_KEY);
+                if (/登录态已失效/.test(error.message || '')) {
+                    // 只标记为可疑，保留 Cookie 供重试；仅用户主动退出才清除凭据
+                    markNeteaseAuthSuspect(error.message || '鉴权未通过', getPrivateApiBase('netease'));
+                }
                 refreshPrivateStatus();
             }
         }
