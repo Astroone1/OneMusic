@@ -53,9 +53,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793018836784,
+    "playedLabel": "B站音源"
   },
   {
     "title": "谢谢爱",
@@ -96,8 +96,8 @@
       }
     ],
     "badgeText": "⚡ 上次可播(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "playedAt": 1793018881309,
+    "playedLabel": "B站音源"
   },
   {
     "title": "安静了",
@@ -221,9 +221,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793018895422,
+    "playedLabel": "B站音源"
   },
   {
     "title": "说说",
@@ -235,9 +235,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793018911484,
+    "playedLabel": "B站音源"
   },
   {
     "title": "你太冷静(国)",
@@ -249,9 +249,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793019072276,
+    "playedLabel": "B站音源"
   },
   {
     "title": "改天再忙",
@@ -739,9 +739,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793019085009,
+    "playedLabel": "B站音源"
   },
   {
     "title": "你这辈子还能不能忘掉前女友",
@@ -1047,11 +1047,9 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "gdSource": "netease",
-    "gdId": "2018065687",
     "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "playedAt": 1793019092669,
+    "playedLabel": "MT-NETEASE·自动"
   },
   {
     "title": "无人知晓",
@@ -1093,11 +1091,9 @@
         "label": "MT-KUGOU·自动"
       }
     ],
-    "gdSource": "netease",
-    "gdId": "336994",
     "badgeText": "⚡ 上次可播(MT-KUGOU·自动)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "playedAt": 1793019277221,
+    "playedLabel": "MT-KUGOU·自动"
   },
   {
     "title": "纽约地铁",
@@ -1112,19 +1108,5 @@
     "badgeText": "⚡ 上次可播(QQ音乐)",
     "playedAt": 1793018796621,
     "playedLabel": "QQ音乐"
-  },
-  {
-    "title": "都是你的",
-    "artist": "林姝涵/RAiNBOW计划",
-    "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=f8a3f2bf613aba0ca7b575f5c168f0ad",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 秒播 (04:36 · B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
   }
 ]
