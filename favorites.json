@@ -613,9 +613,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793019478036,
+    "playedLabel": "B站音源"
   },
   {
     "title": "和平分手",
@@ -627,23 +627,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
-  },
-  {
-    "title": "你说会",
-    "artist": "善宇/屿晨",
-    "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=8e112a5a7c8bb13353544c2f82144f14",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3362270612",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793019719400,
+    "playedLabel": "B站音源"
   },
   {
     "title": "如果下次路过我的生活",
