@@ -473,23 +473,9 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
-  },
-  {
-    "title": "晚安",
-    "artist": "Joy钟媛",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166569180082",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1890850995",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播(B站音源)",
+    "playedAt": 1793028088058,
+    "playedLabel": "B站音源"
   },
   {
     "title": "你为什么不快乐",
