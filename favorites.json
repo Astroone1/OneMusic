@@ -1,5 +1,19 @@
 [
   {
+    "title": "错过",
+    "artist": "KeyKey",
+    "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=13980c070f4c978b28c853aa85e0e50b",
+        "label": "MT-KUGOU·自动"
+      }
+    ],
+    "badgeText": "⚡ 锁定(MT-KUGOU·自动)",
+    "playedAt": 1793023918442,
+    "playedLabel": "MT-KUGOU·自动"
+  },
+  {
     "title": "无人知晓",
     "artist": "田馥甄",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165341263996",
