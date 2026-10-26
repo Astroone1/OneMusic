@@ -5,13 +5,13 @@
     "cover": "http://p3.music.126.net/5DDWHorLCeUQ6rck8zpAWA==/109951168268683558.jpg",
     "sources": [
       {
-        "url": "https://m801.music.126.net/20261026115626/3f71aab2727b17b403570e04135a6ac8/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/24387163748/6fd0/cd48/cd98/666f208a5c9097f86033c1466dd557a9.mp3",
-        "label": "GD-NETEASE·320k"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2018065687",
+        "label": "MT-NETEASE·自动"
       }
     ],
     "gdSource": "netease",
     "gdId": "2018065687",
-    "badgeText": "⚡ 锁定(GD-NETEASE·320k)"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)"
   },
   {
     "title": "无人知晓",
@@ -19,25 +19,25 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165341263996",
     "sources": [
       {
-        "url": "https://m7.music.126.net/20261026114830/e51140d68b80780fb0b2e0ed05101f6b/ymusic/obj/w5zDlMODwrDDiGjCn8Ky/14053003058/67d9/ed7f/4734/ac4d9ceedcba23f38d6c25294a0de034.mp3",
-        "label": "GD-NETEASE·320k"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1481929839",
+        "label": "MT-NETEASE·自动"
       }
     ],
     "gdSource": "netease",
     "gdId": "1481929839",
-    "badgeText": "⚡ 锁定(GD-NETEASE·320k)"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)"
   },
   {
     "title": "请相信",
     "artist": "Nova / 伯爵Johnny",
-    "cover": "http://p3.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
+    "cover": "http://p4.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=tencent&type=url&id=003lTAHg0TUcub",
-        "label": "QQ音乐"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=5241871",
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 锁定(QQ音乐)"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)"
   },
   {
     "title": "当爱情经过的时候",
@@ -45,7 +45,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170974663020",
     "sources": [
       {
-        "url": "https://m701.music.126.net/20261026112342/2465746887eb430913a3dee327aef787/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/36658975497/c446/4ffa/a4a9/dcec00b8dbc6848b709fe47e5c461828.mp3",
+        "url": "https://m801.music.126.net/20261026170439/2505f3e5cd097b57bdae0c0ec5b7e571/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/36658975497/c446/4ffa/a4a9/dcec00b8dbc6848b709fe47e5c461828.mp3",
         "label": "GD-NETEASE·320k"
       }
     ],
@@ -63,7 +63,7 @@
         "label": "QQ音乐"
       }
     ],
-    "badgeText": "⚡ 锁定(QQ音乐)"
+    "badgeText": "⚡ 上次可播(QQ音乐)"
   },
   {
     "title": "備胎 (feat. Eetu Kalavainen) (Explicit)",
@@ -71,11 +71,13 @@
     "cover": "https://music-api.gdstudio.xyz/api.php?types=pic&source=joox&id=491d90de29335551&size=300",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=467142491",
-        "label": "B站音源"
+        "url": "https://m7.music.126.net/20261026172222/3f37aba5e4882dbb8ee3f538b4bf32df/ymusic/69be/0f93/8630/1ba7e092715ba54bfeece428b7a5c304.mp3",
+        "label": "GD-NETEASE·320k"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)"
+    "gdSource": "netease",
+    "gdId": "467163300",
+    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)"
   },
   {
     "title": "在沒有你以後 (feat. 張智成)",
@@ -83,11 +85,11 @@
     "cover": "https://music-api.gdstudio.xyz/api.php?types=pic&source=joox&id=ae1e6d8a268e8e2d&size=300",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1481923420",
-        "label": "B站音源"
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=3717ec1df6690c20dbad25c3b6fa978e",
+        "label": "MT-KUGOU·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)"
+    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)"
   },
   {
     "title": "想要你知道",
@@ -107,11 +109,11 @@
     "cover": "https://api.i-meto.com/meting/api?server=netease&type=pic&id=3273246117001205&auth=ab589e4d625cc830c388674060ae75f91561138b",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
-        "label": "B站音源"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=30284674",
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)"
   },
   {
     "title": "过客",
@@ -119,23 +121,11 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=18770862510931326",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445665094",
-        "label": "B站音源"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445664107",
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 320k直通 (04:30 · B站音源)"
-  },
-  {
-    "title": "不是",
-    "artist": "Tik",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164111609300",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1437018539",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 锁定(B站音源)"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)"
   },
   {
     "title": "谢谢爱",
@@ -147,7 +137,7 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 胆机暖人声 (03:46 · B站音源)"
+    "badgeText": "⚡ 上次可播(B站音源)"
   },
   {
     "title": "谢谢参与",
@@ -159,7 +149,7 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "✓ 320k直通 (03:32 · B站音源)"
+    "badgeText": "⚡ 上次可播(B站音源)"
   },
   {
     "title": "ONE 一个 (Live 版)",
@@ -171,7 +161,7 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 胆机暖人声 (05:47 · B站音源)"
+    "badgeText": "⚡ 上次可播(B站音源)"
   },
   {
     "title": "安静了",
@@ -183,7 +173,7 @@
         "label": "酷狗完整流"
       }
     ],
-    "badgeText": "⚡ 锁定(酷狗完整流)"
+    "badgeText": "⚡ 上次可播(酷狗完整流)"
   },
   {
     "title": "可爱",
@@ -195,7 +185,7 @@
         "label": "酷狗完整流"
       }
     ],
-    "badgeText": "⚡ 锁定(酷狗完整流)"
+    "badgeText": "⚡ 上次可播(酷狗完整流)"
   },
   {
     "title": "你说",
@@ -983,5 +973,17 @@
       }
     ],
     "badgeText": "⚡ 锁定(QQ完整流)"
+  },
+  {
+    "title": "不是",
+    "artist": "Tik",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164111609300",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1437018539",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 锁定(B站音源)"
   }
 ]
