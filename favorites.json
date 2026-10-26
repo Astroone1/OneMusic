@@ -1,5 +1,59 @@
 [
   {
+    "title": "是 你",
+    "artist": "苏艺馨Chency",
+    "cover": "http://p3.music.126.net/5DDWHorLCeUQ6rck8zpAWA==/109951168268683558.jpg",
+    "sources": [
+      {
+        "url": "https://m801.music.126.net/20261026115626/3f71aab2727b17b403570e04135a6ac8/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/24387163748/6fd0/cd48/cd98/666f208a5c9097f86033c1466dd557a9.mp3",
+        "label": "GD-NETEASE·320k"
+      }
+    ],
+    "gdSource": "netease",
+    "gdId": "2018065687",
+    "badgeText": "⚡ 锁定(GD-NETEASE·320k)"
+  },
+  {
+    "title": "无人知晓",
+    "artist": "田馥甄",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165341263996",
+    "sources": [
+      {
+        "url": "https://m7.music.126.net/20261026114830/e51140d68b80780fb0b2e0ed05101f6b/ymusic/obj/w5zDlMODwrDDiGjCn8Ky/14053003058/67d9/ed7f/4734/ac4d9ceedcba23f38d6c25294a0de034.mp3",
+        "label": "GD-NETEASE·320k"
+      }
+    ],
+    "gdSource": "netease",
+    "gdId": "1481929839",
+    "badgeText": "⚡ 锁定(GD-NETEASE·320k)"
+  },
+  {
+    "title": "请相信",
+    "artist": "Nova / 伯爵Johnny",
+    "cover": "http://p3.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=tencent&type=url&id=003lTAHg0TUcub",
+        "label": "QQ音乐"
+      }
+    ],
+    "badgeText": "⚡ 锁定(QQ音乐)"
+  },
+  {
+    "title": "当爱情经过的时候",
+    "artist": "周艳泓",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170974663020",
+    "sources": [
+      {
+        "url": "https://m701.music.126.net/20261026112342/2465746887eb430913a3dee327aef787/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/36658975497/c446/4ffa/a4a9/dcec00b8dbc6848b709fe47e5c461828.mp3",
+        "label": "GD-NETEASE·320k"
+      }
+    ],
+    "gdSource": "netease",
+    "gdId": "336994",
+    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)"
+  },
+  {
     "title": "纽约地铁",
     "artist": "周杰伦",
     "cover": "https://api.qijieya.cn/meting/?server=tencent&type=pic&id=",
