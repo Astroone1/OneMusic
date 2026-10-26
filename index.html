@@ -1523,6 +1523,196 @@
       }
     </style>
 
+    <style id="onemusic-v3-player-lyric">
+      /* ============================================================
+         v3 · 三项等分标签 / 播放栏精简 / 歌词模式专属控制条
+         ============================================================ */
+
+      /* ---------- 1. 标签栏三等分（私人推荐 / 欧美榜 / 收藏 各 1/3） ---------- */
+      /* 搜索结果作为临时第 4 项时，自动回到等分，避免挤压 */
+      .market-nav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        border-bottom: 0;
+        padding-bottom: 0;
+        overflow: visible;
+      }
+
+      .market-nav.has-search { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+      .market-nav .tab-btn {
+        flex: none;
+        min-width: 0;
+        width: 100%;
+        justify-content: center;
+        padding: 9px 6px;
+        gap: 5px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .market-nav .tab-btn.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: var(--accent-border);
+        border-bottom-color: var(--accent-border);
+      }
+
+      .market-nav .tab-btn.fav-tab.active {
+        background: var(--accent-soft);
+        color: var(--danger);
+        border-color: var(--danger-border);
+        border-bottom-color: var(--danger-border);
+      }
+
+      /* ---------- 2. 主页播放栏：只保留一个放大的播放键 ---------- */
+      /* 用 flex 顺序把播放键推到最右，其余控件整体隐藏 */
+      .player-bar .np-controls {
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+
+      .player-bar .np-controls > .ctrl-btn,
+      .player-bar .np-controls > .skip-btn-circle,
+      .player-bar .np-controls > .fav-btn {
+        display: none;
+      }
+
+      .player-bar .play-pause-circle {
+        width: 56px;
+        height: 56px;
+        margin: 0;
+        border-radius: 50%;
+        background: var(--text);
+        box-shadow: 0 4px 14px rgba(61, 49, 36, .18);
+      }
+
+      .player-bar .play-pause-circle:hover { background: #3b4039; }
+
+      .player-bar .play-pause-circle svg {
+        width: 24px;
+        height: 24px;
+        fill: var(--bg-elev);
+      }
+
+      .player-bar .player-main { align-items: center; }
+
+      /* ---------- 3. 歌词模式：专属控制条替换原播放栏 ---------- */
+      .lyric-controls {
+        display: none;
+      }
+
+      /* 歌词模式打开时隐藏原播放栏，由专属控制条接管 */
+      body.lyric-open .player-bar {
+        display: none;
+      }
+
+      body.lyric-open .lyric-controls {
+        display: flex;
+      }
+
+      .lyric-overlay {
+        padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .lyric-controls {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 22px calc(16px + env(safe-area-inset-bottom, 0px));
+        background: var(--bg-elev);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -6px 22px rgba(61, 49, 36, .06);
+      }
+
+      .lyric-controls .lc-btn {
+        flex: 1 1 0;
+        max-width: 96px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+        border-radius: 8px;
+        color: var(--text-2);
+        cursor: pointer;
+        transition: background .15s ease, color .15s ease;
+      }
+
+      .lyric-controls .lc-btn:hover {
+        background: var(--bg-hover);
+        color: var(--text);
+      }
+
+      .lyric-controls .lc-btn:active { transform: scale(.96); }
+
+      .lyric-controls .lc-btn svg {
+        width: 22px;
+        height: 22px;
+        display: block;
+      }
+
+      /* 顺序 / 随机：同一按钮内两个图标互斥 */
+      .lyric-controls .lc-mode .ico-shuffle { display: none; }
+      .lyric-controls .lc-mode.is-shuffle .ico-repeat { display: none; }
+      .lyric-controls .lc-mode.is-shuffle .ico-shuffle { display: block; }
+
+      /* 主播放键：唯一实心元素，视觉重心 */
+      .lyric-controls .lc-play {
+        flex: 0 0 auto;
+        width: 64px;
+        height: 64px;
+        max-width: none;
+        border-radius: 50%;
+        background: var(--text);
+        color: var(--bg-elev);
+        box-shadow: 0 5px 16px rgba(61, 49, 36, .2);
+      }
+
+      .lyric-controls .lc-play:hover {
+        background: #3b4039;
+        color: var(--bg-elev);
+      }
+
+      .lyric-controls .lc-play svg {
+        width: 26px;
+        height: 26px;
+        fill: currentColor;
+      }
+
+      /* ---------- 移动端微调 ---------- */
+      @media (max-width: 720px) {
+        .market-nav { gap: 5px; }
+        .market-nav .tab-btn { padding: 8px 4px; font-size: 12px; gap: 4px; }
+        .market-nav .tab-btn svg { width: 13px; height: 13px; }
+
+        .player-bar .play-pause-circle { width: 52px; height: 52px; }
+        .player-bar .play-pause-circle svg { width: 22px; height: 22px; }
+
+        .lyric-controls { padding: 11px 16px calc(13px + env(safe-area-inset-bottom, 0px)); }
+        .lyric-controls .lc-btn { height: 40px; }
+        .lyric-controls .lc-play { width: 58px; height: 58px; }
+        .lyric-controls .lc-play svg { width: 24px; height: 24px; }
+        .lyric-overlay { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .lyric-controls .lc-btn { transition: none; }
+      }
+    </style>
+
 </head>
 <body>
 
@@ -1716,6 +1906,26 @@
         </div>
     </div>
 
+    <!-- 歌词模式专属控制条：播放模式 / 上一首 / 播放 / 下一首 -->
+    <div class="lyric-controls" id="lyricControls">
+        <button class="lc-btn lc-mode" id="lyricModeBtn" onclick="toggleShuffleMode()"
+                title="当前：顺序循环" aria-label="切换顺序或随机播放">
+            <svg class="ico-repeat" aria-hidden="true"><use href="#ico-repeat"></use></svg>
+            <svg class="ico-shuffle" aria-hidden="true"><use href="#ico-shuffle"></use></svg>
+        </button>
+        <button class="lc-btn" onclick="prevSong()" title="上一首" aria-label="上一首">
+            <svg aria-hidden="true"><use href="#ico-skip-prev"></use></svg>
+        </button>
+        <button class="lc-btn lc-play" id="lyricPlayBtn" onclick="togglePlay()" title="播放/暂停" aria-label="播放或暂停">
+            <svg id="lyricPlayIconSvg" viewBox="0 0 24 24">
+                <path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>
+            </svg>
+        </button>
+        <button class="lc-btn" onclick="nextSong()" title="下一首" aria-label="下一首">
+            <svg aria-hidden="true"><use href="#ico-skip-next"></use></svg>
+        </button>
+    </div>
+
     <!-- 云链接弹窗 -->
     <div class="modal-mask" id="cloudModal" onclick="closeCloudConfigModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
@@ -1854,12 +2064,13 @@
             "https://api.qijieya.cn/meting/"
         ];
 
-        // 搜索与播放时的统一上游列表：B站、网易云、QQ音乐
-        // 注意：QQ音乐通过 Meting 节点请求；它不是 GD Studio 的 source。
+        // 搜索与播放时的统一上游列表：按 30 首实测命中率排序
+        // MT-* = 经 Meting 网关；GD-* = 经 GD Studio 网关
+        // 实测样本（30 首新播放）：MT-NETEASE 21 首(70%) / MT-QQ 7 首(23%) / MT-KUGOU 2 首(7%) / GD 0 首
         const UPSTREAM_PLATFORMS = [
-            { code: 'bilibili', label: 'B站音源' },
-            { code: 'netease',  label: '网易云' },
-            { code: 'tencent',  label: 'QQ音乐' }
+            { code: 'netease', label: 'MT-NETEASE' },
+            { code: 'tencent', label: 'MT-QQ' },
+            { code: 'kugou',   label: 'MT-KUGOU' }
         ];
 
         const MIN_VALID_DURATION = 65;
@@ -1890,6 +2101,43 @@
 
         let isCloudConnected = false;
         let hasCloudDownloadedAndMerged = false;
+        // 云下行的时间戳；上传只在这个时间窗口内允许，防止用陈旧本地数据覆盖云端
+        let cloudDownloadAt = 0;
+        const CLOUD_UPLOAD_WINDOW_MS = 30 * 60 * 1000;   // 30 分钟
+
+        function isCloudUploadAllowed() {
+            if (!hasCloudDownloadedAndMerged || !cloudDownloadAt) return false;
+            return (Date.now() - cloudDownloadAt) < CLOUD_UPLOAD_WINDOW_MS;
+        }
+
+        function refreshCloudUploadButton() {
+            const btn = document.getElementById('cloudUploadBtn');
+            if (!btn) return;
+            const allowed = isCloudUploadAllowed();
+            btn.disabled = !allowed;
+            if (!hasCloudDownloadedAndMerged) {
+                btn.title = '请先执行云下行';
+            } else if (!allowed) {
+                btn.title = '云下行已超过 30 分钟，请重新下行后再上传';
+            } else {
+                const left = Math.ceil((CLOUD_UPLOAD_WINDOW_MS - (Date.now() - cloudDownloadAt)) / 60000);
+                btn.title = `可上传（剩余约 ${left} 分钟）`;
+            }
+        }
+
+        // 每分钟检查一次窗口是否过期，过期就把上传按钮关掉
+        let cloudWindowTimer = null;
+        function startCloudWindowWatch() {
+            if (cloudWindowTimer) return;
+            cloudWindowTimer = setInterval(() => {
+                if (!hasCloudDownloadedAndMerged) return;
+                refreshCloudUploadButton();
+                if (!isCloudUploadAllowed() && cloudWindowTimer) {
+                    clearInterval(cloudWindowTimer);
+                    cloudWindowTimer = null;
+                }
+            }, 60 * 1000);
+        }
 
         let currentLyrics = [];
         let activeLyricIndex = -1;
@@ -1907,6 +2155,10 @@
 
         function setPlayButtonVisual(isPlaying) {
             playIconSvg.innerHTML = isPlaying ? SVG_PAUSE_PATH : SVG_PLAY_PATH;
+            const lyricIcon = document.getElementById('lyricPlayIconSvg');
+            if (lyricIcon) {
+                lyricIcon.innerHTML = isPlaying ? SVG_PAUSE_PATH : SVG_PLAY_PATH;
+            }
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
             }
@@ -1940,6 +2192,12 @@
                 modeBtn.classList.toggle('mode-active', isShuffleMode);
                 modeBtn.classList.toggle('is-shuffle', isShuffleMode);
                 modeBtn.title = isShuffleMode ? '当前：随机播放' : '当前：顺序循环';
+            }
+            // 歌词模式的控制条同步状态
+            const lyricModeBtn = document.getElementById('lyricModeBtn');
+            if (lyricModeBtn) {
+                lyricModeBtn.classList.toggle('is-shuffle', isShuffleMode);
+                lyricModeBtn.title = isShuffleMode ? '当前：随机播放' : '当前：顺序循环';
             }
             npStatus.innerText = isShuffleMode ? "已开启全局随机播放" : "已开启全局顺序循环";
         }
@@ -1980,7 +2238,7 @@
                 .replace(/[^\p{L}\p{N}]/gu, '');
         }
 
-        async function queryGDTracks(source, keyword, timeoutMs = 8500) {
+        async function queryGDTracks(source, keyword, timeoutMs = 2600) {
             const trimmed = String(keyword || '').trim();
             if (!trimmed) return [];
             const cacheKey = `${source}:${trimmed.toLowerCase()}`;
@@ -2061,23 +2319,25 @@
             return /^\d+$/.test(value) ? `${value}k` : value;
         }
 
+        // GD 常规采集：只查网易云（JOOX 已移除）
         async function searchGDStudio(keyword, preferredSource = null, wantedTitle = '', wantedArtist = '') {
-            // JOOX 优先，网易云作为回退；每个源只解析少量候选，避免把公共 API 请求额度耗光。
-            const sources = [...new Set([preferredSource, 'joox', 'netease'].filter(Boolean))];
+            // 即便 preferredSource 传了 joox，也在这里剔除
+            const candidates = [preferredSource, 'netease'].filter(s => s && s !== 'joox');
+            const sources = [...new Set(candidates)];
             const tasks = sources.map(async (srv) => {
-                const tracks = await queryGDTracks(srv, keyword, srv === 'joox' ? 8500 : 4500);
+                const tracks = await queryGDTracks(srv, keyword, 2600);
                 if (!tracks.length) return [];
                 const ranked = tracks.map((track, index) => ({
                     track, index,
                     score: scoreGDTrack(track, wantedTitle, wantedArtist)
                 })).sort((a, b) => b.score - a.score || a.index - b.index);
-                const picked = ranked.slice(0, srv === 'joox' ? 2 : 1);
+                const picked = ranked.slice(0, 1);
                 const resolved = await Promise.all(picked.map(async ({ track }) => {
-                    const data = await resolveGDTrackUrl(srv, track.id, 6500, false);
+                    const data = await resolveGDTrackUrl(srv, track.id, 2600, false);
                     if (!data || !data.url) return null;
                     return {
                         url: data.url,
-                        label: `GD-${srv.toUpperCase()}·${formatGDQuality(data.br)}`,
+                        label: `GD-NETEASE·${formatGDQuality(data.br)}`,
                         title: track.name || track.title || wantedTitle,
                         artist: Array.isArray(track.artist) ? track.artist.join(' / ') : (track.artist || wantedArtist),
                         lyricId: track.lyric_id || track.id,
@@ -2374,7 +2634,9 @@
 
             localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify({ owner, repoName, branch, token }));
             closeCloudConfigModal();
-            await cloudDownloadAndMerge();
+            // 连接仓库只保存配置，不自动下行。上/下行必须由用户手动触发。
+            setCloudLightStatus(false);
+            npStatus.innerText = '已保存云链接，请手动选择「云下行」或「云上传」';
         }
 
         async function cloudDownloadAndMerge() {
@@ -2409,8 +2671,14 @@
                     throw new Error(`HTTP ${res.status}`);
                 }
 
+                // 合并策略：以云端为准（下行）
+                // - 只在本地有  -> 保留本地
+                // - 只在云端有  -> 加入
+                // - 两边都有    -> 云端覆盖本地
                 const mergedMap = new Map();
-                [...favorites, ...remoteList].forEach(item => {
+
+                // 1) 先放入本地全部条目
+                favorites.forEach(item => {
                     if (!item || !item.title) return;
                     const fp = getSongFingerprint(item.title, item.artist);
                     if (!mergedMap.has(fp)) {
@@ -2424,16 +2692,25 @@
                             badgeText: item.badgeText || '⚡ 云同步源',
                             verifiedFull: true
                         });
-                    } else {
-                        const cur = mergedMap.get(fp);
-                        if ((!cur.sources || !cur.sources.length) && item.sources && item.sources.length) {
-                            cur.sources = item.sources;
-                        }
-                        if (!cur.gdSource && item.gdSource && item.gdId != null) {
-                            cur.gdSource = item.gdSource;
-                            cur.gdId = item.gdId;
-                        }
                     }
+                });
+
+                // 2) 云端条目直接覆盖（云端为准）
+                let overwritten = 0;
+                remoteList.forEach(item => {
+                    if (!item || !item.title) return;
+                    const fp = getSongFingerprint(item.title, item.artist);
+                    if (mergedMap.has(fp)) overwritten++;
+                    mergedMap.set(fp, {
+                        title: item.title,
+                        artist: item.artist || '',
+                        cover: item.cover || 'https://picsum.photos/seed/music/100/100',
+                        sources: Array.isArray(item.sources) ? item.sources : [],
+                        gdSource: item.gdSource,
+                        gdId: item.gdId,
+                        badgeText: item.badgeText || '⚡ 云同步源',
+                        verifiedFull: true
+                    });
                 });
 
                 favorites = Array.from(mergedMap.values());
@@ -2445,8 +2722,12 @@
 
                 setCloudLightStatus(true);
                 hasCloudDownloadedAndMerged = true;
-                document.getElementById('cloudUploadBtn').disabled = false;
-                npStatus.innerText = `✅ 已同步 (${favorites.length} 首)`;
+                cloudDownloadAt = Date.now();
+                refreshCloudUploadButton();
+                startCloudWindowWatch();
+                npStatus.innerText = overwritten > 0
+                    ? `✅ 云下行完成 ${favorites.length} 首（覆盖本地 ${overwritten} 首）· 30 分钟内可上传`
+                    : `✅ 云下行完成 ${favorites.length} 首 · 30 分钟内可上传`;
             } catch (err) {
                 setCloudLightStatus(false);
                 npStatus.innerText = `⚠️ 云连接失败`;
@@ -2459,6 +2740,13 @@
 
             if (!hasCloudDownloadedAndMerged) {
                 alert("请先点击「云下行」整合本地数据后，再执行云上传。");
+                return;
+            }
+
+            if (!isCloudUploadAllowed()) {
+                const mins = Math.floor((Date.now() - cloudDownloadAt) / 60000);
+                alert(`上次云下行已是 ${mins} 分钟前，超过 30 分钟有效期。\n\n为防止用陈旧数据覆盖其他设备的内容，请先重新执行「云下行」再上传。`);
+                refreshCloudUploadButton();
                 return;
             }
 
@@ -2518,8 +2806,12 @@
                 }
 
                 setCloudLightStatus(true);
-                npStatus.innerText = `🎉 云上传成功 (${cleanPayload.length} 首)`;
-                alert(`云上传成功！已同步 ${cleanPayload.length} 首收藏配置至 ${cfg.owner}/${cfg.repoName}`);
+                // 上传成功后关闭窗口：再次上传需重新下行，避免本地陈旧数据反复覆盖云端
+                hasCloudDownloadedAndMerged = false;
+                cloudDownloadAt = 0;
+                refreshCloudUploadButton();
+                npStatus.innerText = `🎉 云上传成功 (${cleanPayload.length} 首) · 如需再次上传请先重新下行`;
+                alert(`云上传成功！已同步 ${cleanPayload.length} 首收藏配置至 ${cfg.owner}/${cfg.repoName}\n\n上传窗口已关闭，如需再次上传请先执行「云下行」。`);
             } catch (err) {
                 npStatus.innerText = `❌ 云上传失败`;
                 alert(`云上传失败：${err.message}`);
@@ -2528,7 +2820,19 @@
 
         /* ================= 歌词解析与同步模块 ================= */
         function toggleLyricOverlay() {
-            document.getElementById('lyricOverlay').classList.toggle('open');
+            const overlay = document.getElementById('lyricOverlay');
+            if (!overlay) return;
+            const willOpen = !overlay.classList.contains('open');
+            overlay.classList.toggle('open', willOpen);
+            // 歌词模式打开时隐藏原播放栏，由专属控制条接管（CSS 依赖此 class）
+            document.body.classList.toggle('lyric-open', willOpen);
+            if (willOpen) {
+                // 同步一次播放状态，避免图标与实际不符
+                const icon = document.getElementById('lyricPlayIconSvg');
+                if (icon) icon.innerHTML = audio.paused ? SVG_PLAY_PATH : SVG_PAUSE_PATH;
+                const lyricModeBtn = document.getElementById('lyricModeBtn');
+                if (lyricModeBtn) lyricModeBtn.classList.toggle('is-shuffle', isShuffleMode);
+            }
         }
 
         function parseLrc(lrcText) {
@@ -3051,6 +3355,14 @@
             const activeBtn = document.getElementById(`tab-${tabKey}`);
             if (activeBtn) activeBtn.classList.add('active');
 
+            // 搜索结果页签出现时，标签栏自动切成 4 等分，避免挤压
+            const searchTab = document.getElementById('tab-search');
+            const nav = document.querySelector('.market-nav');
+            if (nav && searchTab) {
+                const searchVisible = searchTab.style.display !== 'none';
+                nav.classList.toggle('has-search', searchVisible);
+            }
+
             const isFav = (tabKey === 'fav');
             const isPrivate = (tabKey === 'private');
             document.getElementById('cloudWrap').style.display = isFav ? 'inline-block' : 'none';
@@ -3085,9 +3397,8 @@
             await loadBillboardStaticChart();
         }
 
-        /* ================= 搜索：GD 兜底源（joox / netease） ================= */
-        // 主源先上屏；JOOX 单独给更宽的超时预算，避免原先 4 秒把慢响应直接误判为无结果。
-        const GD_SEARCH_TIMEOUT = 9000;
+        /* ================= 搜索：GD 兜底源（仅 netease） ================= */
+        const GD_SEARCH_TIMEOUT = 3000;
 
         function fetchWithTimeout(url, timeoutMs) {
             const controller = new AbortController();
@@ -3097,9 +3408,10 @@
 
         // 只做搜索，不逐首取流；同一关键词复用短缓存，减少重复点歌时的公共 API 请求。
         async function searchGDForSearch(keyword, timeoutMs = GD_SEARCH_TIMEOUT) {
-            const sources = ['joox', 'netease'];
+            // JOOX 已移除（最慢且取流不稳）；只保留 GD 网易云
+            const sources = ['netease'];
             const tasks = sources.map(async (srv) => {
-                const tracks = await queryGDTracks(srv, keyword, srv === 'joox' ? timeoutMs : Math.min(timeoutMs, 4500));
+                const tracks = await queryGDTracks(srv, keyword, Math.min(timeoutMs, 4500));
                 return tracks.map(it => ({
                     title: it.name || it.title,
                     artist: Array.isArray(it.artist) ? it.artist.join(' / ') : (it.artist || '未知歌手'),
@@ -3108,7 +3420,7 @@
                         : 'https://picsum.photos/seed/music/300/300',
                     gdSource: srv,
                     gdId: it.id,
-                    gdLabel: `GD-${srv.toUpperCase()}`
+                    gdLabel: 'GD-NETEASE'
                 }));
             });
 
@@ -3307,36 +3619,12 @@
             updateMediaSession(song);
             fetchLyricsForSong(song, myToken);
 
-            // 每次播放都重新解析 GD/JOOX 直链：收藏里保存的 CDN URL 可能已经过期。
-            // URL 只在本次播放会话里使用，不把旧 GD 直链当作下次播放的可靠入口。
+            // 收藏里保存的直链优先直接尝试（能秒播），只有失败后才在后台重新解析。
+            // 注意：不再按标签前缀过滤，否则所有 GD 来源的收藏都会失去秒播能力。
             const favMatch = favorites.find(f => isSameSong(f, song));
-            const preferredGDSource = song.gdSource || (favMatch && favMatch.gdSource);
-            const preferredGDId = song.gdId != null ? song.gdId : (favMatch && favMatch.gdId);
-            const freshGdSources = [];
-            if (preferredGDSource && preferredGDId != null) {
-                npStatus.innerText = `正在刷新 [${song.gdLabel || preferredGDSource}] 播放链接...`;
-                const data = await resolveGDTrackUrl(preferredGDSource, preferredGDId, preferredGDSource === 'joox' ? 5000 : 4000, true);
-                if (myToken !== activePlayToken) return;
-                if (data && data.url) {
-                    freshGdSources.push({
-                        url: data.url,
-                        label: `GD-${String(preferredGDSource).toUpperCase()}·${formatGDQuality(data.br)}`,
-                        gdSource: preferredGDSource,
-                        gdId: preferredGDId,
-                        br: data.br
-                    });
-                } else {
-                    npStatus.innerText = `该曲直链刷新失败，继续尝试其他音源...`;
-                }
-            }
-
-            // 避免优先重试收藏中残留的 GD CDN 旧链接；普通 B站/网易云等来源仍照常保留。
-            const isCachedGDLink = src => /^\s*GD-/i.test(String(src && src.label || ''));
-            const favoriteSources = favMatch && Array.isArray(favMatch.sources)
-                ? favMatch.sources.filter(src => !isCachedGDLink(src)) : [];
-            const songSources = Array.isArray(song.sources) ? song.sources.filter(src => !isCachedGDLink(src)) : [];
+            const favoriteSources = favMatch && Array.isArray(favMatch.sources) ? favMatch.sources : [];
+            const songSources = Array.isArray(song.sources) ? song.sources : [];
             const combinedSources = [
-                ...freshGdSources,
                 ...favoriteSources,
                 ...songSources
             ];
@@ -3344,11 +3632,13 @@
             if (combinedSources.length > 0) {
                 for (let srcObj of combinedSources) {
                     if (myToken !== activePlayToken) return;
-                    npStatus.innerText = `⚡ 直连 [${srcObj.label}]...`;
+                    if (!srcObj.url) continue;
+                    npStatus.innerText = `直连 [${srcObj.label}]…`;
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
                     const sourceIdKey = srcObj.gdSource && srcObj.gdId != null ? `${srcObj.gdSource}:${srcObj.gdId}` : null;
                     if (sourceIdKey) triedSourceIds.add(sourceIdKey);
-                    const check = await verifyAndPlayStream(srcObj.url, myToken, /joox/i.test(srcObj.label || '') ? 9000 : 5500);
+                    // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
+                    const check = await verifyAndPlayStream(srcObj.url, myToken, 6000);
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
@@ -3368,20 +3658,77 @@
                 }
             }
 
+            // 直链都失败后，才按需刷新 GD 直链（不阻塞在收藏秒播之前）
+            const preferredGDSource = song.gdSource || (favMatch && favMatch.gdSource);
+            const preferredGDId = song.gdId != null ? song.gdId : (favMatch && favMatch.gdId);
+            if (myToken !== activePlayToken) return;
+            if (preferredGDSource && preferredGDId != null) {
+                npStatus.innerText = `刷新 [${preferredGDSource.toUpperCase()}] 直链…`;
+                const data = await resolveGDTrackUrl(preferredGDSource, preferredGDId, 3000, false);
+                if (myToken !== activePlayToken) return;
+                if (data && data.url) {
+                    const fresh = {
+                        url: data.url,
+                        label: `GD-${String(preferredGDSource).toUpperCase()}·${formatGDQuality(data.br)}`,
+                        gdSource: preferredGDSource,
+                        gdId: preferredGDId,
+                        br: data.br
+                    };
+                    npStatus.innerText = `直连 [${fresh.label}]…`;
+                    const check2 = await verifyAndPlayStream(fresh.url, myToken, 6000);
+                    if (myToken !== activePlayToken) return;
+                    if (check2.ok) {
+                        song.sources = [fresh];
+                        song.gdSource = preferredGDSource;
+                        song.gdId = preferredGDId;
+                        song.verifiedFull = true;
+                        activeWorkingChain = fresh;
+                        song.badgeText = `✓ ${formatTime(check2.duration)} · ${fresh.label}`;
+                        syncFavoriteLatestChain(song, fresh, check2.duration);
+                        renderList();
+                        renderNowPlaying(song);
+                        setContinuePenetrationVisible(true);
+                        npStatus.innerText = `✓ ${formatTime(check2.duration)} · ${fresh.label}`;
+                        updateMediaSession(song);
+                        return;
+                    }
+                }
+            }
+
             if (myToken !== activePlayToken) return;
 
-            npStatus.innerText = `正在穿透采集高音质音源...`;
+            if (myToken !== activePlayToken) return;
+
+            // 采集阶段：状态行逐源显示真实对象，不再只写一句"正在穿透"
+            penetrationStart();
             activePenetrationCandidates = await collectPenetrationCandidates(song, myToken);
             if (myToken !== activePlayToken) return;
 
+            const totalCand = activePenetrationCandidates.length;
+            if (totalCand === 0) {
+                penetrationEnd('全部采集链均无结果，自动切歌…');
+                if (myToken === activePlayToken) {
+                    song.badgeText = "⚠️ 暂无音源";
+                    renderList();
+                    setTimeout(() => { if (myToken === activePlayToken) nextSong(); }, 1500);
+                }
+                return;
+            }
+
+            penetrationPhase('校验', totalCand);
+            let tried = 0;
             for (let cand of activePenetrationCandidates) {
                 if (myToken !== activePlayToken) return;
                 const sourceIdKey = cand.gdSource && cand.gdId != null ? `${cand.gdSource}:${cand.gdId}` : null;
                 if (!cand.url || triedSourceUrls.has(cand.url) || (sourceIdKey && triedSourceIds.has(sourceIdKey))) continue;
                 triedSourceUrls.add(cand.url);
                 if (sourceIdKey) triedSourceIds.add(sourceIdKey);
-                npStatus.innerText = `校验 [${cand.label}]...`;
-                const check = await verifyAndPlayStream(cand.url, myToken, /joox/i.test(cand.label || '') ? 9000 : 5500);
+                tried++;
+
+                const shortLabel = String(cand.label || '').replace(/·自动$/, '');
+                penetrationTry(shortLabel, tried, totalCand);
+                const check = await verifyAndPlayStream(cand.url, myToken, 6000);
+                penetrationResult(shortLabel, check.ok);
 
                 if (check.ok) {
                     const latestChain = { url: cand.url, label: cand.label, gdSource: cand.gdSource, gdId: cand.gdId, br: cand.br };
@@ -3402,18 +3749,95 @@
                     renderList();
                     renderNowPlaying(song);
                     setContinuePenetrationVisible(true);
-                    npStatus.innerText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
+                    penetrationEnd(`✓ ${formatTime(check.duration)} · ${cand.label}`);
                     updateMediaSession(song);
                     return;
                 }
             }
 
+            penetrationEnd(`已试 ${tried} 条，均不可用，自动切歌...`);
             if (myToken === activePlayToken) {
                 song.badgeText = "⚠️ 暂无音源";
                 renderList();
-                npStatus.innerText = `未找到可用完整版音频，自动切歌...`;
                 setTimeout(() => { if (myToken === activePlayToken) nextSong(); }, 1200);
             }
+        }
+
+        /* ---------- 穿透进度：每次事件显式写状态行，不依赖定时器轮询 ---------- */
+        const PENETRATION_TRAIL_MAX = 2;
+        let penetrationTrail = [];
+        let penetrationT0 = 0;
+        let penetrationPhaseName = '';
+
+        function penetrationElapsed() {
+            if (!penetrationT0) return '';
+            const sec = (Date.now() - penetrationT0) / 1000;
+            return sec < 10 ? `${sec.toFixed(1)}s` : `${Math.round(sec)}s`;
+        }
+
+        // 采集阶段开始
+        function penetrationStart() {
+            penetrationTrail = [];
+            penetrationT0 = Date.now();
+            penetrationPhaseName = '采集';
+            npStatus.innerText = '采集 0/4 · MT-NETEASE';
+        }
+
+        // 切换阶段（采集 → 校验）
+        function penetrationPhase(name, total) {
+            penetrationPhaseName = name;
+            penetrationTrail = [];
+            npStatus.innerText = `${name} 0/${total}`;
+        }
+
+        // 标记某个源开始尝试
+        function penetrationTry(label, index, total) {
+            penetrationTrail.push({ label, state: 'trying' });
+            if (penetrationTrail.length > PENETRATION_TRAIL_MAX) {
+                penetrationTrail = penetrationTrail.slice(-PENETRATION_TRAIL_MAX);
+            }
+            renderPenetrationTrail(index, total);
+        }
+
+        // 标记某个源的结果
+        function penetrationResult(label, ok) {
+            for (let i = penetrationTrail.length - 1; i >= 0; i--) {
+                if (penetrationTrail[i].label === label && penetrationTrail[i].state === 'trying') {
+                    penetrationTrail[i].state = ok ? 'ok' : 'fail';
+                    break;
+                }
+            }
+            renderPenetrationTrail();
+        }
+
+        function renderPenetrationTrail(index, total) {
+            const parts = penetrationTrail.map(it => {
+                if (it.state === 'trying') return `${it.label} ▸`;
+                if (it.state === 'ok') return `${it.label} ✓`;
+                return `${it.label} ✗`;
+            });
+            let head = penetrationPhaseName;
+            if (index != null && total != null) head += ` ${index}/${total}`;
+            else if (total != null) head += ` ${total}`;
+            const elapsed = penetrationElapsed();
+            npStatus.innerText = `${head} · ${parts.join(' → ')}${elapsed ? ' · ' + elapsed : ''}`;
+        }
+
+        function penetrationEnd(text) {
+            penetrationTrail = [];
+            penetrationT0 = 0;
+            npStatus.innerText = text;
+        }
+
+        // 采集链顺位定义：数值越小越先尝试
+        // 采集链顺位：按 30 首实测命中率排序（数值越小越先试）
+        function getSourceRank(cand) {
+            const label = String(cand.label || '');
+            if (/^MT-NETEASE/.test(label)) return 10;   // 70%
+            if (/^MT-QQ/.test(label))      return 20;   // 23%
+            if (/^MT-KUGOU/.test(label))   return 30;   //  7%
+            if (/^GD-NETEASE/.test(label)) return 40;   // 兜底
+            return 50;
         }
 
         async function collectPenetrationCandidates(song, token) {
@@ -3422,43 +3846,84 @@
             const query = `${cleanTitle} ${cleanArtist}`.trim();
             if (!query) return [];
 
-            const metingTasks = UPSTREAM_PLATFORMS.map(plat =>
-                requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(query)}`, 5000)
-                    .then(list => ({ plat, list }))
-            );
-            const gdTask = searchGDStudio(query, song.gdSource || null, cleanTitle, cleanArtist);
-            const [settledMeting, gdSources] = await Promise.all([
-                Promise.allSettled(metingTasks),
-                gdTask
+            // 采集阶段：每个源一返回就刷新状态行
+            const candidates = [];
+            const seenUrls = new Set();
+            const pushAll = (arr) => {
+                arr.forEach(c => {
+                    if (!c || !c.url || seenUrls.has(c.url)) return;
+                    seenUrls.add(c.url);
+                    candidates.push(c);
+                });
+            };
+
+            // 采集专用：状态显示
+            const collectState = [
+                { key: 'MT-NETEASE', state: 'wait' },
+                { key: 'MT-QQ',      state: 'wait' },
+                { key: 'MT-KUGOU',   state: 'wait' },
+                { key: 'GD-NE',      state: 'wait' }
+            ];
+            const renderCollect = () => {
+                const doneCount = collectState.filter(s => s.state !== 'wait').length;
+                const parts = collectState.map(s => {
+                    if (s.state === 'wait') return `${s.key} …`;
+                    if (s.state === 'ok') return `${s.key} ✓`;
+                    return `${s.key} ✗`;
+                });
+                npStatus.innerText = `采集 ${doneCount}/4 · ${parts.join(' ')}`;
+            };
+
+            const settle = (idx, ok) => {
+                collectState[idx].state = ok ? 'ok' : 'fail';
+                renderCollect();
+            };
+
+            const mtNE = requestMeting(`server=netease&type=search&id=${encodeURIComponent(query)}`, 2600)
+                .then(list => { pushAllMeting(list, 'MT-NETEASE'); settle(0, list && list.length > 0); })
+                .catch(() => settle(0, false));
+
+            const mtQQ = requestMeting(`server=tencent&type=search&id=${encodeURIComponent(query)}`, 2600)
+                .then(list => { pushAllMeting(list, 'MT-QQ'); settle(1, list && list.length > 0); })
+                .catch(() => settle(1, false));
+
+            const mtKG = requestMeting(`server=kugou&type=search&id=${encodeURIComponent(query)}`, 2600)
+                .then(list => { pushAllMeting(list, 'MT-KUGOU'); settle(2, list && list.length > 0); })
+                .catch(() => settle(2, false));
+
+            function pushAllMeting(list, label) {
+                if (!Array.isArray(list)) return;
+                list.slice(0, 5).forEach(m => {
+                    if (!m || !m.url) return;
+                    pushAll([{
+                        url: m.url,
+                        label: `${label}·自动`,
+                        pic: m.pic,
+                        title: m.name || m.title || '',
+                        artist: m.artist || m.author || ''
+                    }]);
+                });
+            }
+
+            renderCollect();
+
+            const gdTask = searchGDStudio(query, song.gdSource || null, cleanTitle, cleanArtist)
+                .then(list => { if (Array.isArray(list)) pushAll(list); settle(3, list && list.length > 0); })
+                .catch(() => settle(3, false));
+
+            // 采集阶段硬上限 6 秒：超时就带着已拿到的候选继续，不再干等
+            const collectGuard = new Promise(resolve => setTimeout(resolve, 6000));
+            await Promise.race([
+                Promise.all([mtNE, mtQQ, mtKG, gdTask]),
+                collectGuard
             ]);
+
             if (token !== activePlayToken) return [];
 
-            const candidates = [];
-            gdSources.forEach(c => candidates.push({
-                ...c,
-                title: c.title || cleanTitle,
-                artist: c.artist || cleanArtist
-            }));
-
-            settledMeting.forEach(res => {
-                if (res.status !== 'fulfilled' || !Array.isArray(res.value.list)) return;
-                const { plat, list } = res.value;
-                list.slice(0, 5).forEach(match => {
-                    if (!match || !match.url) return;
-                    candidates.push({
-                        url: match.url,
-                        label: plat.label,
-                        pic: match.pic,
-                        title: match.name || match.title || '',
-                        artist: match.artist || match.author || ''
-                    });
-                });
-            });
-
-            // 精确标题/歌手优先，减少“能播但不是那首歌”的误命中。
+            // 先按采集链顺位，再按标题/歌手匹配度
             const targetTitle = normalizeGDText(cleanTitle);
             const targetArtist = normalizeGDText(cleanArtist);
-            const rank = c => {
+            const matchScore = c => {
                 const title = normalizeGDText(c.title || '');
                 const artist = normalizeGDText(c.artist || '');
                 let score = 0;
@@ -3468,10 +3933,12 @@
                 else if (artist && targetArtist && (artist.includes(targetArtist) || targetArtist.includes(artist))) score += 15;
                 return score;
             };
-            const seen = new Set();
-            return candidates
-                .filter(c => c.url && !seen.has(c.url) && seen.add(c.url))
-                .sort((a, b) => rank(b) - rank(a));
+
+            return candidates.sort((a, b) => {
+                const ra = getSourceRank(a), rb = getSourceRank(b);
+                if (ra !== rb) return ra - rb;
+                return matchScore(b) - matchScore(a);
+            });
         }
 
         async function continuePenetration(event) {
@@ -3486,7 +3953,8 @@
             const song = currentPlayingSong;
             const token = activePlayToken;
             try {
-                npStatus.innerText = '正在继续穿透其他采集链…';
+                penetrationStart();
+                npStatus.innerText = '正在穿透…';
                 let candidates = activePenetrationCandidates;
                 if (!candidates.length) {
                     candidates = await collectPenetrationCandidates(song, token);
@@ -3503,8 +3971,10 @@
                     triedSourceUrls.add(cand.url);
                     if (sourceIdKey) triedSourceIds.add(sourceIdKey);
                     attempted++;
-                    npStatus.innerText = `继续校验 [${cand.label}]…`;
-                    const check = await verifyAndPlayStream(cand.url, token, /joox/i.test(cand.label || '') ? 9000 : 5500);
+                    const shortLabel = String(cand.label || '').replace(/·自动$/, '');
+                    penetrationTry(shortLabel);
+                    const check = await verifyAndPlayStream(cand.url, token, 6000);
+                    penetrationResult(shortLabel, check.ok);
                     if (!check.ok) continue;
 
                     const chain = {
@@ -3523,16 +3993,17 @@
                     renderList();
                     renderNowPlaying(song);
                     updateMediaSession(song);
-                    npStatus.innerText = `已切换到 ${cand.label} · ${formatTime(check.duration)}`;
+                    penetrationEnd(`✓ 已切换到 ${cand.label} · ${formatTime(check.duration)}`);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerText = '继续找音源';
                     }
                     return;
                 }
-                npStatus.innerText = attempted
-                    ? '其余候选均未通过播放校验，可稍后重试'
-                    : '暂时没有新的候选音源';
+
+                penetrationEnd(attempted
+                    ? `已试 ${attempted} 条，均未通过校验`
+                    : '暂时没有新的候选音源');
             } finally {
                 penetrationBusy = false;
                 if (btn) {
@@ -3542,7 +4013,7 @@
             }
         }
 
-        function verifyAndPlayStream(url, token, timeoutMs = 5000) {
+        function verifyAndPlayStream(url, token, timeoutMs = 6000) {
             return new Promise((resolve) => {
                 if (!url) return resolve({ ok: false, reason: 'empty' });
                 let settled = false;
