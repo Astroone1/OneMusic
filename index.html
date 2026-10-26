@@ -2358,6 +2358,14 @@
         }
 
         /* ================= 收藏与穿透互补自动覆写采集链模块 ================= */
+        // 收藏条目的时间戳：记录"最后一次播放成功"的时刻（毫秒）
+        // 同步时以它为唯一依据，判断哪一侧记录的是更新的播放数据
+        function favPlayedAt(item) {
+            if (!item) return 0;
+            const v = Number(item.playedAt);
+            return Number.isFinite(v) && v > 0 ? v : 0;
+        }
+
         function loadFavorites() {
             try {
                 const raw = localStorage.getItem(FAV_STORAGE_KEY) || localStorage.getItem("MUSIC_HUB_FAVORITES_V5");
@@ -2407,6 +2415,9 @@
                 favorites[favIdx].sources = [cleanChain];
                 favorites[favIdx].badgeText = `⚡ 上次可播(${cleanChain.label})`;
                 favorites[favIdx].verifiedFull = true;
+                // 记录本次播放成功的时间：同步时以此判断哪一侧数据更新
+                favorites[favIdx].playedAt = Date.now();
+                favorites[favIdx].playedLabel = cleanChain.label;
                 // GD 的稳定身份（source + song ID）比 CDN 直链更适合长期收藏；播放时再取新 URL。
                 if (latestSourceObj.gdSource && latestSourceObj.gdId != null) {
                     favorites[favIdx].gdSource = latestSourceObj.gdSource;
@@ -2556,7 +2567,10 @@
                         ? activeWorkingChain.gdId : song.gdId,
                     sources: lockedSources.map(s => ({ url: s.url, label: s.label })),
                     badgeText: lockedSources.length > 0 ? `⚡ 锁定(${lockedSources[0].label})` : '已收藏',
-                    verifiedFull: true
+                    verifiedFull: true,
+                    // 新增收藏视为一次"播放记录"，写入时间戳参与同步比对
+                    playedAt: (currentPlayingSong && isSameSong(currentPlayingSong, song)) ? Date.now() : 0,
+                    playedLabel: lockedSources.length > 0 ? lockedSources[0].label : ''
                 });
             }
             saveFavorites();
@@ -2671,46 +2685,63 @@
                     throw new Error(`HTTP ${res.status}`);
                 }
 
-                // 合并策略：以云端为准（下行）
-                // - 只在本地有  -> 保留本地
-                // - 只在云端有  -> 加入
-                // - 两边都有    -> 云端覆盖本地
+                // ============================================================
+                // 合并策略：时间戳优先，新时间无条件覆盖老时间
+                //   - 只在本地有            -> 保留本地
+                //   - 只在云端有            -> 加入
+                //   - 两边都有，云端更新    -> 云端整条覆盖本地
+                //   - 两边都有，本地更新    -> 本地整条保留
+                //   - 时间相同（含都无时间）-> 云端覆盖（保持旧行为，无明显新旧时以云为准）
+                // 不做字段级合并：时间更新的一侧整条胜出。
+                // ============================================================
+                const normalizeFav = (item) => ({
+                    title: item.title,
+                    artist: item.artist || '',
+                    cover: item.cover || 'https://picsum.photos/seed/music/100/100',
+                    sources: Array.isArray(item.sources) ? item.sources : [],
+                    gdSource: item.gdSource,
+                    gdId: item.gdId,
+                    badgeText: item.badgeText || '已收藏',
+                    verifiedFull: item.verifiedFull !== false,
+                    playedAt: favPlayedAt(item),
+                    playedLabel: item.playedLabel || ''
+                });
+
                 const mergedMap = new Map();
 
-                // 1) 先放入本地全部条目
+                // 1) 先放入本地
                 favorites.forEach(item => {
                     if (!item || !item.title) return;
                     const fp = getSongFingerprint(item.title, item.artist);
-                    if (!mergedMap.has(fp)) {
-                        mergedMap.set(fp, {
-                            title: item.title,
-                            artist: item.artist || '',
-                            cover: item.cover || 'https://picsum.photos/seed/music/100/100',
-                            sources: Array.isArray(item.sources) ? item.sources : [],
-                            gdSource: item.gdSource,
-                            gdId: item.gdId,
-                            badgeText: item.badgeText || '⚡ 云同步源',
-                            verifiedFull: true
-                        });
-                    }
+                    if (!mergedMap.has(fp)) mergedMap.set(fp, normalizeFav(item));
                 });
 
-                // 2) 云端条目直接覆盖（云端为准）
-                let overwritten = 0;
+                // 2) 云端逐个比对，新时间整条覆盖
+                let localWon = 0, remoteWon = 0, addedNew = 0;
                 remoteList.forEach(item => {
                     if (!item || !item.title) return;
                     const fp = getSongFingerprint(item.title, item.artist);
-                    if (mergedMap.has(fp)) overwritten++;
-                    mergedMap.set(fp, {
-                        title: item.title,
-                        artist: item.artist || '',
-                        cover: item.cover || 'https://picsum.photos/seed/music/100/100',
-                        sources: Array.isArray(item.sources) ? item.sources : [],
-                        gdSource: item.gdSource,
-                        gdId: item.gdId,
-                        badgeText: item.badgeText || '⚡ 云同步源',
-                        verifiedFull: true
-                    });
+                    const local = mergedMap.get(fp);
+                    if (!local) {
+                        mergedMap.set(fp, normalizeFav(item));
+                        addedNew++;
+                        return;
+                    }
+
+                    const localAt = local.playedAt;
+                    const remoteAt = favPlayedAt(item);
+
+                    if (remoteAt > localAt) {
+                        mergedMap.set(fp, normalizeFav(item));
+                        remoteWon++;
+                    } else if (localAt > remoteAt) {
+                        // 本地更新：保持原样，不做任何字段合并
+                        localWon++;
+                    } else {
+                        // 时间相同或均无时间：云端整条覆盖（旧数据兼容）
+                        mergedMap.set(fp, normalizeFav(item));
+                        remoteWon++;
+                    }
                 });
 
                 favorites = Array.from(mergedMap.values());
@@ -2725,9 +2756,8 @@
                 cloudDownloadAt = Date.now();
                 refreshCloudUploadButton();
                 startCloudWindowWatch();
-                npStatus.innerText = overwritten > 0
-                    ? `✅ 云下行完成 ${favorites.length} 首（覆盖本地 ${overwritten} 首）· 30 分钟内可上传`
-                    : `✅ 云下行完成 ${favorites.length} 首 · 30 分钟内可上传`;
+                npStatus.innerText =
+                    `✅ 下行完成 ${favorites.length} 首 · 本地较新 ${localWon} / 云端较新 ${remoteWon} / 新增 ${addedNew}`;
             } catch (err) {
                 setCloudLightStatus(false);
                 npStatus.innerText = `⚠️ 云连接失败`;
@@ -2783,7 +2813,10 @@
                     sources: (f.sources || []).map(s => ({ url: s.url, label: s.label })),
                     gdSource: f.gdSource,
                     gdId: f.gdId,
-                    badgeText: f.badgeText
+                    badgeText: f.badgeText,
+                    // 时间戳随数据一起上传，否则下次同步无法判断新旧
+                    playedAt: favPlayedAt(f),
+                    playedLabel: f.playedLabel || ''
                 }));
 
                 const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(cleanPayload, null, 2))));
