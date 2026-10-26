@@ -2362,6 +2362,54 @@
       }
     </style>
 
+    <style id="onemusic-v6-mobile-player">
+      /* ============================================================
+         v6 · 手机端播放栏：三键整体左移（不是居中），
+         右侧留出一段空白，信息栏过长的文字截断。
+         桌面端不受影响。
+         ============================================================ */
+      @media (max-width: 720px) {
+        .player-bar .player-main {
+          display: grid;
+          /* 信息区占满剩余，控件的右端固定，整体靠左于原来的最右侧 */
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 8px;
+          padding-right: 14px;
+        }
+
+        .player-bar .np-left {
+          grid-column: 1;
+          grid-row: 1;
+          max-width: 100%;
+          width: 100%;
+          flex: none;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .player-bar .np-controls {
+          grid-column: 2;
+          grid-row: 1;
+          gap: 2px;
+          justify-self: end;
+        }
+
+        /* 信息栏不再撑长：单行截断 */
+        .player-bar .np-meta { min-width: 0; overflow: hidden; }
+        .player-bar .np-title {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .player-bar .player-main { padding-right: 10px; }
+        .player-bar .np-cover { width: 32px; height: 32px; }
+      }
+    </style>
+
 </head>
 <body>
 
@@ -4296,6 +4344,9 @@
             const isFav = (tabKey === 'fav');
             const isPrivate = (tabKey === 'private');
             document.getElementById('cloudWrap').style.display = isFav ? 'inline-block' : 'none';
+            // 私人 FM 只在「私人推荐」页出现（收藏页不重复提供入口）
+            const fmBtnEl = document.getElementById('fmBtn');
+            if (fmBtnEl) fmBtnEl.style.display = isPrivate ? 'inline-flex' : 'none';
             // 网易云账号设置在「收藏」页展示；私人推荐页只保留推荐列表本身
             document.getElementById('privateRecPanel').classList.toggle('is-visible', isFav);
 
