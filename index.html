@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>OneMusic</title>
     <style>
         /* ============================================================
@@ -916,6 +916,21 @@
             margin-top: 1px;
         }
 
+        .penetrate-btn {
+            display: none;
+            margin-top: 4px;
+            padding: 3px 7px;
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            background: var(--bg-elev);
+            color: var(--accent);
+            font-size: 11px;
+            line-height: 1.25;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .penetrate-btn:disabled { opacity: .55; cursor: wait; }
+
         .np-controls {
             display: flex;
             align-items: center;
@@ -1301,6 +1316,55 @@
             background: var(--accent-hover);
         }
 
+
+        /* ---------- 私人推荐：账号级推荐与扫码登录 ---------- */
+        .private-rec-panel {
+            display: none;
+            margin: 0 0 var(--sp-4);
+            padding: var(--sp-4);
+            background: var(--bg-elev);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            gap: var(--sp-3);
+        }
+        .private-rec-panel.is-visible { display: flex; flex-direction: column; }
+        .private-rec-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+        .private-rec-heading strong { color:var(--text); font-size:var(--fs-md); }
+        .private-rec-subtitle { color:var(--text-2); font-size:var(--fs-xs); line-height:1.65; margin-top:4px; }
+        .private-rec-accounts { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-3); }
+        .private-rec-account { min-width:0; border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3); display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:16px; }
+        .private-rec-account-main { display:flex; flex-direction:column; gap:10px; min-width:0; }
+        .private-rec-account-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+        .private-rec-account-head strong { font-size:var(--fs-sm); }
+        .private-rec-status { color:var(--text-2); font-size:var(--fs-xs); }
+        .private-rec-status.connected { color:var(--accent); }
+        .private-rec-actions { display:flex; flex-wrap:wrap; gap:7px; }
+        .private-rec-btn { appearance:none; border:1px solid var(--border); background:var(--bg-sunken); color:var(--text); border-radius:var(--r-sm); padding:7px 10px; cursor:pointer; font:inherit; font-size:var(--fs-xs); }
+        .private-rec-btn:hover { background:var(--bg-hover); }
+        .private-rec-btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-contrast); }
+        .private-rec-btn:disabled { opacity:.55; cursor:not-allowed; }
+        .private-rec-message { color:var(--text-2); font-size:var(--fs-xs); line-height:1.55; overflow-wrap:anywhere; }
+        .private-rec-message:empty { display:none; }
+        .private-rec-source-row { display:flex; flex-direction:column; align-items:stretch; gap:8px; }
+        .private-qr-stage { display:flex; flex-direction:column; align-items:center; gap:12px; min-height:160px; justify-content:center; }
+        .private-qr-img { width:220px; height:220px; object-fit:contain; border:1px solid var(--border); border-radius:var(--r-md); background:white; padding:8px; }
+        .private-qr-status { text-align:center; font-size:var(--fs-sm); color:var(--text-2); line-height:1.6; }
+        .private-config-note { color:var(--text-2); font-size:var(--fs-xs); line-height:1.7; }
+        .private-config-note a { color:var(--accent); }
+        #platformSyncToast.is-loading::before {
+            content: ""; display: inline-block; flex: 0 0 15px; width: 15px; height: 15px;
+            border: 2px solid var(--accent-border, #b7dcf7); border-top-color: var(--accent, #0b7fd4);
+            border-radius: 50%; animation: platformSyncSpin .75s linear infinite;
+        }
+        @keyframes platformSyncSpin { to { transform: rotate(360deg); } }
+        @media (max-width:720px) {
+            .private-rec-accounts { grid-template-columns:1fr; }
+            .private-rec-account { grid-template-columns:minmax(0,1fr); gap:12px; }
+            .private-rec-source-row { flex-direction:row; flex-wrap:wrap; }
+            .private-rec-panel { padding:12px; }
+            .private-qr-img { width:200px; height:200px; }
+        }
+
         /* ---------- 响应式 ---------- */
         @media (max-width: 720px) {
             header { padding: var(--sp-2) 12px; }
@@ -1357,6 +1421,203 @@
             }
         }
     </style>
+
+    <style id="onemusic-responsive-editorial">
+      /* OneMusic · 留白 Editorial：保留原交互，仅覆盖设计层 */
+      :root {
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+        --font-editorial: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", Georgia, serif;
+        --page-max: 1040px;
+        --r-sm: 5px;
+        --r-md: 7px;
+        --r-lg: 10px;
+        --bg: #f7f4ed;
+        --bg-elev: #fffdf8;
+        --bg-sunken: #eee8dd;
+        --bg-hover: #f2ece2;
+        --border: #e4ddd1;
+        --border-strong: #d1c5b5;
+        --text: #292b27;
+        --text-2: #77766e;
+        --text-3: #a39e93;
+        --accent: #c34d39;
+        --accent-hover: #ad3e2d;
+        --accent-soft: #f7e8e2;
+        --accent-border: #e9c2b7;
+        --accent-contrast: #fffaf5;
+        --danger: #c34d39;
+        --danger-soft: #f8e7e2;
+        --danger-border: #e9c2b7;
+        --danger-contrast: #fffaf5;
+        --success: #2e765b;
+        --success-soft: #e9f2eb;
+        --success-border: #c4ddca;
+        --shadow-1: 0 1px 2px rgba(61, 49, 36, .035);
+        --shadow-2: 0 5px 18px rgba(61, 49, 36, .055);
+        --shadow-3: 0 14px 36px rgba(61, 49, 36, .12);
+        --glass: rgba(255, 253, 248, .96);
+        --mask: rgba(35, 31, 25, .38);
+        --track: #e2d9cc;
+        color-scheme: light;
+      }
+      [data-theme="dark"] {
+        --bg: #191b19;
+        --bg-elev: #222521;
+        --bg-sunken: #2b2e28;
+        --bg-hover: #30332d;
+        --border: #393b34;
+        --border-strong: #51534a;
+        --text: #f0eee7;
+        --text-2: #b8b4a9;
+        --text-3: #858277;
+        --accent: #e28b75;
+        --accent-hover: #efa18d;
+        --accent-soft: #3b2925;
+        --accent-border: #654039;
+        --accent-contrast: #211b18;
+        --danger: #e28b75;
+        --danger-soft: #3b2925;
+        --danger-border: #654039;
+        --danger-contrast: #211b18;
+        --success: #7cc4a0;
+        --success-soft: #20382b;
+        --success-border: #365d47;
+        --shadow-1: 0 1px 2px rgba(0,0,0,.18);
+        --shadow-2: 0 5px 18px rgba(0,0,0,.18);
+        --shadow-3: 0 14px 36px rgba(0,0,0,.32);
+        --glass: rgba(25, 27, 25, .96);
+        --mask: rgba(0,0,0,.58);
+        --track: #45453c;
+        color-scheme: dark;
+      }
+      html { min-width: 280px; scroll-behavior: smooth; }
+      body { background: var(--bg); color: var(--text); font-family: var(--font-sans); }
+      header { background: var(--glass); border-bottom-color: var(--border); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      .header-container { gap: 10px; }
+      .header-top { gap: 12px; }
+      .brand { gap: 9px; }
+      .brand-mark { background: var(--accent); border-radius: 5px; box-shadow: none; }
+      .brand-title { font-size: 17px; letter-spacing: -.035em; font-weight: 650; }
+      .search-bar { background: transparent; border-color: var(--border); border-radius: 7px; padding: 3px 4px 3px 12px; }
+      .search-bar:focus-within { background: var(--bg-elev); border-color: var(--accent-border); box-shadow: 0 0 0 3px var(--accent-soft); }
+      .search-btn, .play-all-btn, .btn-primary { background: var(--accent); color: var(--accent-contrast); border-radius: 5px; }
+      .search-btn:hover, .play-all-btn:hover, .btn-primary:hover { background: var(--accent-hover); }
+      .theme-toggle { border-radius: 6px; color: var(--text-2); border-color: var(--border); }
+      .market-nav { gap: 5px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+      .tab-btn { flex: 0 0 auto; min-width: 86px; background: transparent; color: var(--text-2); border: 1px solid transparent; border-bottom: 2px solid transparent; border-radius: 5px 5px 0 0; padding: 8px 13px 9px; }
+      .tab-btn:hover { background: var(--bg-hover); color: var(--text); }
+      .tab-btn.active { background: var(--accent-soft); color: var(--accent); border-color: transparent; border-bottom-color: var(--accent); }
+      .tab-btn.fav-tab.active { background: var(--accent-soft); color: var(--danger); border-color: transparent; border-bottom-color: var(--danger); }
+      main { padding-top: 22px; padding-bottom: calc(154px + env(safe-area-inset-bottom, 0px)); }
+      .banner-card { background: transparent; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 0 0 15px; margin-bottom: 16px; }
+      .banner-info h2 { font-family: var(--font-editorial); font-size: clamp(1.25rem, 2.3vw, 1.55rem); font-weight: 600; letter-spacing: -.035em; }
+      .banner-actions { gap: 7px; }
+      .sub-source-select, .cloud-trigger-btn { border-radius: 5px; }
+      .cloud-dropdown, .modal-card { border-radius: 9px; box-shadow: var(--shadow-3); }
+      .private-rec-panel { background: var(--bg-elev); border-color: var(--border); border-radius: 9px; box-shadow: none; padding: 14px; }
+      .private-rec-account { background: transparent; border: 0; border-radius: 0; padding: 0; }
+      .private-rec-account-head strong { font-weight: 650; }
+      .private-rec-btn { border-radius: 5px; background: var(--bg-elev); transition: background .15s ease, border-color .15s ease; }
+      .private-rec-btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+      .private-rec-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+      .private-rec-btn.primary:hover { background: var(--accent-hover); }
+      .private-rec-message { color: var(--text-2); }
+      .song-list { gap: 0; }
+      .song-item { border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 10px 8px; gap: 10px; }
+      .song-item:first-child { border-top: 1px solid var(--border); }
+      .song-item:hover { background: var(--bg-hover); border-bottom-color: var(--border); }
+      .song-item.active { background: var(--accent-soft); border-bottom-color: var(--accent-border); }
+      .cover { border-radius: 4px; }
+      .title { font-weight: 550; letter-spacing: -.01em; }
+      .artist { color: var(--text-2); }
+      .fav-btn { border-radius: 5px; }
+      .player-bar { background: var(--glass); border-top-color: var(--border); box-shadow: 0 -5px 20px rgba(61,49,36,.025); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px)); }
+      .np-left { border-radius: 6px; }
+      .np-cover { border-radius: 4px; box-shadow: none; }
+      .play-pause-circle { background: var(--text); }
+      .play-pause-circle:hover { background: #3b4039; }
+      .play-pause-circle svg { fill: var(--bg-elev); }
+      [data-theme="dark"] .play-pause-circle { background: var(--accent); }
+      [data-theme="dark"] .play-pause-circle svg { fill: var(--accent-contrast); }
+      .ctrl-btn:hover, .skip-btn-circle:hover, .volume-btn:hover { background: var(--bg-hover); }
+      .progress-bar::-webkit-slider-thumb { border-color: var(--bg-elev); }
+      .lyric-overlay { background: var(--bg); }
+      .lyric-art-col { border-radius: 9px; }
+      .lyric-big-cover { border-radius: 5px; box-shadow: var(--shadow-2); }
+      .lyric-song-title, .modal-card h3 { font-family: var(--font-editorial); font-weight: 600; letter-spacing: -.02em; }
+      .modal-card { border-color: var(--border); background: var(--bg-elev); }
+      .form-group input { border-radius: 5px; }
+      .btn-secondary { border-radius: 5px; }
+      #platformSyncToast { border-radius: 7px !important; box-shadow: var(--shadow-2) !important; }
+
+      /* Mobile-first: retain touch targets, avoid desktop-only columns and overflow. */
+      @media (max-width: 720px) {
+        header { padding: 9px 12px; }
+        .header-container { gap: 8px; }
+        .header-top { gap: 8px; }
+        .brand { gap: 6px; }
+        .brand-title { font-size: 14px; }
+        .brand-mark { width: 24px; height: 24px; }
+        .search-bar { max-width: none; min-width: 0; padding: 2px 3px 2px 9px; }
+        .search-input { font-size: 12px; }
+        .search-btn { padding: 6px 10px; font-size: 12px; }
+        .theme-toggle { width: 31px; height: 31px; }
+        .market-nav { gap: 3px; overflow-x: auto; overscroll-behavior-x: contain; }
+        .tab-btn { flex: 0 0 auto; min-width: 0; padding: 7px 10px 8px; font-size: 12px; }
+        main { padding: 14px 12px calc(142px + env(safe-area-inset-bottom, 0px)); }
+        .banner-card { align-items: center; padding-bottom: 11px; margin-bottom: 12px; }
+        .banner-info h2 { font-size: 20px; }
+        .banner-actions { gap: 5px; }
+        .play-all-btn { padding: 7px 10px; font-size: 12px; }
+        .private-rec-panel { padding: 12px; margin-bottom: 12px; gap: 10px; }
+        .private-rec-account { grid-template-columns: minmax(0,1fr); gap: 10px; }
+        .private-rec-account-main { gap: 9px; }
+        .private-rec-actions { gap: 6px; }
+        .private-rec-btn { padding: 7px 9px; }
+        .private-rec-source-row { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+        .song-item { padding: 9px 4px; gap: 8px; }
+        .song-left { gap: 8px; }
+        .rank { width: 19px; }
+        .cover { width: 36px; height: 36px; }
+        .title { font-size: 13px; }
+        .artist { font-size: 12px; }
+        .player-bar { padding: 7px 10px calc(8px + env(safe-area-inset-bottom, 0px)); }
+        .player-inner { gap: 4px; }
+        .progress-wrap { gap: 6px; }
+        .player-main { gap: 6px; }
+        .np-left { gap: 7px; padding: 1px; }
+        .np-cover { width: 36px; height: 36px; }
+        .np-title { font-size: 12px; }
+        .np-lyric-mini { font-size: 10px; max-width: 38vw; }
+        .np-controls { gap: 1px; }
+        .ctrl-btn, .skip-btn-circle { width: 30px; height: 30px; }
+        .play-pause-circle { width: 38px; height: 38px; }
+        .volume-wrap { display: none; }
+        .lyric-overlay { padding: 12px; padding-bottom: calc(136px + env(safe-area-inset-bottom, 0px)); }
+        .modal-mask { padding: 12px; }
+        .modal-card { padding: 17px; }
+      }
+      @media (max-width: 420px) {
+        .brand-title { font-size: 13px; }
+        .brand-mark { width: 22px; height: 22px; }
+        .header-top { gap: 6px; }
+        .search-bar { padding-left: 7px; }
+        .search-btn { padding: 6px 8px; }
+        .tab-btn { padding-inline: 8px; }
+        .banner-actions { max-width: 56%; }
+        .play-all-btn { padding: 7px 8px; }
+        .np-title { max-width: 34vw; }
+        .np-lyric-mini { display: none; }
+        .np-controls .ctrl-btn { width: 27px; }
+        .play-pause-circle { width: 36px; height: 36px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+      }
+    </style>
+
 </head>
 <body>
 
@@ -1489,12 +1750,9 @@
                 </button>
             </div>
 
-            <div class="market-nav" role="tablist" aria-label="榜单切换">
-                <button class="tab-btn active" id="tab-cn" onclick="switchTab('cn')" role="tab">
-                    <svg aria-hidden="true"><use href="#ico-globe"></use></svg>华语榜
-                </button>
-                <button class="tab-btn" id="tab-jp" onclick="switchTab('jp')" role="tab">
-                    <svg aria-hidden="true"><use href="#ico-globe"></use></svg>日语榜
+            <div class="market-nav" role="tablist" aria-label="内容切换">
+                <button class="tab-btn active" id="tab-private" onclick="switchTab('private')" role="tab">
+                    <svg aria-hidden="true"><use href="#ico-cloud"></use></svg>私人推荐
                 </button>
                 <button class="tab-btn" id="tab-bb" onclick="switchTab('bb')" role="tab">
                     <svg aria-hidden="true"><use href="#ico-globe"></use></svg>欧美榜
@@ -1512,23 +1770,9 @@
     <main>
         <div class="banner-card">
             <div class="banner-info">
-                <h2 id="bannerTitle">华语榜</h2>
+                <h2 id="bannerTitle">私人推荐</h2>
             </div>
             <div class="banner-actions">
-                <select id="cnBoardSelect" class="sub-source-select" onchange="changeCnChart()" aria-label="华语榜单源">
-                    <option value="meting_hot">原生 Meting · 华语热歌榜</option>
-                    <option value="apple_tw">Apple Music · 台湾流行榜</option>
-                    <option value="apple_hk">Apple Music · 香港流行榜</option>
-                </select>
-
-                <select id="bbBoardSelect" class="sub-source-select" style="display:none;"
-                        onchange="changeBillboardChart()" aria-label="欧美榜单源">
-                    <option value="60198">Billboard 公告牌周榜</option>
-                    <option value="2809513713">欧美热歌全量榜</option>
-                    <option value="180106">UK 英国官方单曲榜</option>
-                    <option value="apple_us">Apple Music 美区榜</option>
-                </select>
-
                 <button class="play-all-btn" onclick="playAllInView()">
                     <svg aria-hidden="true"><use href="#ico-play"></use></svg>全部连播
                 </button>
@@ -1548,6 +1792,26 @@
             </div>
         </div>
 
+        <section class="private-rec-panel" id="privateRecPanel" aria-label="私人推荐">
+            <div class="private-rec-accounts">
+                <div class="private-rec-account">
+                    <div class="private-rec-account-main">
+                        <div class="private-rec-account-head"><strong>网易云音乐</strong><span class="private-rec-status" id="neteasePrivateStatus">未登录</span></div>
+                        <div class="private-rec-actions">
+                            <button class="private-rec-btn primary" onclick="startNeteaseQrLogin()">扫码登录</button>
+                            <button class="private-rec-btn" onclick="loadNeteaseDailyRecommendation()">每日推荐</button>
+                            <button class="private-rec-btn" onclick="loadNeteasePersonalFM()">私人 FM</button>
+                            <button class="private-rec-btn" onclick="logoutPrivateProvider('netease')">退出登录</button>
+                        </div>
+                    </div>
+                    <div class="private-rec-source-row">
+                        <button class="private-rec-btn" onclick="openPrivateApiSettings()">配置接口地址</button>
+                        <button class="private-rec-btn" onclick="refreshPrivateStatus()">检查登录状态</button>
+                    </div>
+                </div>
+            </div>
+            <div class="private-rec-message" id="privateRecMessage"></div>
+        </section>
         <div class="song-list" id="songList"></div>
     </main>
 
@@ -1631,6 +1895,8 @@
                     <div class="np-meta">
                         <div class="np-title" id="npTitle">OneMusic</div>
                         <div class="np-lyric-mini" id="npStatus">就绪</div>
+                        <button class="penetrate-btn" id="continuePenetrationBtn"
+                                onclick="continuePenetration(event)" title="当前音源可能匹配错误时，继续尝试其他采集链">继续找音源</button>
                     </div>
                 </div>
                 <div class="np-controls">
@@ -1638,9 +1904,6 @@
                             title="当前：顺序循环" aria-label="切换顺序或随机播放">
                         <svg class="ico-repeat" aria-hidden="true"><use href="#ico-repeat"></use></svg>
                         <svg class="ico-shuffle" aria-hidden="true"><use href="#ico-shuffle"></use></svg>
-                    </button>
-                    <button class="ctrl-btn" onclick="toggleLyricOverlay()" title="歌词" aria-label="打开歌词">
-                        <svg aria-hidden="true"><use href="#ico-music"></use></svg>
                     </button>
                     <button class="fav-btn" id="npFavBtn" onclick="toggleCurrentFav()" title="收藏" aria-label="收藏当前歌曲">
                         <svg class="ico-heart" aria-hidden="true"><use href="#ico-heart"></use></svg>
@@ -1662,32 +1925,67 @@
         </div>
     </div>
 
+    <div class="modal-mask" id="privateApiModal" onclick="closePrivateApiSettings()">
+        <div class="modal-card" onclick="event.stopPropagation()" style="max-width:520px;">
+            <h3>私人推荐接口设置</h3>
+            <p>网易云使用兼容 NeteaseCloudMusicApi 的实例。服务地址只保存在此浏览器。</p>
+            <div class="form-group">
+                <label for="neteaseApiBaseInput">网易云 API 基址</label>
+                <input id="neteaseApiBaseInput" type="url" placeholder="https://ncm.zhenxin.me" autocomplete="url">
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input id="syncOfficialFavoritesInput" type="checkbox" checked style="width:auto;">
+                    收藏时同步到已登录的网易云账号
+                </label>
+                <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:5px;">默认开启。添加到 OneMusic 收藏时，会尝试在已登录的网易云账号点红心；非网易云歌曲会先按歌名和歌手精确匹配。取消 OneMusic 收藏不会自动取消平台红心。</div>
+            </div>
+            <div class="private-config-note">
+                网易云未手动指定地址时，会自动尝试若干公开实例并选择可用者；它们均为社区服务而非官方服务，扫码后会把登录态交给所选实例处理，请只使用你信任的服务。手动填写自定义地址时则只使用该地址。<br>
+                <a href="https://github.com/Binaryify/NeteaseCloudMusicApi" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">网易云 API 项目说明</a>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closePrivateApiSettings()">取消</button>
+                <button class="btn-primary" onclick="savePrivateApiSettings()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-mask" id="privateLoginModal" onclick="closePrivateLoginModal()">
+        <div class="modal-card" onclick="event.stopPropagation()" style="max-width:420px;">
+            <h3 id="privateLoginTitle">扫码登录</h3>
+            <div class="private-qr-stage">
+                <img class="private-qr-img" id="privateQrImage" alt="登录二维码" style="display:none;">
+                <div class="private-qr-status" id="privateQrStatus">正在获取二维码…</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closePrivateLoginModal()">关闭</button>
+                <button class="btn-primary" onclick="restartPrivateQrLogin()">刷新二维码</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 单一原生 <audio> 内核：彻底保障手机切后台、看其他非音源 APP、锁屏时 100% 持续连播不断流 -->
     <audio id="audio" preload="metadata" playsinline></audio>
 
     <script>
+        // 实测可用端点，按可靠性排序。
+        // api.i-meto.com 已移除：稳定返回 HTTP 400。
+        // api.injahow.cn 已移除：对任意搜索恒定返回 {"error":"unknown type"}（实测），
+        // 保留只会让每次搜索/采集多等一轮无效请求。
         const METING_ENDPOINTS = [
-            "https://api.injahow.cn/meting/",
-            "https://api.qijieya.cn/meting/",
-            "https://api.i-meto.com/meting/api"
+            "https://api.qijieya.cn/meting/"
         ];
 
-        // 穿透采集链优先级：B站第一，其余依次递推
+        // 搜索与播放时的统一上游列表：B站、网易云、QQ音乐
+        // 注意：QQ音乐通过 Meting 节点请求；它不是 GD Studio 的 source。
         const UPSTREAM_PLATFORMS = [
             { code: 'bilibili', label: 'B站音源' },
-            { code: 'kuwo',     label: '酷我320k' },
-            { code: 'kugou',    label: '酷狗320k' },
-            { code: 'tencent',  label: 'QQ320k' },
-            { code: 'netease',  label: '网易320k' }
+            { code: 'netease',  label: '网易云' },
+            { code: 'tencent',  label: 'QQ音乐' }
         ];
 
         const MIN_VALID_DURATION = 65;
-
-        const MARKETS = {
-            cn: { title: "华语榜" },
-            jp: { title: "日语榜", playlistId: "60131" },
-            bb: { title: "欧美榜", playlistId: "60198" }
-        };
 
         const SVG_PLAY_PATH = `<path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>`;
         const SVG_PAUSE_PATH = `<rect x="7" y="6" width="3.6" height="12" rx="1.8"/><rect x="13.4" y="6" width="3.6" height="12" rx="1.8"/>`;
@@ -1698,7 +1996,7 @@
         const CLOUD_CFG_KEY = "ONEMUSIC_CLOUD_CLEAN_V3";
         const CLOUD_JSON_FILE = "favorites.json";
 
-        let currentTab = 'cn';
+        let currentTab = 'private';
         let viewList = [];
         let playingQueue = [];
         let playingIndex = -1;
@@ -1709,6 +2007,10 @@
         let favorites = [];
         let activePlayToken = 0;
         let activeWorkingChain = null;
+        let activePenetrationCandidates = [];
+        let triedSourceUrls = new Set();
+        let triedSourceIds = new Set();
+        let penetrationBusy = false;
 
         let isCloudConnected = false;
         let hasCloudDownloadedAndMerged = false;
@@ -1734,6 +2036,26 @@
             }
         }
 
+        function renderNowPlaying(song) {
+            if (!song) return;
+            npCover.src = song.cover || 'https://picsum.photos/seed/music/100/100';
+            npTitle.innerText = `${song.title || '未知歌曲'} - ${song.artist || '未知歌手'}`;
+            const lyricCover = document.getElementById('lyricCover');
+            const lyricTitle = document.getElementById('lyricTitle');
+            const lyricArtist = document.getElementById('lyricArtist');
+            if (lyricCover) lyricCover.src = song.cover || 'https://picsum.photos/seed/music/100/100';
+            if (lyricTitle) lyricTitle.innerText = song.title || '未知歌曲';
+            if (lyricArtist) lyricArtist.innerText = song.artist || '未知歌手';
+        }
+
+        function setContinuePenetrationVisible(visible) {
+            const btn = document.getElementById('continuePenetrationBtn');
+            if (!btn) return;
+            btn.style.display = visible ? 'inline-block' : 'none';
+            btn.disabled = false;
+            btn.innerText = '继续找音源';
+        }
+
         // 全局底部随机播放开关（对所有榜单和收藏列表生效）
         function toggleShuffleMode() {
             isShuffleMode = !isShuffleMode;
@@ -1755,7 +2077,13 @@
                     clearTimeout(timer);
                     if (!res.ok) continue;
                     const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) return data;
+                    // 端点异常时会返回 {"error":"..."}，必须排除，否则会被下游当成数据
+                    if (data && !Array.isArray(data) && data.error) continue;
+                    if (Array.isArray(data) && data.length > 0) {
+                        // 过滤掉 url 为空或名称残缺的脏条目
+                        const clean = data.filter(it => it && (it.name || it.title) && it.url);
+                        if (clean.length > 0) return clean;
+                    }
                 } catch (e) {
                     clearTimeout(timer);
                 }
@@ -1763,29 +2091,133 @@
             return [];
         }
 
-        async function searchGDStudio(keyword) {
-            const sources = ['kuwo', 'tencent', 'kugou'];
-            const results = [];
-            const tasks = sources.map(async (srv) => {
+        // GD Studio 的浏览器直连层。搜索结果短缓存，播放直链不做长缓存（避免收藏里的 URL 过期）。
+        const GD_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
+        const GD_SEARCH_CACHE = new Map();
+        const GD_SEARCH_CACHE_TTL = 90 * 1000;
+
+        function normalizeGDText(value) {
+            return String(value || '')
+                .normalize('NFKC')
+                .replace(/\(.*?\)|（.*?）|\[.*?\]/g, '')
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}]/gu, '');
+        }
+
+        async function queryGDTracks(source, keyword, timeoutMs = 8500) {
+            const trimmed = String(keyword || '').trim();
+            if (!trimmed) return [];
+            const cacheKey = `${source}:${trimmed.toLowerCase()}`;
+            const cached = GD_SEARCH_CACHE.get(cacheKey);
+            if (cached && cached.expiresAt > Date.now()) return cached.tracks;
+
+            const url = `${GD_API_BASE}?types=search&source=${encodeURIComponent(source)}`
+                      + `&name=${encodeURIComponent(trimmed)}&count=12`;
+            try {
+                const res = await fetchWithTimeout(url, timeoutMs);
+                if (!res.ok) throw new Error(`GD search HTTP ${res.status}`);
+                const data = await res.json();
+                const tracks = Array.isArray(data)
+                    ? data.filter(it => it && (it.name || it.title) && it.id != null)
+                    : [];
+                // 成功结果缓存 90 秒；空结果/临时故障只短缓存，减少连续重复请求但不锁死故障。
+                GD_SEARCH_CACHE.set(cacheKey, {
+                    tracks,
+                    expiresAt: Date.now() + (tracks.length ? GD_SEARCH_CACHE_TTL : 12000)
+                });
+                if (GD_SEARCH_CACHE.size > 80) {
+                    const now = Date.now();
+                    for (const [key, value] of GD_SEARCH_CACHE) {
+                        if (value.expiresAt <= now || GD_SEARCH_CACHE.size > 60) GD_SEARCH_CACHE.delete(key);
+                    }
+                }
+                return tracks;
+            } catch (e) {
+                GD_SEARCH_CACHE.set(cacheKey, { tracks: [], expiresAt: Date.now() + 8000 });
+                return [];
+            }
+        }
+
+        async function resolveGDTrackUrl(source, trackId, timeoutMs = 7000, retryEmpty = false) {
+            // 轻量播放器采用流畅优先：先请求 320k，必要时再探索 740 无损；不请求 999。
+            // 严格限制实际返回档位为 320/740，避免 API 忽略请求参数后返回低码率或超高码率。
+            const qualities = ['320', '740'];
+            for (const quality of qualities) {
                 try {
-                    const res = await fetch(`https://music-api.gdstudio.xyz/api.php?types=search&source=${srv}&name=${encodeURIComponent(keyword)}&count=2`);
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        const first = data[0];
-                        const urlRes = await fetch(`https://music-api.gdstudio.xyz/api.php?types=url&source=${srv}&id=${first.id}&br=320`);
-                        const urlData = await urlRes.json();
-                        if (urlData && urlData.url) {
-                            results.push({
-                                url: urlData.url,
-                                label: `GD-${srv.toUpperCase()}·320k`,
-                                lyricId: first.lyric_id || first.id,
-                                srv: srv
-                            });
+                    const url = `${GD_API_BASE}?types=url&source=${encodeURIComponent(source)}`
+                              + `&id=${encodeURIComponent(trackId)}&br=${quality}`;
+                    const res = await fetchWithTimeout(url, timeoutMs);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && typeof data.url === 'string' && data.url.trim()) {
+                            const actualBr = String(data.br == null ? '' : data.br).trim();
+                            // 不能确认实际码率时不将它当作合格音源；也不接受 128/192 或 999。
+                            if (actualBr !== '320' && actualBr !== '740') continue;
+                            return data;
                         }
                     }
-                } catch (e) {}
+                } catch (e) {
+                    // 当前档位失败后尝试下一档，控制等待时间与公共 API 频率。
+                }
+            }
+            return null;
+        }
+
+        function scoreGDTrack(track, wantedTitle, wantedArtist) {
+            const title = normalizeGDText(track.name || track.title);
+            const artistValue = Array.isArray(track.artist) ? track.artist.join(' ') : (track.artist || '');
+            const artist = normalizeGDText(artistValue);
+            const targetTitle = normalizeGDText(wantedTitle);
+            const targetArtist = normalizeGDText(wantedArtist);
+            let score = 0;
+            if (targetTitle && title === targetTitle) score += 100;
+            else if (targetTitle && title && (title.includes(targetTitle) || targetTitle.includes(title))) score += 55;
+            if (targetArtist && artist === targetArtist) score += 35;
+            else if (targetArtist && artist && (artist.includes(targetArtist) || targetArtist.includes(artist))) score += 20;
+            return score;
+        }
+
+        function formatGDQuality(br) {
+            const value = String(br == null || br === '' ? '320' : br).trim();
+            if (value === '740') return '16bit无损';
+            if (value === '999') return '24bit无损';
+            if (value === '未知音质') return value;
+            return /^\d+$/.test(value) ? `${value}k` : value;
+        }
+
+        async function searchGDStudio(keyword, preferredSource = null, wantedTitle = '', wantedArtist = '') {
+            // JOOX 优先，网易云作为回退；每个源只解析少量候选，避免把公共 API 请求额度耗光。
+            const sources = [...new Set([preferredSource, 'joox', 'netease'].filter(Boolean))];
+            const tasks = sources.map(async (srv) => {
+                const tracks = await queryGDTracks(srv, keyword, srv === 'joox' ? 8500 : 4500);
+                if (!tracks.length) return [];
+                const ranked = tracks.map((track, index) => ({
+                    track, index,
+                    score: scoreGDTrack(track, wantedTitle, wantedArtist)
+                })).sort((a, b) => b.score - a.score || a.index - b.index);
+                const picked = ranked.slice(0, srv === 'joox' ? 2 : 1);
+                const resolved = await Promise.all(picked.map(async ({ track }) => {
+                    const data = await resolveGDTrackUrl(srv, track.id, 6500, false);
+                    if (!data || !data.url) return null;
+                    return {
+                        url: data.url,
+                        label: `GD-${srv.toUpperCase()}·${formatGDQuality(data.br)}`,
+                        title: track.name || track.title || wantedTitle,
+                        artist: Array.isArray(track.artist) ? track.artist.join(' / ') : (track.artist || wantedArtist),
+                        lyricId: track.lyric_id || track.id,
+                        srv,
+                        gdSource: srv,
+                        gdId: track.id,
+                        br: data.br
+                    };
+                }));
+                return resolved.filter(Boolean);
             });
-            await Promise.allSettled(tasks);
+            const settled = await Promise.allSettled(tasks);
+            const results = [];
+            settled.forEach((r) => {
+                if (r.status === 'fulfilled' && Array.isArray(r.value)) results.push(...r.value);
+            });
             return results;
         }
 
@@ -1837,8 +2269,16 @@
             if (favIdx > -1) {
                 const cleanChain = { url: latestSourceObj.url, label: latestSourceObj.label || '直连链' };
                 favorites[favIdx].sources = [cleanChain];
-                favorites[favIdx].badgeText = `⚡ 锁定(${cleanChain.label})`;
+                favorites[favIdx].badgeText = `⚡ 上次可播(${cleanChain.label})`;
                 favorites[favIdx].verifiedFull = true;
+                // GD 的稳定身份（source + song ID）比 CDN 直链更适合长期收藏；播放时再取新 URL。
+                if (latestSourceObj.gdSource && latestSourceObj.gdId != null) {
+                    favorites[favIdx].gdSource = latestSourceObj.gdSource;
+                    favorites[favIdx].gdId = latestSourceObj.gdId;
+                } else {
+                    delete favorites[favIdx].gdSource;
+                    delete favorites[favIdx].gdId;
+                }
                 if (song.cover && !song.cover.includes('picsum.photos')) {
                     favorites[favIdx].cover = song.cover;
                 }
@@ -1849,12 +2289,113 @@
             }
         }
 
+        function showPlatformSyncToast(message, isError = false) {
+            let node = document.getElementById('platformSyncToast');
+            if (!node) {
+                node = document.createElement('div');
+                node.id = 'platformSyncToast';
+                node.setAttribute('role', 'status');
+                node.setAttribute('aria-live', 'polite');
+                Object.assign(node.style, {
+                    position: 'fixed', left: '50%', bottom: '112px', transform: 'translateX(-50%)', zIndex: '99999',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px',
+                    maxWidth: 'min(92vw, 560px)', minWidth: '220px', padding: '12px 16px', borderRadius: '12px',
+                    background: 'var(--bg-elev, #ffffff)', color: 'var(--text, #111827)',
+                    boxShadow: '0 8px 28px rgba(0,0,0,.18)', fontSize: '13px', lineHeight: '1.5',
+                    opacity: '0', transition: 'opacity .18s', pointerEvents: 'none', textAlign: 'center',
+                    border: '1px solid var(--border-strong, #cdd7e3)',
+                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)'
+                });
+                document.body.appendChild(node);
+            }
+            const isLoading = /正在同步/.test(message);
+            node.classList.toggle('is-loading', isLoading);
+            node.textContent = message;
+            // Use the design system's actual surface/text tokens. The old --surface token did not exist,
+            // so the fallback made a near-black box while --text resolved to dark text as well.
+            node.style.background = 'var(--bg-elev, #ffffff)';
+            node.style.color = isError ? 'var(--danger, #e11d48)' : 'var(--text, #111827)';
+            node.style.border = isError ? '1px solid var(--danger-border, #f8c6d2)' : '1px solid var(--border-strong, #cdd7e3)';
+            node.style.opacity = '1';
+            clearTimeout(node._hideTimer);
+            node._hideTimer = setTimeout(() => { node.style.opacity = '0'; }, isLoading ? 12000 : 5200);
+        }
+
+        function normalizeMusicMatch(value) {
+            return String(value || '').normalize('NFKC').toLowerCase()
+                .replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]|【[^】]*】/g, '')
+                .replace(/[\s\-‐‑–—_.,，。!！?？:：;；'"“”‘’、/\\·&＆+＋]/g, '');
+        }
+
+        function getNeteaseSearchTracks(payload) {
+            const candidates = [payload?.result?.songs, payload?.data?.result?.songs, payload?.data?.songs,
+                payload?.songs, payload?.data?.data?.songs];
+            return candidates.find(Array.isArray) || [];
+        }
+
+        function splitArtistNames(text) {
+            return String(text || '').split(/\s*[/、,，;；&＆和]\s*/).map(normalizeMusicMatch).filter(x => x.length > 1);
+        }
+
+        function strictPrivateTrackMatch(song, candidate, provider) {
+            const cTitle = candidate.name || candidate.title || candidate.songname || candidate.songName || '';
+            if (!cTitle || normalizeMusicMatch(cTitle) !== normalizeMusicMatch(song.title)) return false;
+            let candidateArtists = [];
+            const raw = provider === 'netease'
+                ? (candidate.ar || candidate.artists || candidate.artist)
+                : (candidate.singer || candidate.singers || candidate.artist || candidate.artists);
+            if (Array.isArray(raw)) candidateArtists = raw.map(x => typeof x === 'string' ? x : x.name || x.title || '').filter(Boolean);
+            else if (raw && typeof raw === 'object') candidateArtists = [raw.name || raw.title || ''];
+            else if (raw) candidateArtists = [String(raw)];
+            const wanted = splitArtistNames(song.artist);
+            const got = normalizeMusicMatch(candidateArtists.join(' '));
+            return wanted.length > 0 && wanted.some(name => got.includes(name));
+        }
+
+        async function findNeteaseTrackForFavorite(song) {
+            if (song.platform === 'netease' && song.platformId) return { id: song.platformId, track: song.platformTrack || null };
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (!cookie) return null;
+            const query = `${song.title} ${song.artist}`;
+            const payload = await privateFetchJSON(privateApiUrl('netease', '/search', {
+                keywords: query, type: 1, limit: 8, cookie, timestamp: Date.now()
+            }), {}, 6500);
+            const match = getNeteaseSearchTracks(payload).find(item => strictPrivateTrackMatch(song, item, 'netease'));
+            return match ? { id: match.id, track: match } : null;
+        }
+
+        async function syncSongToNeteaseFavorite(song) {
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (!cookie) return { provider: '网易云', state: 'skipped', reason: '未登录' };
+            const target = await findNeteaseTrackForFavorite(song);
+            if (!target?.id) return { provider: '网易云', state: 'failed', reason: '未找到歌名和歌手均匹配的歌曲' };
+            const res = await privateFetchJSON(privateApiUrl('netease', '/like', {
+                id: target.id, like: 'true', cookie, timestamp: Date.now()
+            }), {}, 6500);
+            const code = Number(res?.code ?? res?.data?.code ?? 0);
+            if (code !== 200 && res?.success !== true) throw new Error(res?.msg || res?.message || '网易云未确认收藏成功');
+            return { provider: '网易云', state: 'ok' };
+        }
+
+        async function syncFavoriteToOfficialPlatforms(song) {
+            const hasNetease = !!localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (!hasNetease) return;
+            showPlatformSyncToast('已收藏到 OneMusic，正在同步到网易云…');
+            try {
+                const result = await syncSongToNeteaseFavorite(song);
+                if (result.state === 'ok') showPlatformSyncToast('已收藏到 OneMusic，并同步到网易云');
+            } catch (error) {
+                showPlatformSyncToast(`OneMusic 收藏成功，但网易云同步失败：${error.message || '请求失败'}`, true);
+            }
+        }
+
         function toggleFavorite(song, event) {
             if (event) event.stopPropagation();
             if (!song) return;
 
             const fp = getSongFingerprint(song.title, song.artist);
             const idx = favorites.findIndex(f => getSongFingerprint(f.title, f.artist) === fp);
+            const addingToOneMusic = idx < 0;
 
             if (idx > -1) {
                 favorites.splice(idx, 1);
@@ -1871,6 +2412,12 @@
                     title: song.title,
                     artist: song.artist,
                     cover: song.cover,
+                    platform: song.platform || null,
+                    platformId: song.platformId || null,
+                    gdSource: (currentPlayingSong && isSameSong(currentPlayingSong, song) && activeWorkingChain)
+                        ? activeWorkingChain.gdSource : song.gdSource,
+                    gdId: (currentPlayingSong && isSameSong(currentPlayingSong, song) && activeWorkingChain)
+                        ? activeWorkingChain.gdId : song.gdId,
                     sources: lockedSources.map(s => ({ url: s.url, label: s.label })),
                     badgeText: lockedSources.length > 0 ? `⚡ 锁定(${lockedSources[0].label})` : '已收藏',
                     verifiedFull: true
@@ -1881,6 +2428,10 @@
                 viewList = [...favorites];
             }
             renderList();
+            if (addingToOneMusic && localStorage.getItem(PRIVATE_OFFICIAL_FAV_SYNC_KEY) !== 'false') {
+                // 本地收藏立即完成；官方平台同步在后台执行，失败不会撤销 OneMusic 收藏。
+                syncFavoriteToOfficialPlatforms(song).catch(error => console.warn('[OneMusic] 官方收藏同步失败', error));
+            }
         }
 
         function toggleCurrentFav() {
@@ -1992,6 +2543,8 @@
                             artist: item.artist || '',
                             cover: item.cover || 'https://picsum.photos/seed/music/100/100',
                             sources: Array.isArray(item.sources) ? item.sources : [],
+                            gdSource: item.gdSource,
+                            gdId: item.gdId,
                             badgeText: item.badgeText || '⚡ 云同步源',
                             verifiedFull: true
                         });
@@ -1999,6 +2552,10 @@
                         const cur = mergedMap.get(fp);
                         if ((!cur.sources || !cur.sources.length) && item.sources && item.sources.length) {
                             cur.sources = item.sources;
+                        }
+                        if (!cur.gdSource && item.gdSource && item.gdId != null) {
+                            cur.gdSource = item.gdSource;
+                            cur.gdId = item.gdId;
                         }
                     }
                 });
@@ -2060,6 +2617,8 @@
                     artist: f.artist,
                     cover: f.cover,
                     sources: (f.sources || []).map(s => ({ url: s.url, label: s.label })),
+                    gdSource: f.gdSource,
+                    gdId: f.gdId,
                     badgeText: f.badgeText
                 }));
 
@@ -2203,69 +2762,412 @@
             }
         }
 
-        /* ================= Apple 官方直连采样器（无第三方代理） ================= */
-        function parseAppleRssEntries(entries, badgeLabel) {
-            if (!Array.isArray(entries) || entries.length === 0) return [];
-            return entries.map(item => {
-                const imgs = item['im:image'] || [];
-                const rawCover = imgs.length ? imgs[imgs.length - 1].label : "https://picsum.photos/seed/music/300/300";
-                return {
-                    title: item['im:name'] ? item['im:name'].label : "未知歌曲",
-                    artist: item['im:artist'] ? item['im:artist'].label : "未知歌手",
-                    cover: rawCover.replace(/170x170/g, '300x300'),
-                    sources: [],
-                    badgeText: badgeLabel
-                };
-            });
+
+        /* ================= 私人推荐：扫码登录 + 本地持久化 =================
+           凭据只保存到独立 localStorage key，不进入收藏 JSON / 云同步。
+           网易云适配 NeteaseCloudMusicApi QR + recommend/songs + personal_fm + like/fm_trash。
+        */
+        const PRIVATE_NETEASE_API_KEY = 'ONEMUSIC_PRIVATE_NETEASE_API_BASE_V1';
+        const PRIVATE_NETEASE_COOKIE_KEY = 'ONEMUSIC_PRIVATE_NETEASE_COOKIE_V1';
+        const PRIVATE_NETEASE_USER_KEY = 'ONEMUSIC_PRIVATE_NETEASE_USER_V1';
+        const PRIVATE_OFFICIAL_FAV_SYNC_KEY = 'ONEMUSIC_SYNC_OFFICIAL_FAVORITES_V1';
+        const DEFAULT_NETEASE_API_BASE = 'https://ncm.zhenxin.me';
+        const PRIVATE_NETEASE_ACTIVE_BASE_KEY = 'ONEMUSIC_PRIVATE_NETEASE_ACTIVE_BASE_V1';
+        // 来源：ZMusic 文档列出的公开 NeteaseCloudMusicApi 兼容实例。
+        // 这里只对二维码 key 请求做并发探测；拿到可用实例后，创建二维码、轮询与每日推荐均使用同一实例。
+        const PUBLIC_NETEASE_API_BASES = [
+            'https://ncm.zhenxin.me',
+            'https://zm.i9mr.com',
+            'https://music.mcseekeri.com',
+            'https://zm.wwoyun.cn',
+            'https://ncme.zhenxin.me',
+            'https://ncm.landdy.cn'
+        ];
+        let privateQrProvider = '';
+        let privateQrPollTimer = null;
+        let privateQrInFlight = false;
+        let privateQrSession = null;
+
+        function normalizePrivateBase(raw) { return String(raw || '').trim().replace(/\/+$/, ''); }
+
+        function getPrivateApiBase() {
+            const explicit = normalizePrivateBase(localStorage.getItem(PRIVATE_NETEASE_API_KEY) || '');
+            // 自定义地址优先；如果保存的是已知公开实例，则允许自动切换到另一可用实例。
+            const explicitIsKnownPublic = PUBLIC_NETEASE_API_BASES.includes(explicit);
+            if (explicit && !explicitIsKnownPublic) return explicit;
+            const active = normalizePrivateBase(localStorage.getItem(PRIVATE_NETEASE_ACTIVE_BASE_KEY) || '');
+            return active || explicit || DEFAULT_NETEASE_API_BASE;
         }
 
-        function fetchAppleViaJsonp(region, badgeLabel) {
-            return new Promise((resolve) => {
-                const cbName = `appleRssCb_${region}_${Date.now()}`;
-                const script = document.createElement('script');
-                const timer = setTimeout(() => {
-                    cleanup();
-                    resolve([]);
-                }, 6000);
-
-                function cleanup() {
-                    clearTimeout(timer);
-                    delete window[cbName];
-                    if (script.parentNode) script.parentNode.removeChild(script);
-                }
-
-                window[cbName] = (data) => {
-                    cleanup();
-                    const entries = data && data.feed && data.feed.entry;
-                    resolve(parseAppleRssEntries(entries, badgeLabel));
-                };
-
-                script.onerror = () => {
-                    cleanup();
-                    resolve([]);
-                };
-
-                script.src = `https://itunes.apple.com/${region}/rss/topsongs/limit=45/json?callback=${cbName}`;
-                document.body.appendChild(script);
-            });
+        function privateFetchJSON(url, options = {}, timeoutMs = 8500) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { ...options, signal: controller.signal, cache: 'no-store' })
+                .then(async response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .finally(() => clearTimeout(timer));
         }
 
-        async function fetchAppleOfficialChart(region, badgeLabel) {
+        function privateApiUrlFromBase(base, path, params = {}) {
+            if (!base) throw new Error('未设置 API 地址。');
+            const url = new URL(normalizePrivateBase(base) + '/' + String(path).replace(/^\//, ''));
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
+            });
+            return url.toString();
+        }
+
+        function privateApiUrl(provider, path, params = {}) {
+            const base = getPrivateApiBase();
+            if (!base) throw new Error('未设置网易云 API 地址。');
+            return privateApiUrlFromBase(base, path, params);
+        }
+
+        function getNeteaseQrCandidates() {
+            const explicit = normalizePrivateBase(localStorage.getItem(PRIVATE_NETEASE_API_KEY) || '');
+            // 明确配置了非公开列表中的自定义服务时，不把登录请求发给其他服务。
+            if (explicit && !PUBLIC_NETEASE_API_BASES.includes(explicit)) return [explicit];
+            const active = normalizePrivateBase(localStorage.getItem(PRIVATE_NETEASE_ACTIVE_BASE_KEY) || '');
+            return [...new Set([active, explicit, DEFAULT_NETEASE_API_BASE, ...PUBLIC_NETEASE_API_BASES].map(normalizePrivateBase).filter(Boolean))];
+        }
+
+        async function findWorkingNeteaseQrSession() {
+            const bases = getNeteaseQrCandidates();
+            const stamp = Date.now();
+            const checks = bases.map(async (base, index) => {
+                const keyPayload = await privateFetchJSON(privateApiUrlFromBase(base, '/login/qr/key', { timestamp: stamp + index }), {}, 5000);
+                const key = keyPayload?.data?.unikey || keyPayload?.data?.key || keyPayload?.unikey || keyPayload?.key;
+                if (!key) throw new Error('没有返回二维码 key');
+                const qrPayload = await privateFetchJSON(privateApiUrlFromBase(base, '/login/qr/create', { key, qrimg: 'true', timestamp: Date.now() }), {}, 5000);
+                const qrData = qrPayload?.data || qrPayload;
+                const qrImg = qrData?.qrimg || qrData?.qrImage || qrData?.img;
+                const qrUrl = qrData?.qrurl || qrData?.url;
+                if (!qrImg && !qrUrl) throw new Error('没有返回二维码图像或链接');
+                return { base, key, qrPayload };
+            });
             try {
-                const url = `https://itunes.apple.com/${region}/rss/topsongs/limit=45/json`;
-                const res = await fetch(url);
-                if (res.ok) {
-                    const json = await res.json();
-                    const entries = json && json.feed && json.feed.entry;
-                    const parsed = parseAppleRssEntries(entries, badgeLabel);
-                    if (parsed.length > 0) return parsed;
-                }
-            } catch (e) {}
+                return await Promise.any(checks);
+            } catch (_) {
+                throw new Error(`已尝试 ${bases.length} 个网易云 API 实例，均无法生成二维码。通常是实例宕机、当前网络/DNS 不可达或服务未开放 CORS。可在“接口设置”填写你信任的自定义实例后重试。`);
+            }
+        }
 
-            const jsonpList = await fetchAppleViaJsonp(region, badgeLabel);
-            if (jsonpList.length > 0) return jsonpList;
+        function setPrivateMessage(message, isError = false) {
+            const el = document.getElementById('privateRecMessage');
+            if (!el) return;
+            el.textContent = message;
+            el.style.color = isError ? 'var(--fav-red)' : 'var(--text-2)';
+        }
 
+        function refreshPrivateStatus() {
+            const nCookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            const nStatus = document.getElementById('neteasePrivateStatus');
+            if (nStatus) {
+                nStatus.textContent = nCookie ? '已保存登录态' : '未登录';
+                nStatus.classList.toggle('connected', !!nCookie);
+            }
+        }
+
+        function openPrivateApiSettings() {
+            document.getElementById('neteaseApiBaseInput').value = getPrivateApiBase('netease');
+            const syncInput = document.getElementById('syncOfficialFavoritesInput');
+            if (syncInput) syncInput.checked = localStorage.getItem(PRIVATE_OFFICIAL_FAV_SYNC_KEY) !== 'false';
+            document.getElementById('privateApiModal').classList.add('open');
+        }
+        function closePrivateApiSettings() { document.getElementById('privateApiModal').classList.remove('open'); }
+        function savePrivateApiSettings() {
+            const nBase = document.getElementById('neteaseApiBaseInput').value.trim();
+            try {
+                if (nBase) new URL(nBase);
+            } catch (_) {
+                alert('接口地址必须是完整 URL，例如 https://example.com'); return;
+            }
+            if (nBase) localStorage.setItem(PRIVATE_NETEASE_API_KEY, nBase.replace(/\/+$/, ''));
+            else { localStorage.removeItem(PRIVATE_NETEASE_API_KEY); localStorage.removeItem(PRIVATE_NETEASE_ACTIVE_BASE_KEY); }
+            const syncInput = document.getElementById('syncOfficialFavoritesInput');
+            localStorage.setItem(PRIVATE_OFFICIAL_FAV_SYNC_KEY, syncInput && syncInput.checked ? 'true' : 'false');
+            closePrivateApiSettings(); refreshPrivateStatus();
+            setPrivateMessage('接口设置已保存。网易云未配置自定义地址时会自动尝试公开实例。');
+        }
+
+        function normalizePrivateCookie(value) {
+            if (typeof value === 'string') return value.trim();
+            if (Array.isArray(value)) {
+                return value.map(item => {
+                    if (typeof item === 'string') return item.includes('=') ? item.trim() : '';
+                    if (item && typeof item === 'object') {
+                        const name = item.name || item.key || item.cookieName;
+                        const val = item.value ?? item.val ?? item.cookieValue;
+                        return name && val !== undefined ? `${name}=${val}` : '';
+                    }
+                    return '';
+                }).filter(Boolean).join('; ');
+            }
+            if (value && typeof value === 'object') {
+                return Object.entries(value).map(([key, val]) => `${key}=${val}`).join('; ');
+            }
+            return '';
+        }
+
+        function openPrivateLoginModal(provider) {
+            privateQrProvider = provider;
+            document.getElementById('privateLoginTitle').textContent = '网易云音乐扫码登录';
+            document.getElementById('privateQrImage').style.display = 'none';
+            document.getElementById('privateQrImage').removeAttribute('src');
+            document.getElementById('privateQrStatus').textContent = '正在获取二维码…';
+            document.getElementById('privateLoginModal').classList.add('open');
+        }
+        function stopPrivateQrPolling() {
+            if (privateQrPollTimer) clearInterval(privateQrPollTimer);
+            privateQrPollTimer = null; privateQrInFlight = false;
+        }
+        function closePrivateLoginModal() {
+            stopPrivateQrPolling();
+            document.getElementById('privateLoginModal').classList.remove('open');
+        }
+        function restartPrivateQrLogin() { startNeteaseQrLogin(); }
+
+        function logoutPrivateProvider(provider) {
+            if (provider !== 'netease') return;
+            stopPrivateQrPolling();
+            localStorage.removeItem(PRIVATE_NETEASE_COOKIE_KEY);
+            localStorage.removeItem(PRIVATE_NETEASE_USER_KEY);
+            refreshPrivateStatus();
+            setPrivateMessage('已退出网易云登录。本地收藏不会删除。');
+        }
+
+        async function startNeteaseQrLogin() {
+            stopPrivateQrPolling(); openPrivateLoginModal('netease');
+            document.getElementById('privateQrStatus').textContent = '正在寻找可用的网易云 API 实例…';
+            try {
+                const qrSession = await findWorkingNeteaseQrSession();
+                const { base, key, qrPayload } = qrSession;
+                // 固定本次登录流程使用的实例，避免 key / create / check 分散到不同服务器。
+                localStorage.setItem(PRIVATE_NETEASE_ACTIVE_BASE_KEY, base);
+                privateQrSession = { provider: 'netease', key, base };
+                document.getElementById('privateQrStatus').textContent = `已连接 ${new URL(base).host}，请扫码登录。`;
+                const qrData = qrPayload?.data || qrPayload;
+                const qrImg = qrData?.qrimg || qrData?.qrImage || qrData?.img;
+                const qrUrl = qrData?.qrurl || qrData?.url;
+                const image = document.getElementById('privateQrImage');
+                if (qrImg) {
+                    image.src = qrImg.startsWith('data:') ? qrImg : `data:image/png;base64,${qrImg}`;
+                    image.style.display = 'block';
+                } else if (qrUrl) {
+                    image.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(qrUrl);
+                    image.style.display = 'block';
+                } else throw new Error('接口没有返回二维码图像或二维码链接。');
+                document.getElementById('privateQrStatus').textContent = '请使用网易云音乐 App 扫描，并在手机上确认登录。';
+                let attempts = 0;
+                privateQrPollTimer = setInterval(async () => {
+                    if (privateQrInFlight || !privateQrSession || privateQrSession.key !== key) return;
+                    privateQrInFlight = true;
+                    try {
+                        const payload = await privateFetchJSON(privateApiUrlFromBase(privateQrSession.base || getPrivateApiBase('netease'), '/login/qr/check', { key, timestamp: Date.now() }), {}, 7000);
+                        const data = payload?.data || payload;
+                        const code = Number(data?.code ?? payload?.code);
+                        if (code === 800) {
+                            stopPrivateQrPolling(); document.getElementById('privateQrStatus').textContent = '二维码已过期，请点“刷新二维码”。';
+                        } else if (code === 801) {
+                            document.getElementById('privateQrStatus').textContent = '等待扫码…';
+                        } else if (code === 802) {
+                            document.getElementById('privateQrStatus').textContent = '已扫码，请在手机上确认授权…';
+                        } else if (code === 803) {
+                            const cookie = data?.cookie || payload?.cookie || data?.cookies || payload?.cookies;
+                            if (!cookie) throw new Error('扫码成功，但服务没有返回登录凭据。');
+                            const normalizedCookie = normalizePrivateCookie(cookie);
+                            if (!normalizedCookie) throw new Error('扫码成功，但无法识别返回的 Cookie 格式。');
+                            localStorage.setItem(PRIVATE_NETEASE_COOKIE_KEY, normalizedCookie);
+                            const profile = data?.profile || payload?.profile || {};
+                            localStorage.setItem(PRIVATE_NETEASE_USER_KEY, JSON.stringify({ nickname: profile.nickname || '', id: profile.userId || '' }));
+                            stopPrivateQrPolling(); refreshPrivateStatus();
+                            document.getElementById('privateQrStatus').textContent = '登录成功，正在读取每日推荐…';
+                            setTimeout(() => { closePrivateLoginModal(); loadNeteaseDailyRecommendation(); }, 600);
+                        } else if (code && code !== 801) {
+                            const msg = data?.message || data?.msg || payload?.message;
+                            if (msg) document.getElementById('privateQrStatus').textContent = String(msg);
+                        }
+                    } catch (error) {
+                        attempts++;
+                        if (attempts >= 4) {
+                            stopPrivateQrPolling();
+                            document.getElementById('privateQrStatus').textContent = `扫码状态查询失败：${error.message || '网络/跨域错误'}。请检查 API 地址后刷新二维码。`;
+                        }
+                    } finally { privateQrInFlight = false; }
+                }, 2500);
+            } catch (error) {
+                document.getElementById('privateQrStatus').textContent = `获取二维码失败：${error.message || error}。可检查网络，或在“接口设置”填写你信任的网易云 API 地址后重试。`;
+            }
+        }
+
+        async function loadNeteaseDailyRecommendation(options = {}) {
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (!cookie) {
+                setPrivateMessage('网易云尚未登录。请先点“扫码登录”；没有登录凭据时不会请求账号级推荐。');
+                if (currentTab === 'private') songListEl.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-secondary);">请先登录网易云音乐，再读取每日推荐。</div>`;
+                return;
+            }
+            if (currentTab !== 'private') switchTab('private');
+            songListEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary);">正在读取网易云私人每日推荐…</div>`;
+            setPrivateMessage('请求网易云当前账号的每日推荐中…');
+            try {
+                const payload = await privateFetchJSON(privateApiUrl('netease', '/recommend/songs', { cookie, timestamp: Date.now() }), {}, 9500);
+                const data = payload?.data || payload;
+                const code = Number(data?.code ?? payload?.code ?? 200);
+                const tracks = data?.dailySongs || data?.recommend || payload?.dailySongs;
+                if (code === 301 || code === 401 || payload?.msg?.includes?.('登录')) throw new Error('登录态已失效，请重新扫码。');
+                if (!Array.isArray(tracks) || !tracks.length) throw new Error(data?.message || data?.msg || '接口没有返回每日推荐歌曲；该实例可能不支持跨域或登录态参数。');
+                viewList = tracks.map(item => {
+                    const artists = Array.isArray(item.ar) ? item.ar.map(x => x.name).filter(Boolean).join(' / ') : (item.artistName || item.artist || '未知歌手');
+                    const album = item.al || item.album || {};
+                    return {
+                        title: String(item.name || item.title || '').trim(), artist: String(artists || '').trim(),
+                        cover: album.picUrl || album.cover || item.picUrl || item.cover || 'https://picsum.photos/seed/privaterec/300/300',
+                        sources: [], badgeText: '网易云私人每日推荐', platform: 'netease', platformId: item.id || item.songId || null
+                    };
+                }).filter(song => song.title && song.artist);
+                if (!viewList.length) throw new Error('接口返回了数据，但没识别到有效歌曲。');
+                renderList(); setPrivateMessage('');
+            } catch (error) {
+                console.warn('[OneMusic] 网易云私人推荐失败', error);
+                songListEl.innerHTML = `<div style="text-align:center;padding:30px 18px;color:var(--fav-red);line-height:1.8;">网易云私人推荐读取失败：${escapePrivateText(error.message || String(error))}</div>`;
+                setPrivateMessage(error.message || '读取失败', true);
+                if (/登录态已失效/.test(error.message || '')) localStorage.removeItem(PRIVATE_NETEASE_COOKIE_KEY);
+                refreshPrivateStatus();
+            }
+        }
+
+        function extractNeteasePrivateTracks(payload) {
+            const candidates = [payload?.data?.dailySongs, payload?.data?.songs, payload?.data?.data,
+                payload?.data?.list, payload?.dailySongs, payload?.songs, payload?.list, payload?.data, payload];
+            for (const candidate of candidates) if (Array.isArray(candidate)) return candidate;
             return [];
+        }
+
+        function mapNeteasePrivateTrack(item, label, mode) {
+            const artists = Array.isArray(item.ar) ? item.ar.map(x => x.name).filter(Boolean).join(' / ')
+                : Array.isArray(item.artists) ? item.artists.map(x => x.name).filter(Boolean).join(' / ')
+                : (item.artistName || item.artist || item.singer || '未知歌手');
+            const album = item.al || item.album || {};
+            return {
+                title: String(item.name || item.title || '').trim(), artist: String(artists || '').trim(),
+                cover: album.picUrl || album.cover || item.picUrl || item.cover || item.albumPic || 'https://picsum.photos/seed/privaterec/300/300',
+                sources: [], badgeText: label, platform: 'netease', platformId: item.id || item.songId || null,
+                recommendationMode: mode, platformTrack: { id: item.id || item.songId || null, name: item.name || item.title || '', artist: artists }
+            };
+        }
+
+        async function loadNeteasePersonalFM(options = {}) {
+            const autoplay = options.autoplay !== false;
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (!cookie) {
+                setPrivateMessage('网易云尚未登录。请先扫码登录后使用私人 FM。');
+                if (currentTab === 'private') songListEl.innerHTML = `<div style="text-align:center;padding:28px;color:var(--text-secondary);">请先登录网易云音乐，再读取私人 FM。</div>`;
+                return;
+            }
+            const preserveTab = options.preserveTab === true;
+            if (!preserveTab && currentTab !== 'private') switchTab('private');
+            if (!preserveTab) songListEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary);">正在读取网易云私人 FM…</div>`;
+            setPrivateMessage('请求网易云当前账号的私人 FM…');
+            try {
+                const payload = await privateFetchJSON(privateApiUrl('netease', '/personal_fm', { cookie, timestamp: Date.now() }), {}, 9500);
+                const code = Number(payload?.code ?? payload?.data?.code ?? 200);
+                const tracks = extractNeteasePrivateTracks(payload);
+                if (code === 301 || code === 401) throw new Error('登录态已失效，请重新扫码。');
+                if (!tracks.length) throw new Error(payload?.message || payload?.msg || '私人 FM 接口没有返回歌曲；当前实例可能不支持该接口。');
+                const fmTracks = tracks.map(item => mapNeteasePrivateTrack(item, '网易云私人 FM', 'netease_fm')).filter(song => song.title && song.artist);
+                if (!fmTracks.length) throw new Error('私人 FM 返回了数据，但没识别到有效歌曲。');
+                // 私人 FM 接口每次通常只返回 3 首。到达本批最后一首后，nextSong 会自动拉下一批；
+                // 如果用户仍停留在私人推荐页，也要刷新可见列表，不能只替换播放队列。
+                const updateVisibleList = !preserveTab || currentTab === 'private';
+                if (updateVisibleList) viewList = fmTracks;
+                playingQueue = [...fmTracks]; playingIndex = -1;
+                if (updateVisibleList) renderList();
+                setPrivateMessage('');
+                if (autoplay) playSongInQueue(0);
+            } catch (error) {
+                console.warn('[OneMusic] 网易云私人 FM 读取失败', error);
+                if (!preserveTab) songListEl.innerHTML = `<div style="text-align:center;padding:30px 18px;color:var(--fav-red);line-height:1.8;">网易云私人 FM 读取失败：${escapePrivateText(error.message || String(error))}</div>`;
+                setPrivateMessage(error.message || '私人 FM 读取失败', true);
+                if (/登录态已失效/.test(error.message || '')) localStorage.removeItem(PRIVATE_NETEASE_COOKIE_KEY);
+                refreshPrivateStatus();
+            }
+        }
+
+        async function trashNeteaseFMTrack(song) {
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            const id = song?.platformId;
+            if (!cookie || !id || song?.platform !== 'netease' || song?.recommendationMode !== 'netease_fm') return;
+            try {
+                const result = await privateFetchJSON(privateApiUrl('netease', '/fm_trash', { id, cookie, timestamp: Date.now() }), {}, 5000);
+                const code = Number(result?.code ?? result?.data?.code ?? 200);
+                if (code !== 200) console.warn('[OneMusic] 网易云私人 FM 垃圾桶操作返回非成功状态', result);
+            } catch (error) { console.warn('[OneMusic] 网易云 FM 跳过反馈未送达', error); }
+        }
+
+        function escapePrivateText(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+        }
+
+        /* ================= 榜单数据：轻量直连 =================
+           欧美榜使用公开的 Billboard Hot 100 静态 JSON 数据镜像；只读取榜单元数据。
+           不抓网页、不接代理、不串行重试；播放仍走 OneMusic 原有音源匹配链。
+        */
+        const BILLBOARD_JSON_URL = "https://raw.githubusercontent.com/mhollingshead/billboard-hot-100/main/recent.json";
+        const BILLBOARD_PAGE_URL = "https://www.billboard.com/charts/hot-100/";
+        const BILLBOARD_FETCH_TIMEOUT = 6000;
+
+        function normalizeChartSong(title, artist, cover, badgeLabel, chartUrl = "") {
+            return {
+                title: String(title || "").trim(),
+                artist: String(artist || "").trim(),
+                cover: cover || "https://picsum.photos/seed/music/300/300",
+                sources: [],
+                badgeText: badgeLabel,
+                chartUrl
+            };
+        }
+
+        async function loadBillboardStaticChart() {
+            songListEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-secondary);">正在读取 Billboard Hot 100 数据...</div>`;
+            viewList = [];
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), BILLBOARD_FETCH_TIMEOUT);
+            try {
+                const response = await fetch(BILLBOARD_JSON_URL, {
+                    method: "GET",
+                    cache: "no-cache",
+                    credentials: "omit",
+                    signal: controller.signal,
+                    headers: { "Accept": "application/json" }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const payload = await response.json();
+                if (!Array.isArray(payload?.data) || payload.data.length < 10) {
+                    throw new Error("JSON 格式不符合预期");
+                }
+                const date = String(payload.date || "").trim();
+                const label = date ? `Billboard Hot 100 · ${date}` : "Billboard Hot 100 · 数据镜像";
+                viewList = payload.data
+                    .slice()
+                    .sort((a, b) => Number(a.this_week || 999) - Number(b.this_week || 999))
+                    .slice(0, 25)
+                    .map(item => normalizeChartSong(item.song, item.artist, "", label, BILLBOARD_PAGE_URL))
+                    .filter(song => song.title && song.artist);
+                if (!viewList.length) throw new Error("数据中没有识别到有效曲目");
+                renderList();
+            } catch (err) {
+                console.warn("[OneMusic] Billboard 静态 JSON 读取失败", err);
+                const reason = err?.name === "AbortError" ? "请求超过 6 秒，已停止等待。" : (err?.message || "网络或跨域读取失败。");
+                songListEl.innerHTML = `<div style="text-align:center;padding:28px 18px;color:var(--text-secondary);line-height:1.8;">
+                    Billboard 榜单数据暂时无法直连读取。${reason}<br>
+                    <a href="${BILLBOARD_PAGE_URL}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);">打开 Billboard 官方榜单</a>
+                </div>`;
+            } finally {
+                clearTimeout(timer);
+            }
         }
 
         async function switchTab(tabKey) {
@@ -2275,12 +3177,9 @@
             if (activeBtn) activeBtn.classList.add('active');
 
             const isFav = (tabKey === 'fav');
-            const isCN = (tabKey === 'cn');
-            const isBB = (tabKey === 'bb');
-
+            const isPrivate = (tabKey === 'private');
             document.getElementById('cloudWrap').style.display = isFav ? 'inline-block' : 'none';
-            document.getElementById('cnBoardSelect').style.display = isCN ? 'inline-block' : 'none';
-            document.getElementById('bbBoardSelect').style.display = isBB ? 'inline-block' : 'none';
+            document.getElementById('privateRecPanel').classList.toggle('is-visible', isPrivate);
 
             if (tabKey === 'fav') {
                 document.getElementById('bannerTitle').innerText = "我的收藏";
@@ -2290,63 +3189,60 @@
                 document.getElementById('bannerTitle').innerText = "搜索结果";
                 viewList = [...searchResults];
                 renderList();
-            } else if (tabKey === 'cn') {
-                document.getElementById('bannerTitle').innerText = "华语榜";
-                await changeCnChart();
             } else if (tabKey === 'bb') {
                 document.getElementById('bannerTitle').innerText = "欧美榜";
-                await changeBillboardChart();
-            } else {
-                document.getElementById('bannerTitle').innerText = MARKETS[tabKey].title;
-                await loadMarketPlaylist(MARKETS[tabKey].playlistId, "Oricon日本榜");
-            }
-        }
-
-        async function changeCnChart() {
-            const val = document.getElementById('cnBoardSelect').value;
-            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在直连采样榜单...</div>`;
-
-            if (val === 'apple_tw') {
-                viewList = await fetchAppleOfficialChart('tw', 'Apple台湾榜');
+                await loadBillboardStaticChart();
+            } else if (tabKey === 'private') {
+                document.getElementById('bannerTitle').innerText = "私人推荐";
+                viewList = [];
                 renderList();
-                return;
+                refreshPrivateStatus();
+                const savedCookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+                if (savedCookie) {
+                    loadNeteaseDailyRecommendation({ silent: true });
+                } else {
+                    songListEl.innerHTML = '';
+                }
             }
-            if (val === 'apple_hk') {
-                viewList = await fetchAppleOfficialChart('hk', 'Apple香港榜');
-                renderList();
-                return;
-            }
-
-            await loadMarketPlaylist('3778678', 'Meting华语榜');
         }
 
         async function changeBillboardChart() {
-            const val = document.getElementById('bbBoardSelect').value;
-            if (val === 'apple_us') {
-                songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在直连采样 Apple 美区榜...</div>`;
-                viewList = await fetchAppleOfficialChart('us', 'Apple美区榜');
-                renderList();
-                return;
-            }
-            await loadMarketPlaylist(val, "欧美权威榜");
+            await loadBillboardStaticChart();
         }
 
-        async function loadMarketPlaylist(playlistId, badgeLabel = "官方榜") {
-            songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">正在采样榜单目录...</div>`;
+        /* ================= 搜索：GD 兜底源（joox / netease） ================= */
+        // 主源先上屏；JOOX 单独给更宽的超时预算，避免原先 4 秒把慢响应直接误判为无结果。
+        const GD_SEARCH_TIMEOUT = 9000;
 
-            const data = await requestMeting(`server=netease&type=playlist&id=${playlistId}`);
-            if (data.length > 0) {
-                viewList = data.slice(0, 45).map(item => ({
-                    title: item.name || item.title || "未知曲目",
-                    artist: item.artist || item.author || "未知歌手",
-                    cover: item.pic || "https://picsum.photos/seed/music/300/300",
-                    sources: [],
-                    badgeText: badgeLabel
+        function fetchWithTimeout(url, timeoutMs) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+        }
+
+        // 只做搜索，不逐首取流；同一关键词复用短缓存，减少重复点歌时的公共 API 请求。
+        async function searchGDForSearch(keyword, timeoutMs = GD_SEARCH_TIMEOUT) {
+            const sources = ['joox', 'netease'];
+            const tasks = sources.map(async (srv) => {
+                const tracks = await queryGDTracks(srv, keyword, srv === 'joox' ? timeoutMs : Math.min(timeoutMs, 4500));
+                return tracks.map(it => ({
+                    title: it.name || it.title,
+                    artist: Array.isArray(it.artist) ? it.artist.join(' / ') : (it.artist || '未知歌手'),
+                    cover: it.pic_id
+                        ? `${GD_API_BASE}?types=pic&source=${encodeURIComponent(srv)}&id=${encodeURIComponent(it.pic_id)}&size=300`
+                        : 'https://picsum.photos/seed/music/300/300',
+                    gdSource: srv,
+                    gdId: it.id,
+                    gdLabel: `GD-${srv.toUpperCase()}`
                 }));
-                renderList();
-            } else {
-                songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--fav-red);">节点繁忙，请稍后刷新</div>`;
-            }
+            });
+
+            const settled = await Promise.allSettled(tasks);
+            const out = [];
+            settled.forEach(r => {
+                if (r.status === 'fulfilled' && Array.isArray(r.value)) out.push(...r.value);
+            });
+            return out;
         }
 
         async function doAggregatedSearch() {
@@ -2397,13 +3293,63 @@
                 }
             });
 
-            searchResults = Array.from(mergedMap.values()).map(item => ({
+            const buildResult = () => Array.from(mergedMap.values()).map(item => ({
                 ...item,
                 badgeText: `聚合 ${item.sources.length} 源`
             }));
 
+            // ---- 第一阶段：Meting 结果先上屏（通常 <1s） ----
+            searchResults = buildResult();
+            if (currentTab === 'search') {
+                viewList = [...searchResults];
+                renderList();
+                if (searchResults.length === 0) {
+                    songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">主源暂无结果，正在尝试兜底音源…</div>`;
+                }
+            }
+
+            // ---- 第二阶段：GD 兜底在 4s 内返回则追加 ----
+            let gdList = [];
+            try {
+                gdList = await searchGDForSearch(keyword, GD_SEARCH_TIMEOUT);
+            } catch (e) {
+                gdList = [];
+            }
+
+            // 用户可能已经切走，别再覆盖视图
+            if (currentTab !== 'search') return;
+            if (gdList.length === 0) {
+                if (searchResults.length === 0) {
+                    songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--fav-red);">未找到「${keyword}」的可用音源</div>`;
+                }
+                return;
+            }
+
+            let added = 0;
+            gdList.forEach(item => {
+                const fp = getSongFingerprint(item.title, item.artist);
+                if (!mergedMap.has(fp)) {
+                    mergedMap.set(fp, {
+                        title: item.title,
+                        artist: item.artist,
+                        cover: item.cover,
+                        // GD 条目的直链在播放时按需解析，这里先记录来源信息
+                        sources: [],
+                        gdSource: item.gdSource,
+                        gdId: item.gdId,
+                        labels: [item.gdLabel],
+                        badgeText: `兜底 ${item.gdLabel}`
+                    });
+                    added++;
+                }
+            });
+
+            searchResults = buildResult();
             viewList = [...searchResults];
             renderList();
+            if (added > 0) {
+                npStatus.innerText = `兜底源补充 ${added} 首`;
+            }
         }
 
         function renderList() {
@@ -2425,14 +3371,14 @@
                 div.innerHTML = `
                     <div class="song-left">
                         <div class="rank">${idx + 1}</div>
-                        <img src="${song.cover}" class="cover" loading="lazy" alt="">
+                        <img src="${escapePrivateText(song.cover || 'https://picsum.photos/seed/music/300/300')}" class="cover" loading="lazy" alt="">
                         <div class="meta">
-                            <div class="title">${song.title}</div>
-                            <div class="artist">${song.artist}</div>
+                            <div class="title">${escapePrivateText(song.title || '')}</div>
+                            <div class="artist">${escapePrivateText(song.artist || '')}</div>
                         </div>
                     </div>
                     <div class="song-right">
-                        <span class="badge ${song.verifiedFull ? 'full-verified' : ''}">${song.badgeText || '聚合源'}</span>
+                        <span class="badge ${song.verifiedFull ? 'full-verified' : ''}">${escapePrivateText(song.badgeText || '聚合源')}</span>
                         <button class="fav-btn ${liked ? 'is-fav' : ''}" title="${liked ? '取消收藏' : '收藏'}">
                             <svg class="ico-heart" aria-hidden="true"><use href="#ico-heart"></use></svg>
                             <svg class="ico-heart-fill" aria-hidden="true"><use href="#ico-heart-fill"></use></svg>
@@ -2465,6 +3411,8 @@
 
         async function playSongInQueue(idx) {
             if (!playingQueue[idx]) return;
+            // 先暂停上一首，避免它在新音源解析期间自然 ended，触发并发的下一首切换。
+            audio.pause();
             playingIndex = idx;
             const myToken = ++activePlayToken;
             const song = playingQueue[idx];
@@ -2472,32 +3420,72 @@
             activeWorkingChain = null;
 
             renderList();
-            npCover.src = song.cover;
-            npTitle.innerText = `${song.title} - ${song.artist}`;
-            document.getElementById('lyricCover').src = song.cover;
-            document.getElementById('lyricTitle').innerText = song.title;
-            document.getElementById('lyricArtist').innerText = song.artist;
+            renderNowPlaying(song);
+            progressBar.value = 0;
+            curTimeEl.innerText = '00:00';
+            durTimeEl.innerText = '00:00';
+            triedSourceUrls = new Set();
+            triedSourceIds = new Set();
+            activePenetrationCandidates = [];
+            setContinuePenetrationVisible(false);
 
             updateMediaSession(song);
             fetchLyricsForSong(song, myToken);
 
+            // 每次播放都重新解析 GD/JOOX 直链：收藏里保存的 CDN URL 可能已经过期。
+            // URL 只在本次播放会话里使用，不把旧 GD 直链当作下次播放的可靠入口。
             const favMatch = favorites.find(f => isSameSong(f, song));
+            const preferredGDSource = song.gdSource || (favMatch && favMatch.gdSource);
+            const preferredGDId = song.gdId != null ? song.gdId : (favMatch && favMatch.gdId);
+            const freshGdSources = [];
+            if (preferredGDSource && preferredGDId != null) {
+                npStatus.innerText = `正在刷新 [${song.gdLabel || preferredGDSource}] 播放链接...`;
+                const data = await resolveGDTrackUrl(preferredGDSource, preferredGDId, preferredGDSource === 'joox' ? 5000 : 4000, true);
+                if (myToken !== activePlayToken) return;
+                if (data && data.url) {
+                    freshGdSources.push({
+                        url: data.url,
+                        label: `GD-${String(preferredGDSource).toUpperCase()}·${formatGDQuality(data.br)}`,
+                        gdSource: preferredGDSource,
+                        gdId: preferredGDId,
+                        br: data.br
+                    });
+                } else {
+                    npStatus.innerText = `该曲直链刷新失败，继续尝试其他音源...`;
+                }
+            }
+
+            // 避免优先重试收藏中残留的 GD CDN 旧链接；普通 B站/网易云等来源仍照常保留。
+            const isCachedGDLink = src => /^\s*GD-/i.test(String(src && src.label || ''));
+            const favoriteSources = favMatch && Array.isArray(favMatch.sources)
+                ? favMatch.sources.filter(src => !isCachedGDLink(src)) : [];
+            const songSources = Array.isArray(song.sources) ? song.sources.filter(src => !isCachedGDLink(src)) : [];
             const combinedSources = [
-                ...(favMatch && favMatch.sources ? favMatch.sources : []),
-                ...(song.sources || [])
+                ...freshGdSources,
+                ...favoriteSources,
+                ...songSources
             ];
 
             if (combinedSources.length > 0) {
                 for (let srcObj of combinedSources) {
                     if (myToken !== activePlayToken) return;
                     npStatus.innerText = `⚡ 直连 [${srcObj.label}]...`;
-                    const check = await verifyAndPlayStream(srcObj.url, myToken);
+                    if (srcObj.url) triedSourceUrls.add(srcObj.url);
+                    const sourceIdKey = srcObj.gdSource && srcObj.gdId != null ? `${srcObj.gdSource}:${srcObj.gdId}` : null;
+                    if (sourceIdKey) triedSourceIds.add(sourceIdKey);
+                    const check = await verifyAndPlayStream(srcObj.url, myToken, /joox/i.test(srcObj.label || '') ? 9000 : 5500);
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
-                        song.badgeText = `⚡ 320k直通 (${formatTime(check.duration)} · ${srcObj.label})`;
+                        if (srcObj.gdSource) {
+                            song.gdSource = srcObj.gdSource;
+                            song.gdId = srcObj.gdId;
+                        }
+                        song.badgeText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
                         syncFavoriteLatestChain(song, srcObj, check.duration);
                         renderList();
+                        renderNowPlaying(song);
+                        setContinuePenetrationVisible(true);
                         npStatus.innerText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
                         updateMediaSession(song);
                         return;
@@ -2507,72 +3495,29 @@
 
             if (myToken !== activePlayToken) return;
 
-            npStatus.innerText = `正在穿透采集 320k 音源...`;
-            const cleanTitle = song.title.replace(/\(.*?\)|（.*?）/g, '').trim();
-            const cleanArtist = song.artist.split(/[\/&,、]/)[0].trim();
-            const query = `${cleanTitle} ${cleanArtist}`.trim();
-
-            const metingTasks = UPSTREAM_PLATFORMS.map(plat =>
-                requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(query)}`, 5000)
-                    .then(list => ({ plat, list }))
-            );
-            const gdTask = searchGDStudio(query);
-
-            const [settledMeting, gdSources] = await Promise.all([
-                Promise.allSettled(metingTasks),
-                gdTask
-            ]);
-
+            npStatus.innerText = `正在穿透采集高音质音源...`;
+            activePenetrationCandidates = await collectPenetrationCandidates(song, myToken);
             if (myToken !== activePlayToken) return;
 
-            const primaryNonBili = [];
-            const biliCandidates = [];
-            const otherCandidates = [];
-
-            if (gdSources.length > 0) {
-                primaryNonBili.push(gdSources[0]);
-            }
-
-            settledMeting.forEach(res => {
-                if (res.status === 'fulfilled' && Array.isArray(res.value.list)) {
-                    const isBili = res.value.plat.code === 'bilibili';
-                    res.value.list.slice(0, 2).forEach(match => {
-                        if (match && match.url) {
-                            const item = {
-                                url: match.url,
-                                label: res.value.plat.label,
-                                pic: match.pic
-                            };
-                            if (isBili) {
-                                biliCandidates.push(item);
-                            } else if (primaryNonBili.length === 0) {
-                                primaryNonBili.push(item);
-                            } else {
-                                otherCandidates.push(item);
-                            }
-                        }
-                    });
-                }
-            });
-
-            const candidatePool = [
-                ...biliCandidates,
-                ...primaryNonBili,
-                ...gdSources.slice(1),
-                ...otherCandidates
-            ];
-
-            for (let cand of candidatePool) {
+            for (let cand of activePenetrationCandidates) {
                 if (myToken !== activePlayToken) return;
+                const sourceIdKey = cand.gdSource && cand.gdId != null ? `${cand.gdSource}:${cand.gdId}` : null;
+                if (!cand.url || triedSourceUrls.has(cand.url) || (sourceIdKey && triedSourceIds.has(sourceIdKey))) continue;
+                triedSourceUrls.add(cand.url);
+                if (sourceIdKey) triedSourceIds.add(sourceIdKey);
                 npStatus.innerText = `校验 [${cand.label}]...`;
-                const check = await verifyAndPlayStream(cand.url, myToken);
+                const check = await verifyAndPlayStream(cand.url, myToken, /joox/i.test(cand.label || '') ? 9000 : 5500);
 
                 if (check.ok) {
-                    const latestChain = { url: cand.url, label: cand.label };
+                    const latestChain = { url: cand.url, label: cand.label, gdSource: cand.gdSource, gdId: cand.gdId, br: cand.br };
                     song.sources = [latestChain];
+                    if (cand.gdSource) {
+                        song.gdSource = cand.gdSource;
+                        song.gdId = cand.gdId;
+                    }
                     song.verifiedFull = true;
                     activeWorkingChain = latestChain;
-                    song.badgeText = `✓ 320k直通 (${formatTime(check.duration)} · ${cand.label})`;
+                    song.badgeText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
                     if (cand.pic && song.cover.includes('picsum.photos')) {
                         song.cover = cand.pic;
                         npCover.src = cand.pic;
@@ -2580,6 +3525,8 @@
                     }
                     syncFavoriteLatestChain(song, latestChain, check.duration);
                     renderList();
+                    renderNowPlaying(song);
+                    setContinuePenetrationVisible(true);
                     npStatus.innerText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
                     updateMediaSession(song);
                     return;
@@ -2594,7 +3541,133 @@
             }
         }
 
-        function verifyAndPlayStream(url, token) {
+        async function collectPenetrationCandidates(song, token) {
+            const cleanTitle = String(song.title || '').replace(/\(.*?\)|（.*?）/g, '').trim();
+            const cleanArtist = String(song.artist || '').split(/[\/&,、]/)[0].trim();
+            const query = `${cleanTitle} ${cleanArtist}`.trim();
+            if (!query) return [];
+
+            const metingTasks = UPSTREAM_PLATFORMS.map(plat =>
+                requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(query)}`, 5000)
+                    .then(list => ({ plat, list }))
+            );
+            const gdTask = searchGDStudio(query, song.gdSource || null, cleanTitle, cleanArtist);
+            const [settledMeting, gdSources] = await Promise.all([
+                Promise.allSettled(metingTasks),
+                gdTask
+            ]);
+            if (token !== activePlayToken) return [];
+
+            const candidates = [];
+            gdSources.forEach(c => candidates.push({
+                ...c,
+                title: c.title || cleanTitle,
+                artist: c.artist || cleanArtist
+            }));
+
+            settledMeting.forEach(res => {
+                if (res.status !== 'fulfilled' || !Array.isArray(res.value.list)) return;
+                const { plat, list } = res.value;
+                list.slice(0, 5).forEach(match => {
+                    if (!match || !match.url) return;
+                    candidates.push({
+                        url: match.url,
+                        label: plat.label,
+                        pic: match.pic,
+                        title: match.name || match.title || '',
+                        artist: match.artist || match.author || ''
+                    });
+                });
+            });
+
+            // 精确标题/歌手优先，减少“能播但不是那首歌”的误命中。
+            const targetTitle = normalizeGDText(cleanTitle);
+            const targetArtist = normalizeGDText(cleanArtist);
+            const rank = c => {
+                const title = normalizeGDText(c.title || '');
+                const artist = normalizeGDText(c.artist || '');
+                let score = 0;
+                if (title && title === targetTitle) score += 100;
+                else if (title && targetTitle && (title.includes(targetTitle) || targetTitle.includes(title))) score += 50;
+                if (artist && artist === targetArtist) score += 35;
+                else if (artist && targetArtist && (artist.includes(targetArtist) || targetArtist.includes(artist))) score += 15;
+                return score;
+            };
+            const seen = new Set();
+            return candidates
+                .filter(c => c.url && !seen.has(c.url) && seen.add(c.url))
+                .sort((a, b) => rank(b) - rank(a));
+        }
+
+        async function continuePenetration(event) {
+            if (event) event.stopPropagation();
+            if (!currentPlayingSong || penetrationBusy) return;
+            penetrationBusy = true;
+            const btn = document.getElementById('continuePenetrationBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '继续检索中…';
+            }
+            const song = currentPlayingSong;
+            const token = activePlayToken;
+            try {
+                npStatus.innerText = '正在继续穿透其他采集链…';
+                let candidates = activePenetrationCandidates;
+                if (!candidates.length) {
+                    candidates = await collectPenetrationCandidates(song, token);
+                    if (token !== activePlayToken) return;
+                    activePenetrationCandidates = candidates;
+                }
+
+                // 当前链与之前失败过的链接均跳过，手动按钮只尝试尚未验证的候选。
+                let attempted = 0;
+                for (const cand of candidates) {
+                    if (token !== activePlayToken) return;
+                    const sourceIdKey = cand.gdSource && cand.gdId != null ? `${cand.gdSource}:${cand.gdId}` : null;
+                    if (!cand.url || triedSourceUrls.has(cand.url) || (sourceIdKey && triedSourceIds.has(sourceIdKey))) continue;
+                    triedSourceUrls.add(cand.url);
+                    if (sourceIdKey) triedSourceIds.add(sourceIdKey);
+                    attempted++;
+                    npStatus.innerText = `继续校验 [${cand.label}]…`;
+                    const check = await verifyAndPlayStream(cand.url, token, /joox/i.test(cand.label || '') ? 9000 : 5500);
+                    if (!check.ok) continue;
+
+                    const chain = {
+                        url: cand.url, label: cand.label,
+                        gdSource: cand.gdSource, gdId: cand.gdId, br: cand.br
+                    };
+                    song.sources = [chain];
+                    if (cand.gdSource) {
+                        song.gdSource = cand.gdSource;
+                        song.gdId = cand.gdId;
+                    }
+                    activeWorkingChain = chain;
+                    song.verifiedFull = true;
+                    song.badgeText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
+                    syncFavoriteLatestChain(song, chain, check.duration);
+                    renderList();
+                    renderNowPlaying(song);
+                    updateMediaSession(song);
+                    npStatus.innerText = `已切换到 ${cand.label} · ${formatTime(check.duration)}`;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = '继续找音源';
+                    }
+                    return;
+                }
+                npStatus.innerText = attempted
+                    ? '其余候选均未通过播放校验，可稍后重试'
+                    : '暂时没有新的候选音源';
+            } finally {
+                penetrationBusy = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = '继续找音源';
+                }
+            }
+        }
+
+        function verifyAndPlayStream(url, token, timeoutMs = 5000) {
             return new Promise((resolve) => {
                 if (!url) return resolve({ ok: false, reason: 'empty' });
                 let settled = false;
@@ -2605,7 +3678,7 @@
                     resolve(res);
                 };
 
-                const timer = setTimeout(() => finish({ ok: false, reason: 'timeout' }), 5000);
+                const timer = setTimeout(() => finish({ ok: false, reason: 'timeout' }), timeoutMs);
 
                 const onLoadedMetadata = () => {
                     if (token !== activePlayToken) return finish({ ok: false, reason: 'cancelled' });
@@ -2668,20 +3741,32 @@
             }
         }
 
-        function nextSong() {
+        async function nextSong(manualSkip = true) {
             if (!playingQueue.length && viewList.length) {
                 playingQueue = [...viewList];
                 playingIndex = -1;
             }
             if (!playingQueue.length) return;
+            const fmSong = currentPlayingSong?.recommendationMode === 'netease_fm';
+            const isLastFMTrack = fmSong && playingIndex >= playingQueue.length - 1;
+            if (fmSong && manualSkip && !isSongFavorited(currentPlayingSong)) {
+                // 当前批次的最后一首被跳过时，等反馈请求完成再拉新批次，避免返回相同歌曲。
+                if (isLastFMTrack) await trashNeteaseFMTrack(currentPlayingSong);
+                else trashNeteaseFMTrack(currentPlayingSong);
+            }
+            if (isLastFMTrack) {
+                // 当前批次结束后再拉取下一批，避免无限循环旧 FM 队列。
+                await loadNeteasePersonalFM({ autoplay: true, preserveTab: true });
+                return;
+            }
             if (isShuffleMode && playingQueue.length > 1) {
                 let nextIdx = playingIndex;
-                while (nextIdx === playingIndex) {
-                    nextIdx = Math.floor(Math.random() * playingQueue.length);
-                }
+                while (nextIdx === playingIndex) nextIdx = Math.floor(Math.random() * playingQueue.length);
                 playSongInQueue(nextIdx);
             } else {
-                playSongInQueue((playingIndex + 1) % playingQueue.length);
+                const nextIdx = playingIndex + 1;
+                if (nextIdx < playingQueue.length) playSongInQueue(nextIdx);
+                else playSongInQueue(0);
             }
         }
 
@@ -2820,7 +3905,20 @@
 
         audio.addEventListener('pause', () => setPlayButtonVisual(false));
         audio.addEventListener('play', () => setPlayButtonVisual(true));
-        audio.addEventListener('ended', () => nextSong());
+        audio.addEventListener('loadedmetadata', () => {
+            // 新音源开始加载元数据时，再同步一次当前歌曲与系统媒体信息。
+            if (currentPlayingSong) {
+                renderNowPlaying(currentPlayingSong);
+                updateMediaSession(currentPlayingSong);
+            }
+        });
+        audio.addEventListener('playing', () => {
+            if (currentPlayingSong) {
+                renderNowPlaying(currentPlayingSong);
+                updateMediaSession(currentPlayingSong);
+            }
+        });
+        audio.addEventListener('ended', () => nextSong(false));
 
         progressBar.addEventListener('input', () => {
             if (audio.duration) {
@@ -2832,7 +3930,7 @@
         loadFavorites();
         initTheme();
         initVolume();
-        switchTab('cn');
+        switchTab('private');
     </script>
 </body>
 </html>
