@@ -45,13 +45,13 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170974663020",
     "sources": [
       {
-        "url": "https://m801.music.126.net/20261026170439/2505f3e5cd097b57bdae0c0ec5b7e571/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/36658975497/c446/4ffa/a4a9/dcec00b8dbc6848b709fe47e5c461828.mp3",
-        "label": "GD-NETEASE·320k"
+        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=9151674022bce3ee5288b1d299fb0b68",
+        "label": "MT-KUGOU·自动"
       }
     ],
     "gdSource": "netease",
     "gdId": "336994",
-    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)"
+    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)"
   },
   {
     "title": "纽约地铁",
@@ -64,32 +64,6 @@
       }
     ],
     "badgeText": "⚡ 上次可播(QQ音乐)"
-  },
-  {
-    "title": "備胎 (feat. Eetu Kalavainen) (Explicit)",
-    "artist": "謝和弦 / Eetu Kalavainen",
-    "cover": "https://music-api.gdstudio.xyz/api.php?types=pic&source=joox&id=491d90de29335551&size=300",
-    "sources": [
-      {
-        "url": "https://m7.music.126.net/20261026172222/3f37aba5e4882dbb8ee3f538b4bf32df/ymusic/69be/0f93/8630/1ba7e092715ba54bfeece428b7a5c304.mp3",
-        "label": "GD-NETEASE·320k"
-      }
-    ],
-    "gdSource": "netease",
-    "gdId": "467163300",
-    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)"
-  },
-  {
-    "title": "在沒有你以後 (feat. 張智成)",
-    "artist": "謝和弦 / 張智成",
-    "cover": "https://music-api.gdstudio.xyz/api.php?types=pic&source=joox&id=ae1e6d8a268e8e2d&size=300",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=3717ec1df6690c20dbad25c3b6fa978e",
-        "label": "MT-KUGOU·自动"
-      }
-    ],
-    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)"
   },
   {
     "title": "想要你知道",
@@ -109,7 +83,7 @@
     "cover": "https://api.i-meto.com/meting/api?server=netease&type=pic&id=3273246117001205&auth=ab589e4d625cc830c388674060ae75f91561138b",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=30284674",
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
         "label": "MT-NETEASE·自动"
       }
     ],
@@ -145,11 +119,11 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165511240611",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1499551318",
-        "label": "B站音源"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1499546863",
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)"
+    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)"
   },
   {
     "title": "ONE 一个 (Live 版)",
@@ -197,7 +171,7 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)"
+    "badgeText": "⚡ 上次可播(B站音源)"
   },
   {
     "title": "如果不能爱",
@@ -209,7 +183,7 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)"
+    "badgeText": "⚡ 上次可播(B站音源)"
   },
   {
     "title": "反话",
@@ -317,7 +291,7 @@
         "label": "B站音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)"
+    "badgeText": "⚡ 上次可播(B站音源)"
   },
   {
     "title": "时钟",
@@ -896,18 +870,6 @@
     "badgeText": "⚡ 锁定(B站音源)"
   },
   {
-    "title": "都是你的",
-    "artist": "林姝涵/RAiNBOW计划",
-    "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=f8a3f2bf613aba0ca7b575f5c168f0ad",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
-        "label": "B站音源"
-      }
-    ],
-    "badgeText": "⚡ 秒播 (04:36 · B站音源)"
-  },
-  {
     "title": "世界末日",
     "artist": "Young 7",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
@@ -985,5 +947,17 @@
       }
     ],
     "badgeText": "⚡ 锁定(B站音源)"
+  },
+  {
+    "title": "都是你的",
+    "artist": "林姝涵/RAiNBOW计划",
+    "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=f8a3f2bf613aba0ca7b575f5c168f0ad",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "label": "B站音源"
+      }
+    ],
+    "badgeText": "⚡ 秒播 (04:36 · B站音源)"
   }
 ]
