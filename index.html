@@ -2472,8 +2472,8 @@
           flex-direction: column;
           align-items: stretch;
           gap: 0;
-          /* 底部给进度条 + 操作栏让位，并避开 iPhone 手势条 */
-          padding: 0 0 calc(88px + env(safe-area-inset-bottom, 0px));
+          /* 底部给进度条 + 操作栏让位，并避开 iPhone 手势条与浏览器底栏 */
+          padding: 0 0 calc(104px + env(safe-area-inset-bottom, 0px));
           overflow: hidden;
           min-height: 0;
         }
@@ -2528,31 +2528,37 @@
           text-overflow: ellipsis;
         }
 
-        /* ---------- 歌词：占满剩余高度，上下渐隐 ---------- */
+        /* ---------- 歌词：占满剩余高度，上下渐隐（上下留白对称） ---------- */
         .lyric-overlay .lyric-scroll-col {
           flex: 1 1 auto;
           height: auto;
           min-height: 0;
-          padding: 12px 2px 26vh;
+          padding: 18px 2px 22vh;
           text-align: center;
           -webkit-mask-image: linear-gradient(180deg,
             transparent 0%,
-            #000 9%,
-            #000 88%,
+            #000 11%,
+            #000 89%,
             transparent 100%);
           mask-image: linear-gradient(180deg,
             transparent 0%,
-            #000 9%,
-            #000 88%,
+            #000 11%,
+            #000 89%,
             transparent 100%);
         }
 
         .lyric-overlay .lyric-line {
+          position: relative;
           padding: 7px 2px;
           font-size: 15px;
           line-height: 1.72;
           color: rgba(255, 255, 255, .50);
           text-shadow: 0 1px 2px rgba(30, 25, 20, .16);
+          /* 禁用双击缩放与长按选中，滑动预览更顺手 */
+          touch-action: pan-y;
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
         }
 
         .lyric-overlay .lyric-line.active {
@@ -2561,12 +2567,60 @@
           color: var(--accent);
         }
 
+        /* 滑动预览时高亮当前「预览行」，用白色而非红色，和真实播放行区分 */
+        .lyric-overlay .lyric-line.preview-current {
+          color: rgba(255, 255, 255, .94);
+          font-weight: 600;
+        }
+
+        /* 预览期间：真实播放行不再抢红色，避免两条高亮同时存在造成误读 */
+        .lyric-overlay .lyric-scroll-col.is-previewing .lyric-line.active:not(.preview-current) {
+          color: rgba(255, 255, 255, .50);
+          font-weight: 400;
+        }
+
+        /* 每行右侧的独立跳转键：绝对定位，不参与文字排版，保证歌词始终居中 */
+        .lyric-jump-btn {
+          display: none;
+          position: absolute;
+          right: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 24px;
+          height: 24px;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          border: 0;
+          border-radius: 50%;
+          background: transparent;
+          color: rgba(255, 255, 255, .86);
+          cursor: pointer;
+          filter: drop-shadow(0 1px 2px rgba(30, 25, 20, .30));
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .lyric-jump-btn svg {
+          width: 15px;
+          height: 15px;
+          display: block;
+          fill: currentColor;
+        }
+
+        /* 预览态：跳转键只出现在当前预览行上，避免整页都是图标 */
+        .lyric-overlay .lyric-line.preview-current .lyric-jump-btn {
+          display: inline-flex;
+        }
+
+        .lyric-jump-btn:active { transform: translateY(-50%) scale(.9); }
+
         /* ---------- 底部：进度条 + 操作栏，绝对定位且完全透明 ---------- */
         .lyric-overlay .lyric-progress {
           position: absolute;
-          left: 0;
-          right: 0;
-          bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+          /* 与操作栏共用同一条左右中线，保证两者严格对齐 */
+          left: 24px;
+          right: 24px;
+          bottom: calc(70px + env(safe-area-inset-bottom, 0px));
           z-index: 2;
           display: flex;
           align-items: center;
@@ -2607,9 +2661,10 @@
         .lyric-overlay .lyric-controls,
         body.lyric-open .lyric-controls {
           position: absolute;
-          left: 0;
-          right: 0;
-          bottom: env(safe-area-inset-bottom, 0px);
+          left: 24px;
+          right: 24px;
+          /* 不再贴死底边：浏览器底栏 / 手势条之上留出呼吸空间 */
+          bottom: calc(20px + env(safe-area-inset-bottom, 0px));
           z-index: 2;
           display: flex;
           align-items: center;
@@ -3966,6 +4021,176 @@
             }
         }
 
+        /* ================= 歌词滑动预览 =================
+           规则：
+           - 单击歌词行不再跳转（避免误触）
+           - 上滑/下滑 = 只预览歌词，不跟播放进度
+           - 预览时当前行右侧出现播放键，点它才跳转到该句
+           - 停止操作 5 秒后自动锁回真实播放进度
+        */
+        const LYRIC_PREVIEW_TIMEOUT = 5000;   // 预览回锁延迟
+        const LYRIC_PREVIEW_HOLD = 3000;      // 跳转后暂时不跟随进度的时长
+        const LYRIC_LOCK_EASE = { behavior: 'smooth', block: 'center' };
+
+        let lyricPreviewing = false;
+        let lyricPreviewTimer = null;
+        let lyricScrollTimer = null;
+        let lyricFollowHoldUntil = 0;
+        let lyricPreviewIdx = -1;
+        // 程序化滚动（跟随进度 / 回锁）期间的时间戳，用来和用户手动滑动区分
+        let lyricProgrammaticScrollUntil = 0;
+
+        function getLyricCol() {
+            return document.getElementById('lyricScrollBox');
+        }
+
+        function clearLyricPreviewTimer() {
+            if (lyricPreviewTimer) {
+                clearTimeout(lyricPreviewTimer);
+                lyricPreviewTimer = null;
+            }
+        }
+
+        // 预览期间不跟随播放进度
+        function isLyricFollowing() {
+            return !lyricPreviewing && Date.now() >= lyricFollowHoldUntil;
+        }
+
+        // 找滚动视口垂直中心最近的那一行，作为「预览行」
+        function findCenterLyricIndex(col) {
+            const nodes = col.querySelectorAll('.lyric-line');
+            if (!nodes.length) return -1;
+            const colRect = col.getBoundingClientRect();
+            const mid = colRect.top + colRect.height / 2;
+            let best = 0;
+            let bestDist = Infinity;
+            nodes.forEach((n, i) => {
+                const r = n.getBoundingClientRect();
+                const d = Math.abs(r.top + r.height / 2 - mid);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = i;
+                }
+            });
+            return best;
+        }
+
+        function paintPreviewLine(col, idx) {
+            col.querySelectorAll('.lyric-line').forEach((n, i) => {
+                n.classList.toggle('preview-current', i === idx);
+            });
+            if (idx < 0) col.classList.remove('is-previewing');
+            else col.classList.add('is-previewing');
+        }
+
+        // 进入预览态（手动滑动触发），并重置 5 秒回锁计时
+        function enterLyricPreview() {
+            const col = getLyricCol();
+            if (!col) return;
+            lyricPreviewing = true;
+            col.classList.add('is-previewing');
+            lyricPreviewIdx = findCenterLyricIndex(col);
+            paintPreviewLine(col, lyricPreviewIdx);
+            clearLyricPreviewTimer();
+            lyricPreviewTimer = setTimeout(exitLyricPreview, LYRIC_PREVIEW_TIMEOUT);
+        }
+
+        // 退出预览，锁回真实播放进度对应的歌词
+        function exitLyricPreview() {
+            const col = getLyricCol();
+            clearLyricPreviewTimer();
+            if (!col) return;
+            lyricPreviewing = false;
+            lyricPreviewIdx = -1;
+            col.classList.remove('is-previewing');
+            col.querySelectorAll('.lyric-line.preview-current')
+               .forEach(n => n.classList.remove('preview-current'));
+            lockToPlayingLyric();
+        }
+
+        // 把视口滚回当前播放行并居中
+        function lockToPlayingLyric() {
+            const col = getLyricCol();
+            if (!col) return;
+            const nodes = col.querySelectorAll('.lyric-line');
+            const idx = activeLyricIndex >= 0 ? activeLyricIndex : 0;
+            const target = nodes[idx];
+            if (!target) return;
+            col.classList.remove('is-previewing');
+            nodes.forEach((n, i) => {
+                n.classList.toggle('active', i === idx);
+                n.classList.remove('preview-current');
+            });
+            target.scrollIntoView(LYRIC_LOCK_EASE);
+            lyricProgrammaticScrollUntil = Date.now() + 900;
+            lyricFollowHoldUntil = 0;
+        }
+
+        // 点某行的播放键：真正跳转到这句
+        function seekToLyricLine(idx) {
+            const col = getLyricCol();
+            if (!col || !currentLyrics[idx]) return;
+            const t = currentLyrics[idx].time;
+            if (typeof t === 'number' && t >= 0) {
+                audio.currentTime = t;
+            }
+            clearLyricPreviewTimer();
+            lyricPreviewing = false;
+            col.classList.remove('is-previewing');
+            col.querySelectorAll('.lyric-line.preview-current')
+               .forEach(n => n.classList.remove('preview-current'));
+            // 跳转后短暂不跟随，避免进度回调立刻把列表拽走
+            lyricFollowHoldUntil = Date.now() + LYRIC_PREVIEW_HOLD;
+            activeLyricIndex = idx;
+            const nodes = col.querySelectorAll('.lyric-line');
+            nodes.forEach((n, i) => n.classList.toggle('active', i === idx));
+            if (nodes[idx]) {
+                nodes[idx].scrollIntoView(LYRIC_LOCK_EASE);
+                lyricProgrammaticScrollUntil = Date.now() + 900;
+            }
+        }
+
+        // 绑定滚动/触摸监听（只绑一次）
+        function bindLyricPreviewEvents() {
+            const col = getLyricCol();
+            if (!col || col.dataset.previewBound === '1') return;
+            col.dataset.previewBound = '1';
+
+            const onUserScroll = () => {
+                if (!lyricPreviewing) enterLyricPreview();
+                clearLyricPreviewTimer();
+                lyricPreviewTimer = setTimeout(exitLyricPreview, LYRIC_PREVIEW_TIMEOUT);
+            };
+
+            // scroll 事件对触摸滑动与惯性滚动都会触发
+            col.addEventListener('scroll', () => {
+                if (lyricScrollTimer) return;
+                lyricScrollTimer = setTimeout(() => {
+                    lyricScrollTimer = null;
+                    // 程序化滚动（跟随进度/回锁）不进入预览
+                    if (Date.now() < lyricProgrammaticScrollUntil) return;
+                    if (!isLyricFollowing() || lyricPreviewing) {
+                        onUserScroll();
+                        // 防抖结束后重新定位预览行
+                        lyricPreviewIdx = findCenterLyricIndex(col);
+                        paintPreviewLine(col, lyricPreviewIdx);
+                    } else {
+                        // 跟随态下用户手动滑动：立刻切到预览
+                        enterLyricPreview();
+                    }
+                }, 80);
+            }, { passive: true });
+
+            // 触摸抬起后立刻重算预览行
+            col.addEventListener('touchend', () => {
+                if (!lyricPreviewing) return;
+                lyricPreviewIdx = findCenterLyricIndex(col);
+                paintPreviewLine(col, lyricPreviewIdx);
+                clearLyricPreviewTimer();
+                lyricPreviewTimer = setTimeout(exitLyricPreview, LYRIC_PREVIEW_TIMEOUT);
+            }, { passive: true });
+        }
+
         function renderLyricsDOM(lines) {
             const box = document.getElementById('lyricScrollBox');
             box.innerHTML = '';
@@ -3973,13 +4198,24 @@
                 const div = document.createElement('div');
                 div.className = `lyric-line ${idx === 0 ? 'active' : ''}`;
                 div.innerText = item.text;
-                div.onclick = () => {
-                    if (audio.duration && item.time >= 0) {
-                        audio.currentTime = item.time;
-                    }
-                };
+                // 单击不再跳转；跳转只由行内播放键触发
+                const jump = document.createElement('button');
+                jump.type = 'button';
+                jump.className = 'lyric-jump-btn';
+                jump.setAttribute('aria-label', '跳转到这句歌词');
+                jump.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                    + '<path d="M8 5.5v13l10-6.5-10-6.5z"/></svg>';
+                jump.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    seekToLyricLine(idx);
+                });
+                jump.addEventListener('touchstart', (ev) => {
+                    ev.stopPropagation();
+                }, { passive: true });
+                div.appendChild(jump);
                 box.appendChild(div);
             });
+            bindLyricPreviewEvents();
         }
 
         function syncLyricProgress(currentTime) {
@@ -3992,12 +4228,18 @@
                     break;
                 }
             }
+            // 预览中 / 刚跳转完的短暂窗口内，只更新高亮不抢滚动位置
+            const canFollow = isLyricFollowing();
+
             if (idx !== activeLyricIndex) {
                 activeLyricIndex = idx;
                 const box = document.getElementById('lyricScrollBox');
                 const nodes = box.querySelectorAll('.lyric-line');
-                nodes.forEach((n, i) => n.classList.toggle('active', i === idx));
-                if (nodes[idx]) {
+                if (canFollow) {
+                    nodes.forEach((n, i) => n.classList.toggle('active', i === idx));
+                }
+                if (canFollow && nodes[idx]) {
+                    lyricProgrammaticScrollUntil = Date.now() + 900;
                     nodes[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 if (currentLyrics[idx]) {
