@@ -3,227 +3,228 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>媒体播控诊断</title>
+<title>媒体播控诊断 v2</title>
 <style>
   :root { color-scheme: dark; }
   *, *::before, *::after { box-sizing: border-box; }
-  html { width: 100%; overflow-x: hidden; }
-  body {
-    width: 100%; max-width: 100%;
-    overflow-x: hidden;
-    margin: 0;
-    padding: 18px 16px calc(30px + env(safe-area-inset-bottom));
-    font: 15px/1.65 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #17171a; color: #ececf1;
-  }
-  h1 { font-size: 18px; margin: 0 0 4px; font-weight: 600; }
-  .sub { color: #8b8b96; font-size: 13px; margin-bottom: 16px; line-height: 1.6; }
-  .card { background: #202026; border-radius: 12px; padding: 2px 14px; margin-bottom: 12px; }
-  .row { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #2c2c34; align-items: flex-start; }
-  .row:last-child { border-bottom: 0; }
-  .k { color: #9a9aa6; flex: 0 0 auto; font-size: 13.5px; }
-  .v { margin-left: auto; text-align: right; font-size: 13.5px; word-break: break-word; overflow-wrap: anywhere; min-width: 0; max-width: 66%; }
-  .ok { color: #4ade80; }
-  .bad { color: #f87171; }
-  .warn { color: #fbbf24; }
-  button {
-    width: 100%; padding: 15px; font-size: 16px; font-weight: 500; font-family: inherit;
-    border: 0; border-radius: 12px; background: #3b6ef0; color: #fff; margin: 4px 0 10px;
-    cursor: pointer;
-  }
-  button:active { transform: scale(.985); }
-  button.ghost { background: #2a2a32; margin-bottom: 14px; }
-  button:disabled { opacity: .45; }
-  #log {
-    font: 12px/1.65 ui-monospace, Consolas, monospace; color: #8b8b96; white-space: pre-wrap;
-    background: #1c1c22; border-radius: 10px; padding: 12px; max-height: 40vh; overflow: auto;
-    margin-top: 4px;
-  }
-  .verdict { border-radius: 12px; padding: 14px; margin-bottom: 14px; font-size: 14px; line-height: 1.7; display: none; }
-  .verdict.show { display: block; }
-  .verdict.good { background: #12301f; color: #86efac; }
-  .verdict.badbox { background: #33161a; color: #fca5a5; }
-  .verdict.mid { background: #33290f; color: #fcd34d; }
-  .note { font-size: 12px; color: #8b8b96; line-height: 1.75; margin-top: 10px; }
-  code { background: #2a2a32; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  html { width: 100%; }
+  body { margin:0; padding:18px 16px calc(30px + env(safe-area-inset-bottom));
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#17171a; color:#ececf1; }
+  h1 { font-size:18px; margin:0 0 4px; font-weight:600; }
+  .sub { color:#8b8b96; font-size:13px; margin-bottom:14px; line-height:1.6; }
+  .card { background:#202026; border-radius:12px; padding:2px 14px; margin-bottom:12px; }
+  .row { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #2c2c34; align-items:flex-start; }
+  .row:last-child { border-bottom:0; }
+  .k { color:#9a9aa6; flex:0 0 auto; font-size:13.5px; }
+  .v { margin-left:auto; text-align:right; font-size:13.5px; word-break:break-word; overflow-wrap:anywhere; min-width:0; max-width:66%; }
+  .ok { color:#4ade80; } .bad { color:#f87171; } .warn { color:#fbbf24; }
+  button { width:100%; padding:15px; font-size:16px; font-weight:500; font-family:inherit;
+    border:0; border-radius:12px; background:#3b6ef0; color:#fff; margin:4px 0 10px; cursor:pointer; }
+  button:active { transform:scale(.985); }
+  button.ghost { background:#2a2a32; margin-bottom:14px; }
+  button:disabled { opacity:.45; }
+  #log { font:12px/1.65 ui-monospace,Consolas,monospace; color:#8b8b96; white-space:pre-wrap;
+    word-break:break-word; overflow-wrap:anywhere; background:#1c1c22; border-radius:10px;
+    padding:12px; max-height:36vh; overflow:auto; margin-top:4px; }
+  .verdict { border-radius:12px; padding:14px; margin-bottom:14px; font-size:14px; line-height:1.7; display:none; }
+  .verdict.show { display:block; }
+  .verdict.good { background:#12301f; color:#86efac; }
+  .verdict.badbox { background:#33161a; color:#fca5a5; }
+  .verdict.mid { background:#33290f; color:#fcd34d; }
+  .note { font-size:12px; color:#8b8b96; line-height:1.75; margin-top:10px; }
+  .live { display:flex; align-items:center; gap:8px; background:#202026; border-radius:12px;
+    padding:12px 14px; margin-bottom:12px; font-size:13.5px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:#55555f; flex:0 0 auto; }
+  .dot.on { background:#4ade80; box-shadow:0 0 8px #4ade80; }
 </style>
 </head>
 <body>
+<h1>媒体播控诊断 v2</h1>
+<div class="sub">修掉了 3 个会导致「假阴性」的问题：音频只有 8 秒会播完、playbackState 未设置、artwork 为空。</div>
 
-<h1>媒体播控诊断</h1>
-<div class="sub">用来判断「锁屏 / 控制中心的媒体卡片」为什么没有出现。<br>这个卡片是系统界面，网页只能通过 Media Session API 让它显示。</div>
+<div class="live">
+  <span class="dot" id="dot"></span>
+  <span id="liveText">未开始</span>
+  <span id="liveTime" style="margin-left:auto;color:#8b8b96;font-variant-numeric:tabular-nums"></span>
+</div>
 
 <div class="card" id="envCard"></div>
 
-<button id="startBtn">① 开始测试（播放测试音频）</button>
+<button id="startBtn">① 开始测试（60 秒循环音频）</button>
 <button id="stopBtn" class="ghost">② 停止测试</button>
 
 <div class="verdict" id="verdict"></div>
-
 <div class="card" id="stateCard"></div>
-
 <div id="log"></div>
 
 <div class="note">
-  <b>怎么判断：</b><br>
-  · 点 ① 后，立刻下拉控制中心，看媒体卡片是否变成测试歌曲<br>
-  · 若「Media Session 可用」为绿色、动作全部注册成功，但卡片仍不显示 → 属于浏览器/系统的限制<br>
-  · 若「Media Session 可用」为红色 → 当前浏览器根本不支持，需要换 Chrome / Edge 内核浏览器<br>
-  · 测试音频是程序生成的提示音，不需要联网
+  <b>正确测法：</b><br>
+  点 ① → 等 2 秒确认出声 → <b>不要等</b>，立刻下拉控制中心 → 看卡片是否变成「诊断测试歌曲 · OneMusic 诊断」<br>
+  音频循环播放，不会再因为播完而消失。<br><br>
+  <b>若仍是「未在播放」：</b>说明该系统浏览器不支持把网页音频投到控制中心。
 </div>
 
-<audio id="probe" preload="metadata" playsinline></audio>
+<audio id="probe" preload="metadata" playsinline loop></audio>
 
 <script>
 (function () {
   'use strict';
-
-  const probe = document.getElementById('probe');
-  const envCard = document.getElementById('envCard');
-  const stateCard = document.getElementById('stateCard');
-  const logEl = document.getElementById('log');
-  const verdict = document.getElementById('verdict');
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
+  var probe = document.getElementById('probe');
+  var envCard = document.getElementById('envCard');
+  var stateCard = document.getElementById('stateCard');
+  var logEl = document.getElementById('log');
+  var verdict = document.getElementById('verdict');
+  var startBtn = document.getElementById('startBtn');
+  var stopBtn = document.getElementById('stopBtn');
+  var dot = document.getElementById('dot');
+  var liveText = document.getElementById('liveText');
+  var liveTime = document.getElementById('liveTime');
 
   function log(msg) {
     logEl.textContent += (logEl.textContent ? '\n' : '') + msg;
     logEl.scrollTop = logEl.scrollHeight;
   }
-
-  function row(k, v, cls) {
-    return '<div class="row"><span class="k">' + k + '</span><span class="v ' + (cls || '') + '">' + v + '</span></div>';
-  }
-
+  function row(k, v) { return '<div class="row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'; }
   function ok(v) { return '<span class="ok">' + v + '</span>'; }
   function bad(v) { return '<span class="bad">' + v + '</span>'; }
   function warn(v) { return '<span class="warn">' + v + '</span>'; }
 
-  /* ---------- 1. 环境检测 ---------- */
-  const hasMS = ('mediaSession' in navigator);
-  const hasSAH = !!(navigator.mediaSession && typeof navigator.mediaSession.setActionHandler === 'function');
-  const hasSPS = !!(navigator.mediaSession && typeof navigator.mediaSession.setPositionState === 'function');
-  const hasMM = (typeof window.MediaMetadata === 'function');
+  var hasMS = ('mediaSession' in navigator);
+  var hasSAH = !!(navigator.mediaSession && typeof navigator.mediaSession.setActionHandler === 'function');
+  var hasSPS = !!(navigator.mediaSession && typeof navigator.mediaSession.setPositionState === 'function');
+  var hasMM = (typeof window.MediaMetadata === 'function');
 
-  let html = '';
+  var html = '';
   html += row('HTTPS 安全环境', window.isSecureContext ? ok('是') : bad('否（必需）'));
   html += row('Media Session', hasMS ? ok('可用') : bad('不存在'));
   html += row('setActionHandler', hasSAH ? ok('是') : bad('否'));
-  html += row('setPositionState', hasSPS ? ok('支持（可显示进度）') : warn('不支持'));
+  html += row('setPositionState', hasSPS ? ok('支持') : warn('不支持'));
   html += row('MediaMetadata', hasMM ? ok('是') : bad('否'));
-  html += row('浏览器标识', '<span style="font-size:11px">' + navigator.userAgent.replace(/</g, '&lt;') + '</span>');
+  html += row('浏览器', '<span style="font-size:11px">' + navigator.userAgent.replace(/</g, '&lt;') + '</span>');
   envCard.innerHTML = html;
-
   log('环境检测完成');
-  log('secureContext=' + window.isSecureContext);
-  log('mediaSession=' + hasMS + ' setActionHandler=' + hasSAH + ' setPositionState=' + hasSPS);
 
-  /* ---------- 2. 生成测试音频（WAV，无需联网） ---------- */
   function makeTone(seconds, freq) {
-    const rate = 8000;
-    const n = Math.floor(rate * seconds);
-    const buf = new ArrayBuffer(44 + n * 2);
-    const v = new DataView(buf);
-    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    var rate = 8000, n = Math.floor(rate * seconds);
+    var buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    function ws(o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
     ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE');
     ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
     v.setUint16(22, 1, true); v.setUint32(24, rate, true);
     v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
     ws(36, 'data'); v.setUint32(40, n * 2, true);
-    for (let i = 0; i < n; i++) {
-      // 加淡入淡出，避免爆音
-      const env = Math.min(1, i / (rate * 0.05), (n - i) / (rate * 0.05));
-      const s = Math.sin(2 * Math.PI * freq * i / rate) * 0.25 * env;
+    for (var i = 0; i < n; i++) {
+      var env = Math.min(1, i / (rate * 0.08), (n - i) / (rate * 0.08));
+      var beat = 0.55 + 0.45 * Math.sin(2 * Math.PI * 0.5 * i / rate);
+      var s = Math.sin(2 * Math.PI * freq * i / rate) * 0.16 * env * beat;
       v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, s)) * 0x7fff, true);
     }
-    const bytes = new Uint8Array(buf);
-    let bin = '';
-    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    var bytes = new Uint8Array(buf), bin = '', CH = 0x8000;
+    for (var j = 0; j < bytes.length; j += CH) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(j, j + CH));
+    }
     return 'data:audio/wav;base64,' + btoa(bin);
   }
 
-  const TONE_URL = makeTone(8, 440);
+  function makeArtwork() {
+    try {
+      var c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      var ctx = c.getContext('2d');
+      var g = ctx.createLinearGradient(0, 0, 512, 512);
+      g.addColorStop(0, '#3b6ef0'); g.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.font = 'bold 240px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('\u266A', 256, 268);
+      return c.toDataURL('image/png');
+    } catch (e) { return ''; }
+  }
 
-  /* ---------- 3. 测试流程 ---------- */
-  const ACTIONS = [
-    'play', 'pause', 'nexttrack', 'previoustrack',
-    'seekbackward', 'seekforward', 'seekto',
-    'stop', 'togglefavorite'
-  ];
+  var TONE_URL = makeTone(60, 440);
+  var ART_URL = makeArtwork();
 
-  const results = {};
-  let registered = false;
+  var ACTIONS = ['play', 'pause', 'nexttrack', 'previoustrack', 'seekbackward', 'seekforward', 'seekto', 'stop', 'togglefavorite'];
+  var results = {};
+  var registeredCount = 0;
 
   function registerHandlers() {
-    if (!hasSAH) return false;
-    let success = 0;
+    if (!hasSAH) return 0;
+    var success = 0;
     ACTIONS.forEach(function (action) {
       try {
         navigator.mediaSession.setActionHandler(action, function (details) {
-          log('系统触发动作: ' + action + (details ? ' ' + JSON.stringify(details) : ''));
-          if (action === 'play') {
-            probe.play().catch(function () {});
-          } else if (action === 'pause' || action === 'stop') {
-            probe.pause();
-          } else if (action === 'seekforward') {
-            probe.currentTime = Math.min(probe.duration || 0, probe.currentTime + 2);
-          } else if (action === 'seekbackward') {
-            probe.currentTime = Math.max(0, probe.currentTime - 2);
-          } else if (action === 'seekto' && details && typeof details.seekTime === 'number') {
-            probe.currentTime = details.seekTime;
-          }
+          log('\u2605 系统触发: ' + action);
+          if (action === 'play') probe.play().catch(function () {});
+          else if (action === 'pause' || action === 'stop') probe.pause();
+          else if (action === 'seekforward') probe.currentTime = Math.min(probe.duration || 0, probe.currentTime + 5);
+          else if (action === 'seekbackward') probe.currentTime = Math.max(0, probe.currentTime - 5);
+          else if (action === 'seekto' && details && typeof details.seekTime === 'number') probe.currentTime = details.seekTime;
         });
         results[action] = 'ok';
         success++;
-      } catch (e) {
-        results[action] = '不支持';
-      }
+      } catch (e) { results[action] = '不支持'; }
     });
-    registered = success > 0;
-    log('动作注册成功 ' + success + ' / ' + ACTIONS.length);
-    return registered;
+    registeredCount = success;
+    log('动作注册 ' + success + ' / ' + ACTIONS.length);
+    return success;
   }
 
   function setMeta() {
     if (!hasMM || !hasMS) return false;
+    var art = ART_URL ? [{ src: ART_URL, sizes: '512x512', type: 'image/png' }] : [];
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: '诊断测试歌曲',
-        artist: 'OneMusic 诊断',
-        album: 'Media Session Test',
-        artwork: []
+        title: '诊断测试歌曲', artist: 'OneMusic 诊断', album: 'Media Session Test', artwork: art
       });
-      log('metadata 写入成功');
+      log('metadata 写入成功（artwork ' + art.length + ' 张）');
       return true;
-    } catch (e) {
-      log('metadata 写入失败: ' + e.message);
-      return false;
-    }
+    } catch (e) { log('metadata 写入失败: ' + e.message); return false; }
+  }
+
+  function setPlaybackState(state) {
+    if (!hasMS) return;
+    try { navigator.mediaSession.playbackState = state; } catch (e) {}
   }
 
   function postPosition() {
     if (!hasSPS) return;
-    const d = probe.duration;
+    var d = probe.duration;
     if (!d || !isFinite(d) || d <= 0) return;
     try {
       navigator.mediaSession.setPositionState({
-        duration: d,
-        playbackRate: probe.playbackRate || 1,
+        duration: d, playbackRate: probe.playbackRate || 1,
         position: Math.min(probe.currentTime || 0, d)
       });
     } catch (e) {}
   }
 
+  function renderLive() {
+    var playing = !probe.paused && !probe.ended;
+    dot.className = 'dot' + (playing ? ' on' : '');
+    if (!probe.src) liveText.textContent = '未开始';
+    else if (playing) liveText.textContent = '正在播放（保持此状态下拉控制中心）';
+    else if (probe.ended) liveText.textContent = '已播放结束';
+    else liveText.textContent = '已暂停';
+    var t = probe.currentTime || 0, d = probe.duration;
+    liveTime.textContent = (d && isFinite(d)) ? t.toFixed(0) + ' / ' + d.toFixed(0) + 's' : '';
+  }
+
   function renderState() {
-    let h = '';
+    var h = '';
     h += row('音频已就绪', probe.readyState >= 1 ? ok('是') : warn('否'));
-    h += row('音频时长', probe.duration && isFinite(probe.duration) ? ok(probe.duration.toFixed(2) + ' 秒') : warn('未知'));
-    h += row('播放状态', probe.paused ? warn('暂停') : ok('正在播放'));
-    h += row('playbackState', '<span class="v">' + (hasMS ? (navigator.mediaSession.playbackState || 'none') : '-') + '</span>');
-    h += row('系统元数据标题', hasMS && navigator.mediaSession.metadata ? ok(navigator.mediaSession.metadata.title) : bad('未设置'));
-    Object.keys(results).forEach(function (a) {
-      const good = results[a] === 'ok';
-      h += row('动作 ' + a, good ? ok('已注册') : bad(results[a]));
+    h += row('音频时长', (probe.duration && isFinite(probe.duration)) ? ok(probe.duration.toFixed(0) + ' 秒') : warn('未知'));
+    h += row('播放状态', (!probe.paused && !probe.ended) ? ok('正在播放') : (probe.ended ? bad('已结束') : warn('暂停')));
+    var s = hasMS ? (navigator.mediaSession.playbackState || 'none') : '-';
+    h += row('playbackState', s === 'playing' ? ok(s) : (s === 'paused' ? warn(s) : bad(s)));
+    h += row('元数据标题', hasMS && navigator.mediaSession.metadata ? ok(navigator.mediaSession.metadata.title) : bad('未设置'));
+    var m = hasMS ? navigator.mediaSession.metadata : null;
+    var n = m && m.artwork ? m.artwork.length : 0;
+    h += row('封面数量', n > 0 ? ok(n + ' 张') : bad('0（部分系统会因此不显示卡片）'));
+    ACTIONS.forEach(function (a) {
+      h += row('动作 ' + a, results[a] === 'ok' ? ok('已注册') : bad(results[a] || '未尝试'));
     });
     stateCard.innerHTML = h;
   }
@@ -232,73 +233,61 @@
     verdict.className = 'verdict show';
     if (!hasMS || !hasSAH) {
       verdict.classList.add('badbox');
-      verdict.innerHTML = '<b>当前浏览器不支持 Media Session。</b><br>这台设备上的这个浏览器无法让网页内容显示在锁屏/控制中心媒体卡片里。<br>请改用 Chrome 或 Edge（安卓版）再试。';
-    } else if (!registered) {
+      verdict.innerHTML = '<b>浏览器不支持 Media Session。</b><br>无法在控制中心显示媒体卡片，只能换浏览器。';
+    } else if (!registeredCount) {
       verdict.classList.add('badbox');
-      verdict.innerHTML = '<b>Media Session 存在，但所有动作都注册失败。</b><br>浏览器限制了媒体控制，换浏览器测试。';
-    } else if (probe.paused) {
+      verdict.innerHTML = '<b>所有动作注册失败。</b><br>浏览器限制了媒体控制。';
+    } else if (probe.paused || probe.ended) {
       verdict.classList.add('mid');
-      verdict.innerHTML = '<b>已注册，但音频没有在播放。</b><br>点 ① 后请确认页面确实在出声，再下拉控制中心看卡片。';
+      verdict.innerHTML = '<b>音频当前没有在播放。</b><br>请重新点 ①，确认出声后立刻下拉控制中心。';
     } else {
       verdict.classList.add('good');
-      verdict.innerHTML = '<b>已注册并且正在播放。</b><br>现在立刻下拉控制中心，看媒体卡片是否显示「诊断测试歌曲」。<br>如果仍然显示「未在播放」，说明该系统/浏览器屏蔽了网页媒体会话。';
+      verdict.innerHTML = '<b>条件齐备：正在播放 + 动作已注册 + 封面已设置。</b><br>现在立刻下拉控制中心看「诊断测试歌曲」。<br>若仍显示「未在播放」→ 平台限制，网页侧无解。';
     }
   }
 
   startBtn.addEventListener('click', function () {
-    log('--- 开始测试 ---');
+    log('--- 开始 ---');
     startBtn.disabled = true;
-
     probe.src = TONE_URL;
+    probe.loop = true;
     probe.load();
-
-    const onReady = function () {
-      log('音频元数据已加载，duration=' + probe.duration);
+    var onReady = function () {
+      log('duration=' + probe.duration);
       probe.play().then(function () {
         log('play() 成功');
         registerHandlers();
         setMeta();
+        setPlaybackState('playing');
         postPosition();
-        renderState();
-        showVerdict();
+        renderState(); renderLive(); showVerdict();
         startBtn.disabled = false;
       }).catch(function (e) {
         log('play() 失败: ' + e.message);
-        renderState();
-        showVerdict();
         startBtn.disabled = false;
       });
     };
-
-    if (probe.readyState >= 1) {
-      onReady();
-    } else {
+    if (probe.readyState >= 1) onReady();
+    else {
       probe.addEventListener('loadedmetadata', onReady, { once: true });
-      setTimeout(function () {
-        if (probe.readyState < 1) {
-          log('等待元数据超时，仍尝试播放');
-          onReady();
-        }
-      }, 2500);
+      setTimeout(function () { if (probe.readyState < 1) { log('等待超时'); onReady(); } }, 2500);
     }
   });
 
   stopBtn.addEventListener('click', function () {
     probe.pause();
-    renderState();
-    log('已暂停');
+    setPlaybackState('paused');
+    renderState(); renderLive();
   });
 
-  probe.addEventListener('timeupdate', postPosition);
-  probe.addEventListener('play', function () { log('事件: play'); renderState(); });
-  probe.addEventListener('pause', function () { log('事件: pause'); renderState(); });
-  probe.addEventListener('ended', function () { log('事件: ended'); renderState(); });
-  probe.addEventListener('error', function () {
-    log('音频错误: ' + (probe.error ? probe.error.code : '?'));
-    renderState();
-  });
+  probe.addEventListener('timeupdate', function () { postPosition(); renderLive(); });
+  probe.addEventListener('play', function () { log('事件 play'); setPlaybackState('playing'); renderState(); renderLive(); });
+  probe.addEventListener('pause', function () { log('事件 pause'); setPlaybackState('paused'); renderState(); renderLive(); });
+  probe.addEventListener('ended', function () { log('事件 ended'); renderState(); renderLive(); });
+  probe.addEventListener('error', function () { log('音频错误 code=' + (probe.error ? probe.error.code : '?')); renderState(); renderLive(); });
 
   renderState();
+  renderLive();
 })();
 </script>
 </body>
