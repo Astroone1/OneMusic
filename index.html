@@ -910,20 +910,21 @@
             display: block;
         }
 
-        /* 顺序/随机共用同一个按钮：默认显示循环，开启随机后互斥切换到随机图标 */
+        /* 播放方式三态共用同一个按钮：列表循环 / 单曲循环 / 随机，图标互斥显示 */
         .ctrl-btn > .ico-repeat { display: block; }
+        .ctrl-btn > .ico-repeat-one,
         .ctrl-btn > .ico-shuffle { display: none; }
 
-        .ctrl-btn.is-shuffle,
-        .ctrl-btn.mode-active {
+        .ctrl-btn.is-single,
+        .ctrl-btn.is-shuffle {
             color: var(--accent);
         }
 
-        .ctrl-btn.is-shuffle > .ico-repeat,
-        .ctrl-btn.mode-active > .ico-repeat { display: none; }
+        .ctrl-btn.is-single > .ico-repeat,
+        .ctrl-btn.is-shuffle > .ico-repeat { display: none; }
 
-        .ctrl-btn.is-shuffle > .ico-shuffle,
-        .ctrl-btn.mode-active > .ico-shuffle { display: block; }
+        .ctrl-btn.is-single > .ico-repeat-one { display: block; }
+        .ctrl-btn.is-shuffle > .ico-shuffle { display: block; }
 
         .play-pause-circle {
             width: 42px;
@@ -1774,9 +1775,12 @@
         display: block;
       }
 
-      /* 顺序 / 随机：同一按钮内两个图标互斥 */
+      /* 播放方式三态：列表循环 / 单曲循环 / 随机，同一按钮内图标互斥 */
+      .lyric-controls .lc-mode .ico-repeat-one,
       .lyric-controls .lc-mode .ico-shuffle { display: none; }
+      .lyric-controls .lc-mode.is-single .ico-repeat,
       .lyric-controls .lc-mode.is-shuffle .ico-repeat { display: none; }
+      .lyric-controls .lc-mode.is-single .ico-repeat-one { display: block; }
       .lyric-controls .lc-mode.is-shuffle .ico-shuffle { display: block; }
 
       /* 主播放键：唯一实心元素，视觉重心 */
@@ -2129,11 +2133,15 @@
         display: block;
       }
 
-      /* 顺序 / 随机：同一按钮内两个图标互斥 */
+      /* 播放方式三态：列表循环 / 单曲循环 / 随机，同一按钮内图标互斥 */
+      .lyric-controls .lc-mode .ico-repeat-one,
       .lyric-controls .lc-mode .ico-shuffle { display: none; }
+      .lyric-controls .lc-mode.is-single .ico-repeat,
       .lyric-controls .lc-mode.is-shuffle .ico-repeat { display: none; }
+      .lyric-controls .lc-mode.is-single .ico-repeat-one { display: block; }
       .lyric-controls .lc-mode.is-shuffle .ico-shuffle { display: block; }
 
+      .lyric-controls .lc-mode.is-single,
       .lyric-controls .lc-mode.is-shuffle { color: #fff; }
 
       /* 红心：只有「已收藏」用暖红点色，未收藏保持白色 */
@@ -2779,6 +2787,16 @@
             <path d="M4 19h12a4 4 0 0 0 4-4v-2"></path>
         </symbol>
 
+        <!-- 单曲循环：与 ico-repeat 同一套循环箭头骨架，中心加「1」表示只重复当前一首 -->
+        <symbol id="ico-repeat-one" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 2l3 3-3 3"></path>
+            <path d="M20 5H8a4 4 0 0 0-4 4v2"></path>
+            <path d="M7 22l-3-3 3-3"></path>
+            <path d="M4 19h12a4 4 0 0 0 4-4v-2"></path>
+            <path d="M11.4 10.2l1.8-1.1V15"></path>
+        </symbol>
+
         <symbol id="ico-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 2l3 3-3 3"></path>
@@ -2944,9 +2962,10 @@
 
                     <!-- 控制条：顺序 / 上一首 / 透明播放键 / 下一首 / 红心 -->
                     <div class="lyric-controls" id="lyricControls">
-                        <button class="lc-btn lc-mode" id="lyricModeBtn" onclick="toggleShuffleMode()"
-                                title="当前：顺序循环" aria-label="切换顺序或随机播放">
+                        <button class="lc-btn lc-mode" id="lyricModeBtn" onclick="cyclePlayMode()"
+                                title="当前：列表循环" aria-label="切换播放方式：列表循环 / 单曲循环 / 随机播放">
                             <svg class="ico-repeat" aria-hidden="true"><use href="#ico-repeat"></use></svg>
+                            <svg class="ico-repeat-one" aria-hidden="true"><use href="#ico-repeat-one"></use></svg>
                             <svg class="ico-shuffle" aria-hidden="true"><use href="#ico-shuffle"></use></svg>
                         </button>
 
@@ -3041,9 +3060,10 @@
                     </div>
                 </div>
                 <div class="np-controls">
-                    <button class="ctrl-btn" id="modeToggleBtn" onclick="toggleShuffleMode()"
-                            title="当前：顺序循环" aria-label="切换顺序或随机播放">
+                    <button class="ctrl-btn" id="modeToggleBtn" onclick="cyclePlayMode()"
+                            title="当前：列表循环" aria-label="切换播放方式：列表循环 / 单曲循环 / 随机播放">
                         <svg class="ico-repeat" aria-hidden="true"><use href="#ico-repeat"></use></svg>
+                        <svg class="ico-repeat-one" aria-hidden="true"><use href="#ico-repeat-one"></use></svg>
                         <svg class="ico-shuffle" aria-hidden="true"><use href="#ico-shuffle"></use></svg>
                     </button>
                     <button class="fav-btn" id="npFavBtn" onclick="toggleCurrentFav()" title="收藏" aria-label="收藏当前歌曲">
@@ -3142,7 +3162,17 @@
         let playingQueue = [];
         let playingIndex = -1;
         let currentPlayingSong = null;
+        // 播放方式三态：'list'（列表循环）→ 'single'（单曲循环）→ 'shuffle'（随机播放）
+        // isShuffleMode 由 playMode 派生，保持既有播放逻辑的兼容
+        let playMode = 'list';
         let isShuffleMode = false;
+        const PLAY_MODE_ORDER = ['list', 'single', 'shuffle'];
+        const PLAY_MODE_META = {
+            list:    { label: '列表循环', cls: '',           status: '已开启列表循环' },
+            single:  { label: '单曲循环', cls: 'is-single',  status: '已开启单曲循环' },
+            shuffle: { label: '随机播放', cls: 'is-shuffle', status: '已开启全局随机播放' }
+        };
+        const PLAY_MODE_KEY = 'ONEMUSIC_PLAY_MODE_V1';
 
         let searchResults = [];
         let favorites = [];
@@ -3241,22 +3271,52 @@
             btn.innerText = '继续找音源';
         }
 
-        // 全局底部随机播放开关（对所有榜单和收藏列表生效）
+        // 把 playMode 同步到两个播放方式按钮的图标 / 文案 / 可访问性状态
+        function syncPlayModeUI() {
+            const meta = PLAY_MODE_META[playMode] || PLAY_MODE_META.list;
+            const btns = [
+                document.getElementById('modeToggleBtn'),
+                document.getElementById('lyricModeBtn')
+            ];
+            btns.forEach((btn) => {
+                if (!btn) return;
+                btn.classList.toggle('is-single', playMode === 'single');
+                btn.classList.toggle('is-shuffle', playMode === 'shuffle');
+                btn.classList.remove('mode-active');
+                btn.title = `当前：${meta.label}`;
+                btn.setAttribute('aria-label', `切换播放方式，当前 ${meta.label}`);
+                // 三态按钮用 data-mode 便于样式和自动化断言定位当前状态
+                btn.dataset.mode = playMode;
+            });
+        }
+
+        // 播放方式切换：列表循环 → 单曲循环 → 随机播放 → 列表循环
+        // 对歌词页与底部播放栏上的同一个开关都生效
+        function cyclePlayMode() {
+            const curIdx = PLAY_MODE_ORDER.indexOf(playMode);
+            playMode = PLAY_MODE_ORDER[(curIdx + 1) % PLAY_MODE_ORDER.length];
+            isShuffleMode = playMode === 'shuffle';
+            syncPlayModeUI();
+            try { localStorage.setItem(PLAY_MODE_KEY, playMode); } catch (e) {}
+            npStatus.innerText = PLAY_MODE_META[playMode].status;
+        }
+
+        // 兼容旧调用点：只需开关「随机」
         function toggleShuffleMode() {
-            isShuffleMode = !isShuffleMode;
-            const modeBtn = document.getElementById('modeToggleBtn');
-            if (modeBtn) {
-                modeBtn.classList.toggle('mode-active', isShuffleMode);
-                modeBtn.classList.toggle('is-shuffle', isShuffleMode);
-                modeBtn.title = isShuffleMode ? '当前：随机播放' : '当前：顺序循环';
-            }
-            // 歌词模式的控制条同步状态
-            const lyricModeBtn = document.getElementById('lyricModeBtn');
-            if (lyricModeBtn) {
-                lyricModeBtn.classList.toggle('is-shuffle', isShuffleMode);
-                lyricModeBtn.title = isShuffleMode ? '当前：随机播放' : '当前：顺序循环';
-            }
-            npStatus.innerText = isShuffleMode ? "已开启全局随机播放" : "已开启全局顺序循环";
+            playMode = isShuffleMode ? 'list' : 'shuffle';
+            isShuffleMode = playMode === 'shuffle';
+            syncPlayModeUI();
+            try { localStorage.setItem(PLAY_MODE_KEY, playMode); } catch (e) {}
+            npStatus.innerText = PLAY_MODE_META[playMode].status;
+        }
+
+        // 启动时恢复上次的播放方式
+        function initPlayMode() {
+            let stored = null;
+            try { stored = localStorage.getItem(PLAY_MODE_KEY); } catch (e) {}
+            playMode = PLAY_MODE_ORDER.includes(stored) ? stored : 'list';
+            isShuffleMode = playMode === 'shuffle';
+            syncPlayModeUI();
         }
 
         async function requestMeting(paramsStr, timeout = 5500) {
@@ -3926,8 +3986,7 @@
                 // 同步一次播放状态，避免图标与实际不符
                 const icon = document.getElementById('lyricPlayIconSvg');
                 if (icon) icon.innerHTML = audio.paused ? SVG_PLAY_PATH : SVG_PAUSE_PATH;
-                const lyricModeBtn = document.getElementById('lyricModeBtn');
-                if (lyricModeBtn) lyricModeBtn.classList.toggle('is-shuffle', isShuffleMode);
+                syncPlayModeUI();
                 // 同步封面虚化背景与歌词页进度条/红心
                 const lyricBgImg = document.getElementById('lyricBgImg');
                 const lyricCover = document.getElementById('lyricCover');
@@ -5718,7 +5777,15 @@
                 updateMediaSession(currentPlayingSong);
             }
         });
-        audio.addEventListener('ended', () => nextSong(false));
+        audio.addEventListener('ended', () => {
+            // 单曲循环：把同一首重新放一遍，不进入下一首
+            if (playMode === 'single') {
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
+                return;
+            }
+            nextSong(false);
+        });
 
         progressBar.addEventListener('input', () => {
             if (audio.duration) {
@@ -5742,6 +5809,7 @@
         setupHeadsetMediaSession();
         loadFavorites();
         initVolume();
+        initPlayMode();
         switchTab('private');
     </script>
 </body>
