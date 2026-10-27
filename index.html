@@ -2410,6 +2410,111 @@
       }
     </style>
 
+    <style id="onemusic-v7-mobile-lyric">
+      /* ============================================================
+         v7 · 手机端歌词页：删封面、控制栏压到底部、保留上下渐隐
+         桌面端不受影响（全部包在 max-width: 720px 里）
+         ============================================================ */
+      @media (max-width: 720px) {
+        /* 整页改为纵向三段：头部 / 歌词(占满) / 底部控制栏 */
+        .lyric-inner {
+          padding: 6px 16px 0;
+          height: 100%;
+          min-height: 0;
+        }
+
+        .lyric-body {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          min-height: 0;
+          padding-bottom: 0;
+        }
+
+        /* 封面直接隐藏，腾出空间 */
+        .lyric-big-cover { display: none; }
+
+        /* 顶部信息（歌名/歌手）与进度条紧贴头部，保持紧凑 */
+        .lyric-art-col {
+          flex: 0 0 auto;
+          align-items: center;
+          text-align: center;
+          gap: 6px;
+          padding: 0;
+          order: 0;
+        }
+
+        .lyric-art-meta { align-items: center; gap: 2px; }
+        .lyric-song-title { font-size: 17px; font-weight: 600; }
+        .lyric-song-artist { font-size: 12px; }
+
+        .lyric-progress {
+          width: 100%;
+          max-width: none;
+          margin-top: 4px;
+          gap: 8px;
+        }
+
+        /* 控制栏从信息区里抽出来，固定到页面最底部 */
+        .lyric-controls,
+        body.lyric-open .lyric-controls {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 45;
+          margin: 0;
+          padding: 14px 18px calc(16px + env(safe-area-inset-bottom, 0px));
+          max-width: none;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: rgba(28, 25, 21, .34);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+        }
+
+        .lyric-controls .lc-btn { width: 44px; height: 44px; }
+        .lyric-controls .lc-btn svg { width: 22px; height: 22px; }
+        .lyric-controls .lc-play { width: 58px; height: 58px; }
+        .lyric-controls .lc-play svg { width: 22px; height: 22px; }
+        .lyric-controls .lc-fav svg { width: 20px; height: 20px; }
+
+        /* 歌词区吃掉剩余高度；底部留出控制栏的高度，并保留上下渐隐 */
+        .lyric-scroll-col {
+          flex: 1 1 auto;
+          min-height: 0;
+          padding: 20px 2px calc(150px + env(safe-area-inset-bottom, 0px));
+          text-align: center;
+          -webkit-mask-image: linear-gradient(180deg,
+            transparent 0,
+            #000 40px,
+            rgba(0, 0, 0, .92) calc(100% - 230px),
+            rgba(0, 0, 0, .28) calc(100% - 130px),
+            transparent calc(100% - 40px));
+          mask-image: linear-gradient(180deg,
+            transparent 0,
+            #000 40px,
+            rgba(0, 0, 0, .92) calc(100% - 230px),
+            rgba(0, 0, 0, .28) calc(100% - 130px),
+            transparent calc(100% - 40px));
+        }
+
+        .lyric-line {
+          padding: 7px 2px;
+          font-size: 15px;
+          line-height: 1.8;
+          color: rgba(255, 255, 255, .62);
+        }
+
+        .lyric-line.active {
+          font-size: 15px;
+          color: var(--accent);
+        }
+      }
+    </style>
+
 </head>
 <body>
 
@@ -5157,6 +5262,18 @@
                 }],
                 ['nexttrack', () => nextSong()],
                 ['previoustrack', () => prevSong()],
+                ['seekback', (details) => {
+                    const delta = details?.seekOffset || 10;
+                    audio.currentTime = Math.max(0, (audio.currentTime || 0) - delta);
+                }],
+                ['seekforward', (details) => {
+                    const delta = details?.seekOffset || 10;
+                    if (audio.duration) {
+                        audio.currentTime = Math.min(audio.duration, (audio.currentTime || 0) + delta);
+                    }
+                }],
+                // 锁屏/通知栏的红心：切换当前歌曲收藏状态
+                ['togglefavorite', () => toggleCurrentFav()],
                 ['seekto', (details) => {
                     if (details.seekTime && audio.duration) {
                         audio.currentTime = details.seekTime;
