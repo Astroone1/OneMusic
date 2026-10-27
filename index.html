@@ -3,45 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>媒体播控诊断 v2</title>
+<title>媒体播控诊断 v3</title>
 <style>
   :root { color-scheme: dark; }
   *, *::before, *::after { box-sizing: border-box; }
   html { width: 100%; }
-  body { margin:0; padding:18px 16px calc(30px + env(safe-area-inset-bottom));
-    font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  body { margin:0; padding:16px 14px calc(28px + env(safe-area-inset-bottom));
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
     background:#17171a; color:#ececf1; }
-  h1 { font-size:18px; margin:0 0 4px; font-weight:600; }
-  .sub { color:#8b8b96; font-size:13px; margin-bottom:14px; line-height:1.6; }
-  .card { background:#202026; border-radius:12px; padding:2px 14px; margin-bottom:12px; }
-  .row { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #2c2c34; align-items:flex-start; }
+  h1 { font-size:17px; margin:0 0 4px; font-weight:600; }
+  .sub { color:#8b8b96; font-size:12.5px; margin-bottom:12px; line-height:1.55; }
+  .card { background:#202026; border-radius:12px; padding:2px 13px; margin-bottom:10px; }
+  .row { display:flex; gap:10px; padding:9px 0; border-bottom:1px solid #2c2c34; align-items:flex-start; }
   .row:last-child { border-bottom:0; }
-  .k { color:#9a9aa6; flex:0 0 auto; font-size:13.5px; }
-  .v { margin-left:auto; text-align:right; font-size:13.5px; word-break:break-word; overflow-wrap:anywhere; min-width:0; max-width:66%; }
+  .k { color:#9a9aa6; flex:0 0 auto; font-size:13px; }
+  .v { margin-left:auto; text-align:right; font-size:13px; word-break:break-word; overflow-wrap:anywhere; min-width:0; max-width:64%; }
   .ok { color:#4ade80; } .bad { color:#f87171; } .warn { color:#fbbf24; }
-  button { width:100%; padding:15px; font-size:16px; font-weight:500; font-family:inherit;
-    border:0; border-radius:12px; background:#3b6ef0; color:#fff; margin:4px 0 10px; cursor:pointer; }
+  button { width:100%; padding:14px; font-size:15.5px; font-weight:500; font-family:inherit;
+    border:0; border-radius:12px; background:#3b6ef0; color:#fff; margin:3px 0 9px; cursor:pointer; }
   button:active { transform:scale(.985); }
-  button.ghost { background:#2a2a32; margin-bottom:14px; }
+  button.ghost { background:#2a2a32; margin-bottom:9px; }
+  button.alt { background:#7c3aed; }
   button:disabled { opacity:.45; }
-  #log { font:12px/1.65 ui-monospace,Consolas,monospace; color:#8b8b96; white-space:pre-wrap;
+  #log { font:11.5px/1.6 ui-monospace,Consolas,monospace; color:#8b8b96; white-space:pre-wrap;
     word-break:break-word; overflow-wrap:anywhere; background:#1c1c22; border-radius:10px;
-    padding:12px; max-height:36vh; overflow:auto; margin-top:4px; }
-  .verdict { border-radius:12px; padding:14px; margin-bottom:14px; font-size:14px; line-height:1.7; display:none; }
+    padding:11px; max-height:32vh; overflow:auto; }
+  .verdict { border-radius:12px; padding:13px; margin-bottom:10px; font-size:13.5px; line-height:1.65; display:none; }
   .verdict.show { display:block; }
   .verdict.good { background:#12301f; color:#86efac; }
   .verdict.badbox { background:#33161a; color:#fca5a5; }
   .verdict.mid { background:#33290f; color:#fcd34d; }
-  .note { font-size:12px; color:#8b8b96; line-height:1.75; margin-top:10px; }
+  .note { font-size:12px; color:#8b8b96; line-height:1.7; margin-top:10px; }
   .live { display:flex; align-items:center; gap:8px; background:#202026; border-radius:12px;
-    padding:12px 14px; margin-bottom:12px; font-size:13.5px; }
+    padding:11px 13px; margin-bottom:10px; font-size:13px; }
   .dot { width:9px; height:9px; border-radius:50%; background:#55555f; flex:0 0 auto; }
   .dot.on { background:#4ade80; box-shadow:0 0 8px #4ade80; }
+  .hint { font-size:12px; color:#fbbf24; line-height:1.6; background:#33290f;
+    border-radius:10px; padding:11px 13px; margin-bottom:10px; }
 </style>
 </head>
 <body>
-<h1>媒体播控诊断 v2</h1>
-<div class="sub">修掉了 3 个会导致「假阴性」的问题：音频只有 8 秒会播完、playbackState 未设置、artwork 为空。</div>
+<h1>媒体播控诊断 v3</h1>
+<div class="sub">v3 重点验证两件事：真实音频流（非 data: URL）、以及切后台后的存活情况。</div>
 
 <div class="live">
   <span class="dot" id="dot"></span>
@@ -49,20 +52,27 @@
   <span id="liveTime" style="margin-left:auto;color:#8b8b96;font-variant-numeric:tabular-nums"></span>
 </div>
 
+<div class="hint">
+  <b>关键测法（前两次可能漏了这步）：</b><br>
+  播放出声后，<b>按 Home 键回到桌面</b>或<b>直接锁屏</b>，再看卡片。<br>
+  浏览器在前台时，华为控制中心经常不显示媒体卡片。
+</div>
+
 <div class="card" id="envCard"></div>
 
-<button id="startBtn">① 开始测试（60 秒循环音频）</button>
-<button id="stopBtn" class="ghost">② 停止测试</button>
+<button id="startBtn">① 播放真实音频流（推荐）</button>
+<button id="startDataBtn" class="alt">② 播放本地合成音频（对照组）</button>
+<button id="stopBtn" class="ghost">③ 停止</button>
 
 <div class="verdict" id="verdict"></div>
 <div class="card" id="stateCard"></div>
 <div id="log"></div>
 
 <div class="note">
-  <b>正确测法：</b><br>
-  点 ① → 等 2 秒确认出声 → <b>不要等</b>，立刻下拉控制中心 → 看卡片是否变成「诊断测试歌曲 · OneMusic 诊断」<br>
-  音频循环播放，不会再因为播完而消失。<br><br>
-  <b>若仍是「未在播放」：</b>说明该系统浏览器不支持把网页音频投到控制中心。
+  <b>两组对比的意义：</b><br>
+  若 ① 能出卡片、② 不能 → 说明系统只认真实音频流，主站没问题<br>
+  若两组都不能 → 华为浏览器限制，网页侧无解<br>
+  若两组都能 → 之前只是没切后台，主站有救
 </div>
 
 <audio id="probe" preload="metadata" playsinline loop></audio>
@@ -76,15 +86,13 @@
   var logEl = document.getElementById('log');
   var verdict = document.getElementById('verdict');
   var startBtn = document.getElementById('startBtn');
+  var startDataBtn = document.getElementById('startDataBtn');
   var stopBtn = document.getElementById('stopBtn');
   var dot = document.getElementById('dot');
   var liveText = document.getElementById('liveText');
   var liveTime = document.getElementById('liveTime');
 
-  function log(msg) {
-    logEl.textContent += (logEl.textContent ? '\n' : '') + msg;
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+  function log(m) { logEl.textContent += (logEl.textContent ? '\n' : '') + m; logEl.scrollTop = logEl.scrollHeight; }
   function row(k, v) { return '<div class="row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'; }
   function ok(v) { return '<span class="ok">' + v + '</span>'; }
   function bad(v) { return '<span class="bad">' + v + '</span>'; }
@@ -101,10 +109,17 @@
   html += row('setActionHandler', hasSAH ? ok('是') : bad('否'));
   html += row('setPositionState', hasSPS ? ok('支持') : warn('不支持'));
   html += row('MediaMetadata', hasMM ? ok('是') : bad('否'));
-  html += row('浏览器', '<span style="font-size:11px">' + navigator.userAgent.replace(/</g, '&lt;') + '</span>');
+  html += row('togglefavorite', '华为浏览器不支持，仅影响红心按钮');
   envCard.innerHTML = html;
-  log('环境检测完成');
 
+  /* ---------- 真实音频流（公开 CDN 的短音频，带 CORS） ---------- */
+  var STREAM_URLS = [
+    'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3',
+    'https://file-examples.com/storage/fe5e5d2f0e5e2b6d1d6a3c8/2017/11/file_example_MP3_700KB.mp3'
+  ];
+  var streamIdx = 0;
+
+  /* ---------- 本地合成音频作为对照组 ---------- */
   function makeTone(seconds, freq) {
     var rate = 8000, n = Math.floor(rate * seconds);
     var buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
@@ -143,32 +158,31 @@
     } catch (e) { return ''; }
   }
 
-  var TONE_URL = makeTone(60, 440);
+  var DATA_URL = makeTone(60, 440);
   var ART_URL = makeArtwork();
 
-  var ACTIONS = ['play', 'pause', 'nexttrack', 'previoustrack', 'seekbackward', 'seekforward', 'seekto', 'stop', 'togglefavorite'];
+  var ACTIONS = ['play', 'pause', 'nexttrack', 'previoustrack', 'seekbackward', 'seekforward', 'seekto', 'stop'];
   var results = {};
   var registeredCount = 0;
 
   function registerHandlers() {
     if (!hasSAH) return 0;
     var success = 0;
-    ACTIONS.forEach(function (action) {
+    ACTIONS.forEach(function (a) {
       try {
-        navigator.mediaSession.setActionHandler(action, function (details) {
-          log('\u2605 系统触发: ' + action);
-          if (action === 'play') probe.play().catch(function () {});
-          else if (action === 'pause' || action === 'stop') probe.pause();
-          else if (action === 'seekforward') probe.currentTime = Math.min(probe.duration || 0, probe.currentTime + 5);
-          else if (action === 'seekbackward') probe.currentTime = Math.max(0, probe.currentTime - 5);
-          else if (action === 'seekto' && details && typeof details.seekTime === 'number') probe.currentTime = details.seekTime;
+        navigator.mediaSession.setActionHandler(a, function (d) {
+          log('\u2605 系统触发: ' + a);
+          if (a === 'play') { markWakeLock(); probe.play().catch(function () {}); }
+          else if (a === 'pause' || a === 'stop') probe.pause();
+          else if (a === 'seekforward') probe.currentTime = Math.min(probe.duration || 0, probe.currentTime + 5);
+          else if (a === 'seekbackward') probe.currentTime = Math.max(0, probe.currentTime - 5);
+          else if (a === 'seekto' && d && typeof d.seekTime === 'number') probe.currentTime = d.seekTime;
         });
-        results[action] = 'ok';
-        success++;
-      } catch (e) { results[action] = '不支持'; }
+        results[a] = 'ok'; success++;
+      } catch (e) { results[a] = '不支持'; }
     });
     registeredCount = success;
-    log('动作注册 ' + success + ' / ' + ACTIONS.length);
+    log('动作注册 ' + success + '/' + ACTIONS.length);
     return success;
   }
 
@@ -179,15 +193,12 @@
       navigator.mediaSession.metadata = new MediaMetadata({
         title: '诊断测试歌曲', artist: 'OneMusic 诊断', album: 'Media Session Test', artwork: art
       });
-      log('metadata 写入成功（artwork ' + art.length + ' 张）');
+      log('metadata OK, artwork=' + art.length);
       return true;
-    } catch (e) { log('metadata 写入失败: ' + e.message); return false; }
+    } catch (e) { log('metadata fail: ' + e.message); return false; }
   }
 
-  function setPlaybackState(state) {
-    if (!hasMS) return;
-    try { navigator.mediaSession.playbackState = state; } catch (e) {}
-  }
+  function setPlaybackState(s) { if (!hasMS) return; try { navigator.mediaSession.playbackState = s; } catch (e) {} }
 
   function postPosition() {
     if (!hasSPS) return;
@@ -201,31 +212,37 @@
     } catch (e) {}
   }
 
+  /* ---------- Wake Lock：切后台/锁屏时尽量保活 ---------- */
+  var wakeLock = null;
+  function markWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    navigator.wakeLock.request('screen').then(function (l) {
+      wakeLock = l;
+      log('wakeLock 已获取');
+    }).catch(function (e) { log('wakeLock 失败: ' + e.message); });
+  }
+
   function renderLive() {
     var playing = !probe.paused && !probe.ended;
     dot.className = 'dot' + (playing ? ' on' : '');
     if (!probe.src) liveText.textContent = '未开始';
-    else if (playing) liveText.textContent = '正在播放（保持此状态下拉控制中心）';
-    else if (probe.ended) liveText.textContent = '已播放结束';
+    else if (playing) liveText.textContent = '正在播放 → 现在回桌面/锁屏看卡片';
+    else if (probe.ended) liveText.textContent = '已结束';
     else liveText.textContent = '已暂停';
     var t = probe.currentTime || 0, d = probe.duration;
-    liveTime.textContent = (d && isFinite(d)) ? t.toFixed(0) + ' / ' + d.toFixed(0) + 's' : '';
+    liveTime.textContent = (d && isFinite(d)) ? t.toFixed(0) + '/' + d.toFixed(0) + 's' : '';
   }
 
   function renderState() {
     var h = '';
-    h += row('音频已就绪', probe.readyState >= 1 ? ok('是') : warn('否'));
-    h += row('音频时长', (probe.duration && isFinite(probe.duration)) ? ok(probe.duration.toFixed(0) + ' 秒') : warn('未知'));
-    h += row('播放状态', (!probe.paused && !probe.ended) ? ok('正在播放') : (probe.ended ? bad('已结束') : warn('暂停')));
+    h += row('音频源', probe.src ? (probe.src.indexOf('data:') === 0 ? '本地合成' : '网络流') : '未加载');
+    h += row('已就绪', probe.readyState >= 1 ? ok('是') : warn('否'));
+    h += row('时长', (probe.duration && isFinite(probe.duration)) ? ok(probe.duration.toFixed(0) + ' 秒') : warn('未知'));
+    h += row('播放中', (!probe.paused && !probe.ended) ? ok('是') : (probe.ended ? bad('已结束') : warn('否')));
     var s = hasMS ? (navigator.mediaSession.playbackState || 'none') : '-';
     h += row('playbackState', s === 'playing' ? ok(s) : (s === 'paused' ? warn(s) : bad(s)));
-    h += row('元数据标题', hasMS && navigator.mediaSession.metadata ? ok(navigator.mediaSession.metadata.title) : bad('未设置'));
-    var m = hasMS ? navigator.mediaSession.metadata : null;
-    var n = m && m.artwork ? m.artwork.length : 0;
-    h += row('封面数量', n > 0 ? ok(n + ' 张') : bad('0（部分系统会因此不显示卡片）'));
-    ACTIONS.forEach(function (a) {
-      h += row('动作 ' + a, results[a] === 'ok' ? ok('已注册') : bad(results[a] || '未尝试'));
-    });
+    h += row('元数据', hasMS && navigator.mediaSession.metadata ? ok(navigator.mediaSession.metadata.title) : bad('未设置'));
+    ACTIONS.forEach(function (a) { h += row('动作 ' + a, results[a] === 'ok' ? ok('已注册') : bad(results[a] || '未尝试')); });
     stateCard.innerHTML = h;
   }
 
@@ -233,61 +250,84 @@
     verdict.className = 'verdict show';
     if (!hasMS || !hasSAH) {
       verdict.classList.add('badbox');
-      verdict.innerHTML = '<b>浏览器不支持 Media Session。</b><br>无法在控制中心显示媒体卡片，只能换浏览器。';
-    } else if (!registeredCount) {
-      verdict.classList.add('badbox');
-      verdict.innerHTML = '<b>所有动作注册失败。</b><br>浏览器限制了媒体控制。';
+      verdict.innerHTML = '<b>浏览器不支持 Media Session。</b><br>无法显示媒体卡片，只能换浏览器。';
     } else if (probe.paused || probe.ended) {
       verdict.classList.add('mid');
-      verdict.innerHTML = '<b>音频当前没有在播放。</b><br>请重新点 ①，确认出声后立刻下拉控制中心。';
+      verdict.innerHTML = '<b>音频没在播。</b><br>重新点按钮，出声后立刻回桌面或锁屏。';
     } else {
       verdict.classList.add('good');
-      verdict.innerHTML = '<b>条件齐备：正在播放 + 动作已注册 + 封面已设置。</b><br>现在立刻下拉控制中心看「诊断测试歌曲」。<br>若仍显示「未在播放」→ 平台限制，网页侧无解。';
+      verdict.innerHTML = '<b>已就绪。</b>现在<b>按 Home 键回桌面</b>或<b>锁屏</b>，看卡片有没有变成「诊断测试歌曲」。<br>前台看不出来是正常的。';
+    }
+  }
+
+  function playWith(src, label) {
+    log('--- ' + label + ' ---');
+    startBtn.disabled = true; startDataBtn.disabled = true;
+    probe.src = src; probe.loop = true; probe.load();
+
+    var done = false;
+    var onReady = function () {
+      if (done) return; done = true;
+      log('duration=' + probe.duration);
+      probe.play().then(function () {
+        log('play() OK');
+        registerHandlers(); setMeta(); setPlaybackState('playing'); postPosition();
+        renderState(); renderLive(); showVerdict();
+      }).catch(function (e) {
+        log('play() fail: ' + e.message);
+        renderState(); renderLive();
+      }).finally(function () {
+        startBtn.disabled = false; startDataBtn.disabled = false;
+      });
+    };
+
+    probe.onerror = function () {
+      log('音频加载失败 code=' + (probe.error ? probe.error.code : '?'));
+      if (src !== DATA_URL) {
+        streamIdx++;
+        if (streamIdx < STREAM_URLS.length) {
+          log('尝试备用流 ' + streamIdx);
+          playWith(STREAM_URLS[streamIdx], '备用流 ' + streamIdx);
+        } else {
+          log('所有网络流都失败，请用 ② 对照组');
+          startBtn.disabled = false; startDataBtn.disabled = false;
+        }
+      }
+    };
+
+    if (probe.readyState >= 1) onReady();
+    else {
+      probe.addEventListener('loadedmetadata', onReady, { once: true });
+      setTimeout(function () {
+        if (!done) { log('等待元数据超时'); onReady(); }
+      }, 8000);
     }
   }
 
   startBtn.addEventListener('click', function () {
-    log('--- 开始 ---');
-    startBtn.disabled = true;
-    probe.src = TONE_URL;
-    probe.loop = true;
-    probe.load();
-    var onReady = function () {
-      log('duration=' + probe.duration);
-      probe.play().then(function () {
-        log('play() 成功');
-        registerHandlers();
-        setMeta();
-        setPlaybackState('playing');
-        postPosition();
-        renderState(); renderLive(); showVerdict();
-        startBtn.disabled = false;
-      }).catch(function (e) {
-        log('play() 失败: ' + e.message);
-        startBtn.disabled = false;
-      });
-    };
-    if (probe.readyState >= 1) onReady();
-    else {
-      probe.addEventListener('loadedmetadata', onReady, { once: true });
-      setTimeout(function () { if (probe.readyState < 1) { log('等待超时'); onReady(); } }, 2500);
-    }
+    streamIdx = 0;
+    playWith(STREAM_URLS[0], '真实音频流');
   });
-
+  startDataBtn.addEventListener('click', function () {
+    playWith(DATA_URL, '本地合成音频');
+  });
   stopBtn.addEventListener('click', function () {
-    probe.pause();
-    setPlaybackState('paused');
-    renderState(); renderLive();
+    probe.pause(); setPlaybackState('paused');
+    renderState(); renderLive(); log('已暂停');
   });
 
   probe.addEventListener('timeupdate', function () { postPosition(); renderLive(); });
   probe.addEventListener('play', function () { log('事件 play'); setPlaybackState('playing'); renderState(); renderLive(); });
   probe.addEventListener('pause', function () { log('事件 pause'); setPlaybackState('paused'); renderState(); renderLive(); });
   probe.addEventListener('ended', function () { log('事件 ended'); renderState(); renderLive(); });
-  probe.addEventListener('error', function () { log('音频错误 code=' + (probe.error ? probe.error.code : '?')); renderState(); renderLive(); });
+  probe.addEventListener('waiting', function () { log('事件 waiting（缓冲中）'); });
+  probe.addEventListener('stalled', function () { log('事件 stalled（卡住）'); });
+  document.addEventListener('visibilitychange', function () {
+    log('visibility=' + document.visibilityState + ' paused=' + probe.paused);
+    renderLive();
+  });
 
-  renderState();
-  renderLive();
+  renderState(); renderLive();
 })();
 </script>
 </body>
