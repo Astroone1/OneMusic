@@ -3175,6 +3175,7 @@
         const PLAY_MODE_KEY = 'ONEMUSIC_PLAY_MODE_V1';
 
         let searchResults = [];
+        let activeSearchToken = 0;
         let favorites = [];
         let activePlayToken = 0;
         let activeWorkingChain = null;
@@ -3319,7 +3320,9 @@
             syncPlayModeUI();
         }
 
-        async function requestMeting(paramsStr, timeout = 5500) {
+        async function requestMeting(paramsStr, timeout = 5500, options = {}) {
+            // 默认仍按“可播放音源”过滤；纯搜索时允许只返回曲目信息，播放时再解析音源。
+            const requireUrl = options.requireUrl !== false;
             for (let endpoint of METING_ENDPOINTS) {
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), timeout);
@@ -3331,8 +3334,9 @@
                     // 端点异常时会返回 {"error":"..."}，必须排除，否则会被下游当成数据
                     if (data && !Array.isArray(data) && data.error) continue;
                     if (Array.isArray(data) && data.length > 0) {
-                        // 过滤掉 url 为空或名称残缺的脏条目
-                        const clean = data.filter(it => it && (it.name || it.title) && it.url);
+                        // 搜索发现与可播放直链是两件事：仅在音源采集场景强制要求 url。
+                        const clean = data.filter(it => it && (it.name || it.title)
+                            && (!requireUrl || (typeof it.url === 'string' && it.url.trim())));
                         if (clean.length > 0) return clean;
                     }
                 } catch (e) {
@@ -3345,7 +3349,7 @@
         // GD Studio 的浏览器直连层。搜索结果短缓存，播放直链不做长缓存（避免收藏里的 URL 过期）。
         const GD_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
         const GD_SEARCH_CACHE = new Map();
-        const GD_SEARCH_CACHE_TTL = 90 * 1000;
+        const GD_SEARCH_CACHE_TTL = 15 * 1000;
 
         function normalizeGDText(value) {
             return String(value || '')
@@ -3363,7 +3367,7 @@
             if (cached && cached.expiresAt > Date.now()) return cached.tracks;
 
             const url = `${GD_API_BASE}?types=search&source=${encodeURIComponent(source)}`
-                      + `&name=${encodeURIComponent(trimmed)}&count=12`;
+                      + `&name=${encodeURIComponent(trimmed)}&count=20`;
             try {
                 const res = await fetchWithTimeout(url, timeoutMs);
                 if (!res.ok) throw new Error(`GD search HTTP ${res.status}`);
@@ -3371,10 +3375,10 @@
                 const tracks = Array.isArray(data)
                     ? data.filter(it => it && (it.name || it.title) && it.id != null)
                     : [];
-                // 成功结果缓存 90 秒；空结果/临时故障只短缓存，减少连续重复请求但不锁死故障。
+                // 正结果短缓存；空结果只缓存 1 秒，避免接口瞬时空回包让用户重试时仍拿到旧空结果。
                 GD_SEARCH_CACHE.set(cacheKey, {
                     tracks,
-                    expiresAt: Date.now() + (tracks.length ? GD_SEARCH_CACHE_TTL : 12000)
+                    expiresAt: Date.now() + (tracks.length ? GD_SEARCH_CACHE_TTL : 1000)
                 });
                 if (GD_SEARCH_CACHE.size > 80) {
                     const now = Date.now();
@@ -3384,7 +3388,8 @@
                 }
                 return tracks;
             } catch (e) {
-                GD_SEARCH_CACHE.set(cacheKey, { tracks: [], expiresAt: Date.now() + 8000 });
+                // 网络错误/超时不缓存：下一次点击应该真正发起新请求。
+                GD_SEARCH_CACHE.delete(cacheKey);
                 return [];
             }
         }
@@ -4682,6 +4687,35 @@
             }
         }
 
+        // 网易云账号推荐已提供官方 song ID，不应只靠“歌名+歌手”去第三方反查。
+        // 优先用当前登录 API 实例解析官方直链；失败时仍走下面既有的多源穿透。
+        async function resolveNeteasePrivateTrackUrl(song, timeoutMs = 3200) {
+            const id = song?.platformId ?? song?.platformTrack?.id;
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
+            if (song?.platform !== 'netease' || id == null || !cookie) return null;
+            try {
+                const url = privateApiUrl('netease', '/song/url/v1', {
+                    id, level: 'standard', cookie, timestamp: Date.now()
+                });
+                const payload = await privateFetchJSON(url, {}, timeoutMs);
+                const rows = Array.isArray(payload?.data) ? payload.data : [];
+                const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
+                const mediaUrl = item?.url || payload?.url;
+                if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) return null;
+                if (item?.freeTrialInfo || (item?.code != null && Number(item.code) !== 200)) return null;
+                return {
+                    url: mediaUrl,
+                    label: 'NETEASE-ID·官方直链',
+                    title: song.title || item?.name || '',
+                    artist: song.artist || '',
+                    platformId: id
+                };
+            } catch (error) {
+                // 某些兼容实例未部署 song/url/v1；保持静默并回退公共音源采集链。
+                return null;
+            }
+        }
+
         async function loadNeteaseDailyRecommendation(options = {}) {
             // preserveTab: 仅刷新登录态/列表，不切换标签页（扫码完成后在收藏页静默刷新时使用）
             const preserveTab = options.preserveTab === true;
@@ -4931,7 +4965,7 @@
         }
 
         /* ================= 搜索：GD 兜底源（仅 netease） ================= */
-        const GD_SEARCH_TIMEOUT = 3000;
+        const GD_SEARCH_TIMEOUT = 4500;
 
         function fetchWithTimeout(url, timeoutMs) {
             const controller = new AbortController();
@@ -4966,6 +5000,7 @@
         }
 
         async function doAggregatedSearch() {
+            const requestToken = ++activeSearchToken;
             const keyword = document.getElementById('searchInput').value.trim();
             if (!keyword) return;
 
@@ -4975,11 +5010,12 @@
             songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--accent);">正在全网并发检索「${keyword}」...</div>`;
 
             const tasks = UPSTREAM_PLATFORMS.map(plat =>
-                requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(keyword)}`, 6000)
-                    .then(list => ({ plat, list: list.slice(0, 15) }))
+                requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(keyword)}`, 6000, { requireUrl: false })
+                    .then(list => ({ plat, list: list.slice(0, 20) }))
             );
 
             const settled = await Promise.allSettled(tasks);
+            if (requestToken !== activeSearchToken) return;
             const mergedMap = new Map();
 
             settled.forEach(res => {
@@ -4988,21 +5024,21 @@
                     list.forEach(item => {
                         const title = item.name || item.title || "未知歌曲";
                         const artist = item.artist || item.author || "未知歌手";
-                        if (!item.url) return;
-
+                        const hasUrl = typeof item.url === 'string' && item.url.trim();
+                        const source = hasUrl ? { url: item.url, label: plat.label } : null;
                         const fp = getSongFingerprint(title, artist);
                         if (!mergedMap.has(fp)) {
                             mergedMap.set(fp, {
                                 title,
                                 artist,
                                 cover: item.pic || "https://picsum.photos/seed/music/300/300",
-                                sources: [{ url: item.url, label: plat.label }],
-                                labels: [plat.label]
+                                sources: source ? [source] : [],
+                                labels: source ? [plat.label] : []
                             });
                         } else {
                             const existing = mergedMap.get(fp);
-                            if (!existing.labels.includes(plat.label)) {
-                                existing.sources.push({ url: item.url, label: plat.label });
+                            if (source && !existing.labels.includes(plat.label)) {
+                                existing.sources.push(source);
                                 existing.labels.push(plat.label);
                             }
                             if (existing.cover.includes('picsum.photos') && item.pic) {
@@ -5015,12 +5051,14 @@
 
             const buildResult = () => Array.from(mergedMap.values()).map(item => ({
                 ...item,
-                badgeText: `聚合 ${item.sources.length} 源`
+                badgeText: item.sources.length
+                    ? `聚合 ${item.sources.length} 源`
+                    : (item.gdSource ? `兜底 ${item.gdLabel || 'GD-NETEASE'}` : '已找到曲目 · 播放时解析音源')
             }));
 
             // ---- 第一阶段：Meting 结果先上屏（通常 <1s） ----
             searchResults = buildResult();
-            if (currentTab === 'search') {
+            if (requestToken === activeSearchToken && currentTab === 'search') {
                 viewList = [...searchResults];
                 renderList();
                 if (searchResults.length === 0) {
@@ -5036,8 +5074,8 @@
                 gdList = [];
             }
 
-            // 用户可能已经切走，别再覆盖视图
-            if (currentTab !== 'search') return;
+            // 用户可能已发起新搜索或切走，旧请求不能再覆盖新列表。
+            if (requestToken !== activeSearchToken || currentTab !== 'search') return;
             if (gdList.length === 0) {
                 if (searchResults.length === 0) {
                     songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--fav-red);">未找到「${keyword}」的可用音源</div>`;
@@ -5057,10 +5095,21 @@
                         sources: [],
                         gdSource: item.gdSource,
                         gdId: item.gdId,
-                        labels: [item.gdLabel],
+                        gdLabel: item.gdLabel,
+                        labels: [],
                         badgeText: `兜底 ${item.gdLabel}`
                     });
                     added++;
+                } else {
+                    // 元数据搜索已经发现、但没给直链的歌曲，也要补上 GD 的稳定 song ID。
+                    const existing = mergedMap.get(fp);
+                    if (existing.gdId == null) {
+                        existing.gdSource = item.gdSource;
+                        existing.gdId = item.gdId;
+                        existing.gdLabel = item.gdLabel;
+                        if (existing.cover.includes('picsum.photos') && item.cover) existing.cover = item.cover;
+                        added++;
+                    }
                 }
             });
 
@@ -5244,7 +5293,7 @@
                 if (myToken === activePlayToken) {
                     song.badgeText = "⚠️ 暂无音源";
                     renderList();
-                    setTimeout(() => { if (myToken === activePlayToken) nextSong(); }, 1500);
+                    setTimeout(() => { if (myToken === activePlayToken) nextSong(false); }, 1500);
                 }
                 return;
             }
@@ -5293,7 +5342,7 @@
             if (myToken === activePlayToken) {
                 song.badgeText = "⚠️ 暂无音源";
                 renderList();
-                setTimeout(() => { if (myToken === activePlayToken) nextSong(); }, 1200);
+                setTimeout(() => { if (myToken === activePlayToken) nextSong(false); }, 1200);
             }
         }
 
@@ -5367,6 +5416,7 @@
         // 采集链顺位：按 30 首实测命中率排序（数值越小越先试）
         function getSourceRank(cand) {
             const label = String(cand.label || '');
+            if (/^NETEASE-ID/.test(label)) return 5;   // 账号接口给出的歌曲 ID 直链优先验证
             if (/^MT-NETEASE/.test(label)) return 10;   // 70%
             if (/^MT-QQ/.test(label))      return 20;   // 23%
             if (/^MT-KUGOU/.test(label))   return 30;   //  7%
@@ -5398,6 +5448,8 @@
                 { key: 'MT-KUGOU',   state: 'wait' },
                 { key: 'GD-NE',      state: 'wait' }
             ];
+            const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
+            if (hasNativeNeteaseId) collectState.push({ key: 'NETEASE-ID', state: 'wait' });
             const renderCollect = () => {
                 const doneCount = collectState.filter(s => s.state !== 'wait').length;
                 const parts = collectState.map(s => {
@@ -5405,7 +5457,7 @@
                     if (s.state === 'ok') return `${s.key} ✓`;
                     return `${s.key} ✗`;
                 });
-                npStatus.innerText = `采集 ${doneCount}/4 · ${parts.join(' ')}`;
+                npStatus.innerText = `采集 ${doneCount}/${collectState.length} · ${parts.join(' ')}`;
             };
 
             const settle = (idx, ok) => {
@@ -5445,12 +5497,22 @@
                 .then(list => { if (Array.isArray(list)) pushAll(list); settle(3, list && list.length > 0); })
                 .catch(() => settle(3, false));
 
+            // 私人每日推荐/FM 自带网易云 song ID，直接取账号 API 的可播 URL，
+            // 与第三方按歌名检索并行，避免把可用曲目误判成“全无音源”。
+            const nativeNeteaseTask = hasNativeNeteaseId
+                ? resolveNeteasePrivateTrackUrl(song, 3200)
+                    .then(item => {
+                        if (item?.url) pushAll([item]);
+                        settle(4, !!item?.url);
+                    })
+                    .catch(() => settle(4, false))
+                : Promise.resolve();
+
             // 采集阶段硬上限 6 秒：超时就带着已拿到的候选继续，不再干等
             const collectGuard = new Promise(resolve => setTimeout(resolve, 6000));
-            await Promise.race([
-                Promise.all([mtNE, mtQQ, mtKG, gdTask]),
-                collectGuard
-            ]);
+            const allTasks = [mtNE, mtQQ, mtKG, gdTask];
+            if (hasNativeNeteaseId) allTasks.push(nativeNeteaseTask);
+            await Promise.race([Promise.all(allTasks), collectGuard]);
 
             if (token !== activePlayToken) return [];
 
