@@ -3145,19 +3145,30 @@
         ];
 
         // 搜索与播放时的统一上游列表（全部走 Meting 网关）
-        // 实测（2026-10）：MT-QQ 40/40 稳定；MT-NETEASE 命中率最高但会按关键词持续返回空包；
-        // MT-KUGOU/KUWO/BAIDU 在 qijieya 网关下恒返回 []（名义存在、实际不可用）。
-        // 因此把 QQ 提为首选主源，网易云作为并列主源（覆盖独家曲库），酷狗降为可选补充。
+        // 实测（2026-10）：MT-QQ 40/40 稳定；MT-NETEASE 命中率最高但会按关键词持续返回空包。
+        // 酷狗已移除：qijieya 网关恒返回 []（10/10 空包）；i-meto 网关虽能返回 30 条搜索结果，
+        // 但实测直链 0/5 可播（empty / TimeoutError / TypeError），且耗时 2.3~8 秒，
+        // 在 6 秒采集上限内纯属拖累，没有任何产出。
         const UPSTREAM_PLATFORMS = [
             { code: 'tencent', label: 'MT-QQ',      primary: true },
-            { code: 'netease', label: 'MT-NETEASE', primary: true },
-            { code: 'kugou',   label: 'MT-KUGOU',   primary: false }
+            { code: 'netease', label: 'MT-NETEASE', primary: true }
         ];
 
         // 相似推荐：主词全空时用来兜底，保证「搜不到也不返回空列表」。
         const SIMILAR_FALLBACK_PLATFORMS = ['tencent', 'netease'];
 
         const MIN_VALID_DURATION = 65;
+
+        // 音质底线：低于该码率（kbps）的音源一律跳过，不允许播放。
+        // 背景：GD 移除后「不接受 128/192」的硬约束一并消失，Meting 链变成
+        // 「上游给什么就用什么」，实测上游确实会返回 128k。这里重新把底线钉死。
+        // 注意：这是用户明确要求「音质不可降」的落地，代价是遇到只有低码率的歌会播不了。
+        const MIN_AUDIO_BITRATE_KBPS = 320;
+        // 码率探测只需读开头几十 KB 就能找到 MP3 帧头。
+        // 实测：上游首字节延迟波动极大（node 侧 0.5s，浏览器侧 2.2s~15.9s 都有），
+        // 所以超时必须放宽，否则会把「慢但合格」的源误判成失败。
+        const BITRATE_PROBE_BYTES = 32 * 1024;
+        const BITRATE_PROBE_TIMEOUT_MS = 20000;
 
         const SVG_PLAY_PATH = `<path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>`;
         const SVG_PAUSE_PATH = `<rect x="7" y="6" width="3.6" height="12" rx="1.8"/><rect x="13.4" y="6" width="3.6" height="12" rx="1.8"/>`;
@@ -3508,7 +3519,6 @@
         const CURRENT_SOURCE_DISPLAY = [
             { match: /^MT-NETEASE/i, name: '网易云' },
             { match: /^MT-QQ/i,      name: 'QQ音乐' },
-            { match: /^MT-KUGOU/i,   name: '酷狗' },
             { match: /^NETEASE-ID/i, name: '网易云账号' }
         ];
 
@@ -4847,31 +4857,51 @@
 
         // 网易云账号推荐已提供官方 song ID，不应只靠“歌名+歌手”去第三方反查。
         // 优先用当前登录 API 实例解析官方直链；失败时仍走下面既有的多源穿透。
+        // 网易云账号直链。音质要求：最低 320kbps。
+        // 按 exhigh(320) → lossless → hires 依次尝试，取第一个实际返回 url 且码率≥320 的。
+        // 注意：能拿到哪一档取决于账号会员等级；接口忽略请求参数时靠后续码率闸门兜底。
+        const NETEASE_URL_LEVELS = ['exhigh', 'lossless', 'hires'];
+
         async function resolveNeteasePrivateTrackUrl(song, timeoutMs = 3200) {
             const id = song?.platformId ?? song?.platformTrack?.id;
             const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
             if (song?.platform !== 'netease' || id == null || !cookie) return null;
-            try {
-                const url = privateApiUrl('netease', '/song/url/v1', {
-                    id, level: 'standard', cookie, timestamp: Date.now()
-                });
-                const payload = await privateFetchJSON(url, {}, timeoutMs);
-                const rows = Array.isArray(payload?.data) ? payload.data : [];
-                const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
-                const mediaUrl = item?.url || payload?.url;
-                if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) return null;
-                if (item?.freeTrialInfo || (item?.code != null && Number(item.code) !== 200)) return null;
-                return {
-                    url: mediaUrl,
-                    label: 'NETEASE-ID·官方直链',
-                    title: song.title || item?.name || '',
-                    artist: song.artist || '',
-                    platformId: id
-                };
-            } catch (error) {
-                // 某些兼容实例未部署 song/url/v1；保持静默并回退公共音源采集链。
-                return null;
+
+            for (const level of NETEASE_URL_LEVELS) {
+                try {
+                    const url = privateApiUrl('netease', '/song/url/v1', {
+                        id, level, cookie, timestamp: Date.now()
+                    });
+                    const payload = await privateFetchJSON(url, {}, timeoutMs);
+                    const rows = Array.isArray(payload?.data) ? payload.data : [];
+                    const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
+                    const mediaUrl = item?.url || payload?.url;
+                    if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) continue;
+                    // 试听片段（会员/版权限制）直接跳过，不当作可用音源
+                    if (item?.freeTrialInfo) continue;
+                    if (item?.code != null && Number(item.code) !== 200) continue;
+
+                    // 接口会返回 br 字段（如 320000 = 320kbps）。能读到就先按它初筛，
+                    // 读不到则放行，交给播放前的码率闸门做最终判定。
+                    const rawBr = Number(item?.br);
+                    if (Number.isFinite(rawBr) && rawBr > 0) {
+                        const kbps = Math.round(rawBr / 1000);
+                        if (kbps < MIN_AUDIO_BITRATE_KBPS) continue;
+                    }
+
+                    return {
+                        url: mediaUrl,
+                        label: 'NETEASE-ID·官方直链',
+                        title: song.title || item?.name || '',
+                        artist: song.artist || '',
+                        platformId: id
+                    };
+                } catch (error) {
+                    // 该档位失败（实例未部署 / 无版权）就试下一档，全失败后返回 null
+                    continue;
+                }
             }
+            return null;
         }
 
         async function loadNeteaseDailyRecommendation(options = {}) {
@@ -5217,7 +5247,7 @@
         // 单平台带变体重试的检索。
         // 策略：原始词与所有变体并发（都受同一总预算约束），但**原始词有优先窗口**：
         // 变体先回来时先暂存，给原始词一个短暂窗口；窗口内原始词命中就用原始词，否则用变体。
-        // 这样既避免串行叠加耗时（实测 kugou 串行 13.7s），又不会让相似结果抢占精确匹配。
+        // 这样既避免串行叠加耗时，又不会让相似结果抢占精确匹配。
         async function searchPlatformWithVariants(code, variants, timeout, budgetMs = 12000) {
             const list = variants && variants.length ? variants : [];
             if (!list.length) return [];
@@ -5610,12 +5640,13 @@
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
-                        song.badgeText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
+                        const q = formatQualityTag(check);
+                        song.badgeText = `⚡ ${formatTime(check.duration)} · ${q ? q + ' · ' : ''}${srcObj.label}`;
                         syncFavoriteLatestChain(song, srcObj, check.duration);
                         renderList();
                         renderNowPlaying(song);
                         setContinuePenetrationVisible(true);
-                        npStatus.innerText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
+                        npStatus.innerText = `⚡ ${formatTime(check.duration)} · ${q ? q + ' · ' : ''}${srcObj.label}`;
                         updateMediaSession(song);
                         return;
                     }
@@ -5651,14 +5682,15 @@
                 const shortLabel = String(cand.label || '').replace(/·自动$/, '');
                 penetrationTry(shortLabel, tried, totalCand);
                 const check = await verifyAndPlayStream(cand.url, myToken, 6000);
-                penetrationResult(shortLabel, check.ok);
+                penetrationResult(shortLabel, check.ok, check.reason);
 
                 if (check.ok) {
                     const latestChain = { url: cand.url, label: cand.label, br: cand.br };
                     song.sources = [latestChain];
                     song.verifiedFull = true;
                     activeWorkingChain = latestChain;
-                    song.badgeText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
+                    const q1 = formatQualityTag(check);
+                    song.badgeText = `✓ ${formatTime(check.duration)} · ${q1 ? q1 + ' · ' : ''}${cand.label}`;
                     if (cand.pic && song.cover.includes('picsum.photos')) {
                         song.cover = cand.pic;
                         npCover.src = cand.pic;
@@ -5668,7 +5700,7 @@
                     renderList();
                     renderNowPlaying(song);
                     setContinuePenetrationVisible(true);
-                    penetrationEnd(`✓ ${formatTime(check.duration)} · ${cand.label}`);
+                    penetrationEnd(`✓ ${formatTime(check.duration)} · ${q1 ? q1 + ' · ' : ''}${cand.label}`);
                     updateMediaSession(song);
                     return;
                 }
@@ -5718,11 +5750,13 @@
             renderPenetrationTrail(index, total);
         }
 
-        // 标记某个源的结果
-        function penetrationResult(label, ok) {
+        // 标记某个源的结果。reason 可区分「链接坏了」和「码率不达标」，
+        // 避免用户看到失败却不知道是被音质底线拦下的。
+        function penetrationResult(label, ok, reason) {
             for (let i = penetrationTrail.length - 1; i >= 0; i--) {
                 if (penetrationTrail[i].label === label && penetrationTrail[i].state === 'trying') {
                     penetrationTrail[i].state = ok ? 'ok' : 'fail';
+                    if (!ok && reason) penetrationTrail[i].reason = reason;
                     break;
                 }
             }
@@ -5733,6 +5767,8 @@
             const parts = penetrationTrail.map(it => {
                 if (it.state === 'trying') return `${it.label} ▸`;
                 if (it.state === 'ok') return `${it.label} ✓`;
+                // 明确标出「码率不达标」，与普通失败区分开
+                if (it.reason === 'low_bitrate') return `${it.label} ✗(码率<320)`;
                 return `${it.label} ✗`;
             });
             let head = penetrationPhaseName;
@@ -5759,7 +5795,6 @@
             if (/^NETEASE-ID/.test(label)) return 5;   // 账号接口给出的歌曲 ID 直链优先验证
             if (/^MT-NETEASE/.test(label)) return 10;   // 采集首选：直链可播率高
             if (/^MT-QQ/.test(label))      return 20;   // 搜索稳定，但直链经常 0 字节
-            if (/^MT-KUGOU/.test(label))   return 30;   // 仅在 i-meto 端点偶尔可用
             return 50;
         }
 
@@ -5781,11 +5816,10 @@
             };
 
             // 采集专用：状态显示。
-            // 顺序按「直链可播率」排：网易云 > 腾讯 > 酷狗。
+            // 顺序按「直链可播率」排：网易云 > 腾讯。
             const collectState = [
                 { key: 'MT-NETEASE', state: 'wait' },
-                { key: 'MT-QQ',      state: 'wait' },
-                { key: 'MT-KUGOU',   state: 'wait' }
+                { key: 'MT-QQ',      state: 'wait' }
             ];
             const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
             if (hasNativeNeteaseId) collectState.push({ key: 'NETEASE-ID', state: 'wait' });
@@ -5834,10 +5868,6 @@
                 .then(list => { pushAllMeting(list, 'MT-QQ'); settle('MT-QQ', list && list.length > 0); })
                 .catch(() => settle('MT-QQ', false));
 
-            const mtKG = metingWithVariants('kugou', 'MT-KUGOU', 3200)
-                .then(list => { pushAllMeting(list, 'MT-KUGOU'); settle('MT-KUGOU', list && list.length > 0); })
-                .catch(() => settle('MT-KUGOU', false));
-
             function pushAllMeting(list, label) {
                 if (!Array.isArray(list)) return;
                 list.slice(0, 5).forEach(m => {
@@ -5867,7 +5897,7 @@
 
             // 采集阶段硬上限 6 秒：超时就带着已拿到的候选继续，不再干等
             const collectGuard = new Promise(resolve => setTimeout(resolve, 6000));
-            const allTasks = [mtNE, mtQQ, mtKG];
+            const allTasks = [mtNE, mtQQ];
             if (hasNativeNeteaseId) allTasks.push(nativeNeteaseTask);
             await Promise.race([Promise.all(allTasks), collectGuard]);
 
@@ -5925,7 +5955,7 @@
                     const shortLabel = String(cand.label || '').replace(/·自动$/, '');
                     penetrationTry(shortLabel);
                     const check = await verifyAndPlayStream(cand.url, token, 6000);
-                    penetrationResult(shortLabel, check.ok);
+                    penetrationResult(shortLabel, check.ok, check.reason);
                     if (!check.ok) continue;
 
                     const chain = {
@@ -5934,12 +5964,13 @@
                     song.sources = [chain];
                     activeWorkingChain = chain;
                     song.verifiedFull = true;
-                    song.badgeText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
+                    const q2 = formatQualityTag(check);
+                    song.badgeText = `✓ ${formatTime(check.duration)} · ${q2 ? q2 + ' · ' : ''}${cand.label}`;
                     syncFavoriteLatestChain(song, chain, check.duration);
                     renderList();
                     renderNowPlaying(song);
                     updateMediaSession(song);
-                    penetrationEnd(`✓ 已切换到 ${cand.label} · ${formatTime(check.duration)}`);
+                    penetrationEnd(`✓ 已切换到 ${cand.label} · ${q2 ? q2 + ' · ' : ''}${formatTime(check.duration)}`);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerText = '继续找音源';
@@ -5959,7 +5990,209 @@
             }
         }
 
-        function verifyAndPlayStream(url, token, timeoutMs = 6000) {
+        // ---- 音源码率探测 ----
+        // <audio> 元素拿不到码率，只能读开头字节解析 MP3 帧头。
+        // MPEG1 Layer III 帧头：FF Ex/Fx，帧头第 3 字节高 4 位是码率索引。
+        const MP3_BITRATE_TABLE = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+
+        function parseMp3Bitrate(buf) {
+            let off = 0;
+            // 跳过 ID3v2 标签
+            if (buf.length >= 10 && buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) {
+                const size = ((buf[6] & 0x7f) << 21) | ((buf[7] & 0x7f) << 14) | ((buf[8] & 0x7f) << 7) | (buf[9] & 0x7f);
+                off = 10 + size;
+            }
+            // 在合理范围内找同步帧头
+            for (let i = off; i < buf.length - 4 && i < off + 131072; i++) {
+                if (buf[i] === 0xFF && (buf[i + 1] & 0xE6) === 0xE2) {
+                    const brIdx = (buf[i + 2] >> 4) & 0x0F;
+                    const srIdx = (buf[i + 2] >> 2) & 0x03;
+                    if (brIdx > 0 && brIdx < 15 && srIdx < 3) return MP3_BITRATE_TABLE[brIdx];
+                }
+            }
+            return null;
+        }
+
+        // ---- FLAC 码率解析 ----
+        // FLAC 结构：'fLaC' + 若干 metadata block。
+        // block header = 1 字节(bit7 是否最后一块, bits6-0 类型) + 3 字节大端长度。
+        // 类型 0 = STREAMINFO（固定 34 字节），含采样率/声道/位深/总采样数。
+        //
+        // 关键：FLAC 是无损压缩，"未压缩码率"（采样率×声道×位深）不代表实际数据量，
+        // 必须用「文件总字节 / 时长」算真实码率。实测某首 16bit/44.1kHz 的 FLAC：
+        // 未压缩理论 1411kbps，实际压缩后是 798kbps。
+        // 所以音质底线一律按实际码率判断。
+        function parseFlacStreamInfo(buf) {
+            if (buf.length < 8) return null;
+            // 校验 magic 'fLaC'
+            if (!(buf[0] === 0x66 && buf[1] === 0x4C && buf[2] === 0x61 && buf[3] === 0x43)) return null;
+
+            let off = 4;
+            let streamInfo = null;
+            let guard = 0;
+            while (off + 4 <= buf.length && guard++ < 16) {
+                const header = buf[off];
+                const isLast = (header & 0x80) !== 0;
+                const type = header & 0x7F;
+                const len = (buf[off + 1] << 16) | (buf[off + 2] << 8) | buf[off + 3];
+                // STREAMINFO 必须完整落在已读窗口内
+                if (type === 0 && len >= 34 && off + 4 + 34 <= buf.length) {
+                    streamInfo = buf.subarray(off + 4, off + 4 + 34);
+                    break;
+                }
+                off += 4 + len;
+                if (isLast) break;
+            }
+            if (!streamInfo) return null;
+
+            // STREAMINFO 位域（规范 11.1）：20bit 采样率 + 3bit 声道数-1 + 5bit 位深-1 + 36bit 总采样数
+            const sampleRate = (streamInfo[10] << 12) | (streamInfo[11] << 4) | ((streamInfo[12] >> 4) & 0x0F);
+            const channels = ((streamInfo[12] >> 1) & 0x07) + 1;
+            const bitsPerSample = ((((streamInfo[12] & 0x01) << 4) | ((streamInfo[13] >> 4) & 0x0F)) + 1);
+            // 36bit 总采样数：分段计算，避免位运算溢出
+            const totalSamples =
+                (streamInfo[13] & 0x0F) * 2 ** 32 +
+                streamInfo[14] * 2 ** 24 +
+                streamInfo[15] * 2 ** 16 +
+                streamInfo[16] * 2 ** 8 +
+                streamInfo[17];
+
+            if (!(sampleRate > 0) || !(totalSamples > 0)) return null;
+            return {
+                sampleRate,
+                channels,
+                bitsPerSample,
+                totalSamples,
+                durationSec: totalSamples / sampleRate
+            };
+        }
+
+        // 从 Content-Range / Content-Length 取文件总字节数
+        function parseTotalBytes(status, contentRange, contentLength) {
+            const cr = String(contentRange || '');
+            const m = cr.match(/\/(\d+)\s*$/);
+            if (m) return Number(m[1]);
+            if (status === 200 && contentLength && /^\d+$/.test(String(contentLength))) {
+                return Number(contentLength);
+            }
+            return null;
+        }
+
+        // 探测一个直链的实际码率。返回 { ok, bitrate, reason }。
+        // ok=false 时 reason 说明原因（low_bitrate / probe_failed / not_mp3）。
+        async function probeStreamBitrate(url, timeoutMs = BITRATE_PROBE_TIMEOUT_MS) {
+            if (!url) return { ok: false, reason: 'empty', bitrate: null };
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                // 用 Range 只取前 32KB：避免为了判断码率而拉整首歌。
+                // 服务端不支持 Range 时会返回 200 全量，此时靠读到目标字节后主动 cancel 收手。
+                const res = await fetch(url, {
+                    signal: controller.signal,
+                    headers: { Range: `bytes=0-${BITRATE_PROBE_BYTES - 1}` }
+                });
+                // 200（全量）和 206（分段）都可用；其余状态视为不可探测
+                if (!res.ok && res.status !== 206) {
+                    return { ok: false, reason: 'http_' + res.status, bitrate: null };
+                }
+                const ctype = String(res.headers.get('content-type') || '').toLowerCase();
+                // 空响应体（腾讯出于版权常返回 200 + 0 字节 text/html）直接判失败
+                if (!res.body) return { ok: false, reason: 'no_body', bitrate: null };
+
+                const reader = res.body.getReader();
+                const chunks = [];
+                let total = 0;
+                while (total < BITRATE_PROBE_BYTES) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    total += value.length;
+                }
+                try { reader.cancel(); } catch (e) {}
+
+                // 拼接探测窗口
+                const merged = new Uint8Array(total);
+                let pos = 0;
+                for (const c of chunks) { merged.set(c, pos); pos += c.length; }
+
+                if (total === 0) return { ok: false, reason: 'empty_body', bitrate: null };
+
+                // 按 magic 判断容器格式，而不是信 content-type。
+                // 实测：上游 FLAC 直链的 content-type 谎报为 "audio/mpeg"，只信 header 会判错。
+                const isFlac = merged[0] === 0x66 && merged[1] === 0x4C && merged[2] === 0x61 && merged[3] === 0x43;
+
+                if (isFlac) {
+                    const info = parseFlacStreamInfo(merged);
+                    if (!info) {
+                        return { ok: false, reason: 'flac_no_streaminfo', bitrate: null, contentType: ctype };
+                    }
+                    // 实际码率 = 文件总字节 × 8 / 时长 / 1000
+                    const totalBytes = parseTotalBytes(res.status, res.headers.get('content-range'), res.headers.get('content-length'));
+                    if (!totalBytes) {
+                        // 拿不到总大小就无法算真实码率：不放行（避免静默降质）
+                        return { ok: false, reason: 'flac_no_size', bitrate: null, contentType: ctype,
+                                 flac: { sampleRate: info.sampleRate, bitsPerSample: info.bitsPerSample } };
+                    }
+                    const actualKbps = Math.round((totalBytes * 8) / info.durationSec / 1000);
+                    if (actualKbps < MIN_AUDIO_BITRATE_KBPS) {
+                        return { ok: false, reason: 'low_bitrate', bitrate: actualKbps, format: 'flac' };
+                    }
+                    return { ok: true, reason: 'ok', bitrate: actualKbps, format: 'flac',
+                             flac: {
+                                 sampleRate: info.sampleRate,
+                                 channels: info.channels,
+                                 bitsPerSample: info.bitsPerSample,
+                                 durationSec: Math.round(info.durationSec)
+                             } };
+                }
+
+                // MP3 分支
+                const br = parseMp3Bitrate(merged);
+                if (br == null) {
+                    // 无法识别的容器（如 M4A/AAC）：不放行，避免静默降质
+                    return { ok: false, reason: 'unknown_bitrate', bitrate: null, contentType: ctype };
+                }
+                if (br < MIN_AUDIO_BITRATE_KBPS) {
+                    return { ok: false, reason: 'low_bitrate', bitrate: br, format: 'mp3' };
+                }
+                return { ok: true, reason: 'ok', bitrate: br, format: 'mp3' };
+            } catch (e) {
+                return { ok: false, reason: e && e.name === 'AbortError' ? 'probe_timeout' : 'probe_error', bitrate: null };
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        // 校验一条音源并播放。两步，顺序很关键：
+        //   1) 先用 <audio> 验证「能不能播」（快，且能在 6s 内判死链）
+        //   2) 通过后再做码率闸门。此时浏览器已缓存开头数据，探测通常几十毫秒完成，
+        //      不会像「先探测」那样把首字节延迟（实测最高 15.9s）扛在播放链路上。
+        // 码率不达标会撤销已开始的播放，继续尝试下一个候选。
+        async function verifyAndPlayStream(url, token, timeoutMs = 6000) {
+            if (!url) return { ok: false, reason: 'empty' };
+
+            // 第一步：可播性
+            const playResult = await playStreamOnAudioElement(url, token, timeoutMs);
+            if (!playResult.ok) return playResult;
+
+            // 第二步：码率闸门（缓存命中，通常很快）
+            const probe = await probeStreamBitrate(url);
+            if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+            if (!probe.ok) {
+                // 音质不达标：停掉刚起的播放，交给上层换下一条候选
+                try {
+                    audio.pause();
+                    audio.removeAttribute('src');
+                    setPlayButtonVisual(false);
+                } catch (e) {}
+                return { ok: false, reason: probe.reason, bitrate: probe.bitrate };
+            }
+
+            playResult.bitrate = probe.bitrate;
+            return playResult;
+        }
+
+        function playStreamOnAudioElement(url, token, timeoutMs = 6000) {
             return new Promise((resolve) => {
                 if (!url) return resolve({ ok: false, reason: 'empty' });
                 let settled = false;
@@ -6165,6 +6398,17 @@
             const m = Math.floor(sec / 60).toString().padStart(2, '0');
             const s = Math.floor(sec % 60).toString().padStart(2, '0');
             return `${m}:${s}`;
+        }
+
+        // 把探测结果格式化成简短音质标签，用于状态行/徽章展示。
+        // MP3 显示 "320k"；FLAC 显示 "无损798k"（附位深更好辨识）。
+        function formatQualityTag(check) {
+            if (!check || !check.bitrate) return '';
+            if (check.format === 'flac') {
+                const bits = check.flac && check.flac.bitsPerSample ? `${check.flac.bitsPerSample}bit` : '';
+                return `无损${bits}·${check.bitrate}k`;
+            }
+            return `${check.bitrate}k`;
         }
 
         audio.addEventListener('timeupdate', () => {
