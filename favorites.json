@@ -1,17 +1,31 @@
 [
   {
+    "title": "简简单单",
+    "artist": "林俊杰",
+    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951171891432947",
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=108868",
+        "label": "MT-NETEASE"
+      }
+    ],
+    "badgeText": "⚡ 上次可播(网易云)",
+    "playedAt": 1793265686683,
+    "playedLabel": "MT-NETEASE"
+  },
+  {
     "title": "错过",
     "artist": "KeyKey",
     "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
     "sources": [
       {
-        "url": "https://api.qijieya.cn/meting/?server=kugou&type=url&id=13980c070f4c978b28c853aa85e0e50b",
-        "label": "MT-KUGOU·自动"
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1456486676",
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-KUGOU·自动)",
-    "playedAt": 1793042260847,
-    "playedLabel": "MT-KUGOU·自动"
+    "badgeText": "⚡ 上次可播(网易云)",
+    "playedAt": 1793244400028,
+    "playedLabel": "MT-NETEASE·自动"
   },
   {
     "title": "请相信",
@@ -23,7 +37,7 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "badgeText": "⚡ 上次可播(网易云)",
     "playedAt": 1793042257371,
     "playedLabel": "MT-NETEASE·自动"
   },
@@ -52,7 +66,7 @@
       }
     ],
     "badgeText": "⚡ 上次可播(QQ音乐)",
-    "playedAt": 1793018796621,
+    "playedAt": 1793188492930,
     "playedLabel": "QQ音乐"
   },
   {
@@ -62,10 +76,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=32507551",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -79,7 +93,7 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "badgeText": "⚡ 上次可播(网易云)",
     "playedAt": 1793028976237,
     "playedLabel": "MT-NETEASE·自动"
   },
@@ -93,7 +107,7 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "badgeText": "⚡ 上次可播(网易云)",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -104,10 +118,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2661673976",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -121,7 +135,7 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "badgeText": "⚡ 上次可播(网易云)",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -132,10 +146,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2020252977",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793018881309,
     "playedLabel": "B站音源"
   },
@@ -174,10 +188,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=545310078",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -188,10 +202,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=366149",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -202,10 +216,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1886963850",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -216,10 +230,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1965901840",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -230,10 +244,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=297495",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -244,10 +258,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1871152892",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -258,10 +272,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1386055755",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793018895422,
     "playedLabel": "B站音源"
   },
@@ -272,10 +286,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=344500",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793018911484,
     "playedLabel": "B站音源"
   },
@@ -286,10 +300,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=213534",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793019072276,
     "playedLabel": "B站音源"
   },
@@ -300,10 +314,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=465921641",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -314,10 +328,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=465920705",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -328,10 +342,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=461463653",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -342,10 +356,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1462905862",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -356,10 +370,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=554191927",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -370,10 +384,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1852267315",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -384,10 +398,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1374490167",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -398,10 +412,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1434332707",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -412,10 +426,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1413146224",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -426,10 +440,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1859422742",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -440,10 +454,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1840474273",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -454,10 +468,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1473721141",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -468,10 +482,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2047437209",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -482,10 +496,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=401382412",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -496,10 +510,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2661735192",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -510,10 +524,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2164206007",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793028088058,
     "playedLabel": "B站音源"
   },
@@ -524,12 +538,12 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1845430095",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播",
+    "playedAt": 1793189018039,
+    "playedLabel": "历史音源"
   },
   {
     "title": "别",
@@ -538,10 +552,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1944301267",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -552,10 +566,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2046244146",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -566,10 +580,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1494086743",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -580,10 +594,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2731411097",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -594,10 +608,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1409003291",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -608,10 +622,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2131369879",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -622,12 +636,12 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=329433",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播",
+    "playedAt": 1793188271519,
+    "playedLabel": "历史音源"
   },
   {
     "title": "生锈游乐场",
@@ -636,10 +650,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=208905",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793019478036,
     "playedLabel": "B站音源"
   },
@@ -650,10 +664,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=559647510",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793019719400,
     "playedLabel": "B站音源"
   },
@@ -664,10 +678,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2116880483",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -678,10 +692,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=354246",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -692,10 +706,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1903349486",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -706,10 +720,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2605985701",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -720,10 +734,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2703908101",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -734,10 +748,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1478399160",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -748,10 +762,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=4875680",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793019085009,
     "playedLabel": "B站音源"
   },
@@ -776,10 +790,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2037903749",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -790,10 +804,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2615585638",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -804,10 +818,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2719831199",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -818,10 +832,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1472899837",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -832,10 +846,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=205356",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -846,10 +860,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1455849734",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -860,12 +874,12 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=350806",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播",
+    "playedAt": 1793188681965,
+    "playedLabel": "历史音源"
   },
   {
     "title": "像风像雨",
@@ -874,12 +888,12 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2646984607",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播",
+    "playedAt": 1793071623721,
+    "playedLabel": "历史音源"
   },
   {
     "title": "好远",
@@ -888,10 +902,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1497575879",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -902,12 +916,12 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1496849890",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
-    "playedAt": 0,
-    "playedLabel": ""
+    "badgeText": "⚡ 上次可播",
+    "playedAt": 1793042837005,
+    "playedLabel": "历史音源"
   },
   {
     "title": "别再哭了",
@@ -916,10 +930,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=261435",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -930,10 +944,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2609838360",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -944,10 +958,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2069217181",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -958,10 +972,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2747956343",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -972,10 +986,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1441514325",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -986,10 +1000,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=25780143",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -1000,10 +1014,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3335999694",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -1014,10 +1028,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=207257",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 锁定(B站音源)",
+    "badgeText": "已收藏",
     "playedAt": 0,
     "playedLabel": ""
   },
@@ -1028,12 +1042,10 @@
     "sources": [
       {
         "url": "https://m701.music.126.net/20261026235730/b25d29f41173590bea15b68bfc5e03e2/jdymusic/obj/wo3DlMOGwrbDjj7DisKw/83873421687/4323/6505/f88c/2b46646d7ab9e9ad98eb82a588bb6973.mp3",
-        "label": "GD-NETEASE·320k"
+        "label": "历史音源"
       }
     ],
-    "gdSource": "netease",
-    "gdId": "3453836283",
-    "badgeText": "⚡ 上次可播(GD-NETEASE·320k)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793028751851,
     "playedLabel": "GD-NETEASE·320k"
   },
@@ -1044,10 +1056,10 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1437018539",
-        "label": "B站音源"
+        "label": "历史音源"
       }
     ],
-    "badgeText": "⚡ 上次可播(B站音源)",
+    "badgeText": "⚡ 上次可播",
     "playedAt": 1793029267200,
     "playedLabel": "B站音源"
   },
@@ -1061,7 +1073,7 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
+    "badgeText": "⚡ 上次可播(网易云)",
     "playedAt": 1793028566204,
     "playedLabel": "MT-NETEASE·自动"
   },
@@ -1072,12 +1084,12 @@
     "sources": [
       {
         "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2050582408",
-        "label": "MT-NETEASE"
+        "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE)",
-    "playedAt": 1793030539339,
-    "playedLabel": "MT-NETEASE"
+    "badgeText": "⚡ 上次可播(网易云)",
+    "playedAt": 1793188037263,
+    "playedLabel": "MT-NETEASE·自动"
   },
   {
     "title": "是 你",
@@ -1089,8 +1101,8 @@
         "label": "MT-NETEASE·自动"
       }
     ],
-    "badgeText": "⚡ 上次可播(MT-NETEASE·自动)",
-    "playedAt": 1793027947457,
+    "badgeText": "⚡ 上次可播(网易云)",
+    "playedAt": 1793071657548,
     "playedLabel": "MT-NETEASE·自动"
   }
 ]
