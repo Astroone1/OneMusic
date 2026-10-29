@@ -3491,13 +3491,110 @@
             return Number.isFinite(v) && v > 0 ? v : 0;
         }
 
+        // ---- 收藏徽章清洗（历史数据兼容） ----
+        // 背景：早期版本接过一些后来下线的音源（如「B站音源」），收藏时把当时的 label
+        // 原样拼进了 badgeText 并持久化到 localStorage / GitHub 仓库。代码里早已没有这些音源，
+        // 但旧记录里的文本不会自动更新，界面上就长期显示「锁定(B站音源)」这种误导性徽章。
+        //
+        // 处理原则：
+        //   1) 只改「文案」，绝不动 sources 里的 url —— 老收藏的秒播能力必须保留；
+        //   2) 无法确认来源的旧标签统一收敛成中性文案「已收藏」，不编造新来源名；
+        //   3) 可识别的现役来源（MT-*）继续保留可读标签。
+        //
+        // 已知下线/不可追溯的来源关键词（命中即视为历史标签）。
+        const LEGACY_SOURCE_LABEL_RE = /(bilibili|bili|B站|哔哩|GD[-_]?NETEASE|GD[-_]?Studio|joox|JOOX)/i;
+
+        // 现役采集链标签 → 展示名。键是小写匹配片段。
+        const CURRENT_SOURCE_DISPLAY = [
+            { match: /^MT-NETEASE/i, name: '网易云' },
+            { match: /^MT-QQ/i,      name: 'QQ音乐' },
+            { match: /^MT-KUGOU/i,   name: '酷狗' },
+            { match: /^NETEASE-ID/i, name: '网易云账号' }
+        ];
+
+        function displaySourceName(label) {
+            const raw = String(label || '').trim();
+            if (!raw) return '';
+            for (const rule of CURRENT_SOURCE_DISPLAY) {
+                if (rule.match.test(raw)) return rule.name;
+            }
+            return '';
+        }
+
+        // 把一条 badgeText 清洗成可展示文案。返回值永远是非空中性文案。
+        function sanitizeBadgeText(badgeText) {
+            const raw = String(badgeText || '').trim();
+            if (!raw) return '已收藏';
+
+            // 从 "⚡ 锁定(X)" / "⚡ 上次可播(X)" / "✓ 02:00 · X" 里取出括号/点号后的来源部分
+            const prefixMatch = raw.match(/^[⚡✓⚠️\s]*\s*(锁定|上次可播)\s*[(（](.*)[)）]\s*$/);
+            const sourcePart = prefixMatch ? prefixMatch[2].trim() : '';
+            const which = prefixMatch ? prefixMatch[1] : '';
+
+            // 命中历史下线来源：收敛成中性文案，不暴露已不存在的来源名
+            if (LEGACY_SOURCE_LABEL_RE.test(prefixMatch ? sourcePart : raw)) {
+                return which === '上次可播' ? '⚡ 上次可播' : '已收藏';
+            }
+
+            // 现役来源：换成友好展示名（"MT-NETEASE·自动" → "网易云"）
+            const friendly = displaySourceName(sourcePart);
+            if (friendly) {
+                return which === '上次可播' ? `⚡ 上次可播(${friendly})` : `⚡ 收藏(${friendly})`;
+            }
+
+            // 其它情况（含"⚠️ 暂无音源"、播放时长徽章等）保持原样
+            return raw;
+        }
+
+        // 就地清洗全部收藏的 badgeText 与 sources 里的 label。
+        // 返回被改动条数，便于提示用户。
+        function sanitizeFavoritesBadges() {
+            let changed = 0;
+            favorites.forEach(f => {
+                if (!f) return;
+                const before = String(f.badgeText || '');
+                const after = sanitizeBadgeText(before);
+                if (after !== before) { f.badgeText = after; changed++; }
+
+                // 历史 sources 的 label 同样清洗，避免「聚合 2 源」气泡里仍露出旧来源
+                if (Array.isArray(f.sources)) {
+                    f.sources.forEach(s => {
+                        if (!s || !s.label) return;
+                        if (LEGACY_SOURCE_LABEL_RE.test(String(s.label))) {
+                            const friendly = displaySourceName(s.label);
+                            s.label = friendly || '历史音源';
+                            changed++;
+                        }
+                    });
+                }
+
+                // playedLabel 也会随云上传写入仓库，必须一并清洗，
+                // 否则「B站音源」这类已下线来源名会通过同步继续传播。
+                if (f.playedLabel && LEGACY_SOURCE_LABEL_RE.test(String(f.playedLabel))) {
+                    f.playedLabel = displaySourceName(f.playedLabel) || '历史音源';
+                    changed++;
+                }
+            });
+            return changed;
+        }
+
         function loadFavorites() {
             try {
                 const raw = localStorage.getItem(FAV_STORAGE_KEY) || localStorage.getItem("MUSIC_HUB_FAVORITES_V5");
                 favorites = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(favorites)) favorites = [];
             } catch (e) {
                 favorites = [];
             }
+            // 启动即执行一次历史徽章清洗（B 方案）：把误导性文案改写掉并落盘，
+            // 这样云上传也会带上清洗后的文案，避免旧标签继续传播到 GitHub。
+            try {
+                const cleaned = sanitizeFavoritesBadges();
+                if (cleaned > 0) {
+                    localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(favorites));
+                    console.info(`[OneMusic] 已清洗 ${cleaned} 处历史收藏文案`);
+                }
+            } catch (e) {}
             updateFavCountUI();
         }
 
@@ -3863,8 +3960,14 @@
                     title: item.title,
                     artist: item.artist || '',
                     cover: item.cover || 'https://picsum.photos/seed/music/100/100',
-                    sources: Array.isArray(item.sources) ? item.sources : [],
-                    badgeText: item.badgeText || '已收藏',
+                    sources: Array.isArray(item.sources) ? item.sources.map(s => ({
+                        ...s,
+                        label: LEGACY_SOURCE_LABEL_RE.test(String(s && s.label || ''))
+                            ? (displaySourceName(s && s.label) || '历史音源')
+                            : (s && s.label)
+                    })) : [],
+                    // 云下行时也清洗：仓库里可能还留着历史版本写入的旧文案
+                    badgeText: sanitizeBadgeText(item.badgeText),
                     verifiedFull: item.verifiedFull !== false,
                     playedAt: favPlayedAt(item),
                     playedLabel: item.playedLabel || ''
@@ -3973,8 +4076,15 @@
                     title: f.title,
                     artist: f.artist,
                     cover: f.cover,
-                    sources: (f.sources || []).map(s => ({ url: s.url, label: s.label })),
-                    badgeText: f.badgeText,
+                    // sources 的 label 同样清洗：避免已下线来源名继续写进仓库
+                    sources: (f.sources || []).map(s => ({
+                        url: s.url,
+                        label: LEGACY_SOURCE_LABEL_RE.test(String(s.label || ''))
+                            ? (displaySourceName(s.label) || '历史音源')
+                            : s.label
+                    })),
+                    // 徽章文案清洗后再上传，防止误导性文案在 GitHub 里长期留存
+                    badgeText: sanitizeBadgeText(f.badgeText),
                     // 时间戳随数据一起上传，否则下次同步无法判断新旧
                     playedAt: favPlayedAt(f),
                     playedLabel: f.playedLabel || ''
@@ -5425,7 +5535,7 @@
                         </div>
                     </div>
                     <div class="song-right">
-                        <span class="badge ${song.verifiedFull ? 'full-verified' : ''}">${escapePrivateText(song.badgeText || '聚合源')}</span>
+                        <span class="badge ${song.verifiedFull ? 'full-verified' : ''}">${escapePrivateText(sanitizeBadgeText(song.badgeText) || '聚合源')}</span>
                         <button class="fav-btn ${liked ? 'is-fav' : ''}" title="${liked ? '取消收藏' : '收藏'}">
                             <svg class="ico-heart" aria-hidden="true"><use href="#ico-heart"></use></svg>
                             <svg class="ico-heart-fill" aria-hidden="true"><use href="#ico-heart-fill"></use></svg>
