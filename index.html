@@ -3130,22 +3130,32 @@
     <audio id="audio" preload="metadata" playsinline></audio>
 
     <script>
-        // 实测可用端点，按可靠性排序。
-        // api.i-meto.com 已移除：稳定返回 HTTP 400。
-        // api.injahow.cn 已移除：对任意搜索恒定返回 {"error":"unknown type"}（实测），
-        // 保留只会让每次搜索/采集多等一轮无效请求。
+        // 实测可用端点，按可靠性排序（2026-10 复测）。
+        // qijieya：稳定，返回 name/artist 字段；对不支持的 server 会静默降级成 netease 结果。
+        // i-meto ：可用但延迟高（实测 0.8~17s），返回 title/author 字段，需要归一化与更长超时。
+        // injahow：对任意搜索恒定返回 {"error":"unknown type"}（实测），已移除。
+        // 每个端点声明自己的响应字段风格，由 requestMeting 统一归一化成 name/artist/url/pic/lrc。
+        // 实测（2026-10）：i-meto 网关的 search 完全可用，但它返回的 url 直链是 404，
+        // 带 auth 参数也打不开（qijieya 同一首歌正常返回 audio/mpeg 320kbps）。
+        // 因此 i-meto 只用于「搜索发现」，绝不能作为「可播放音源」来源。
+        // urlPlayable: false 表示该端点的 url 字段不可当作直链使用。
         const METING_ENDPOINTS = [
-            "https://api.qijieya.cn/meting/"
+            { base: "https://api.qijieya.cn/meting/",    fields: 'name',  timeoutScale: 1, maxTimeout: 9000, urlPlayable: true  },
+            { base: "https://api.i-meto.com/meting/api", fields: 'title', timeoutScale: 3, maxTimeout: 8000, urlPlayable: false }
         ];
 
-        // 搜索与播放时的统一上游列表：按 30 首实测命中率排序
-        // MT-* = 经 Meting 网关；GD-* = 经 GD Studio 网关
-        // 实测样本（30 首新播放）：MT-NETEASE 21 首(70%) / MT-QQ 7 首(23%) / MT-KUGOU 2 首(7%) / GD 0 首
+        // 搜索与播放时的统一上游列表（全部走 Meting 网关）
+        // 实测（2026-10）：MT-QQ 40/40 稳定；MT-NETEASE 命中率最高但会按关键词持续返回空包；
+        // MT-KUGOU/KUWO/BAIDU 在 qijieya 网关下恒返回 []（名义存在、实际不可用）。
+        // 因此把 QQ 提为首选主源，网易云作为并列主源（覆盖独家曲库），酷狗降为可选补充。
         const UPSTREAM_PLATFORMS = [
-            { code: 'netease', label: 'MT-NETEASE' },
-            { code: 'tencent', label: 'MT-QQ' },
-            { code: 'kugou',   label: 'MT-KUGOU' }
+            { code: 'tencent', label: 'MT-QQ',      primary: true },
+            { code: 'netease', label: 'MT-NETEASE', primary: true },
+            { code: 'kugou',   label: 'MT-KUGOU',   primary: false }
         ];
+
+        // 相似推荐：主词全空时用来兜底，保证「搜不到也不返回空列表」。
+        const SIMILAR_FALLBACK_PLATFORMS = ['tencent', 'netease'];
 
         const MIN_VALID_DURATION = 65;
 
@@ -3181,7 +3191,6 @@
         let activeWorkingChain = null;
         let activePenetrationCandidates = [];
         let triedSourceUrls = new Set();
-        let triedSourceIds = new Set();
         let penetrationBusy = false;
 
         let isCloudConnected = false;
@@ -3320,163 +3329,157 @@
             syncPlayModeUI();
         }
 
+        // 把不同 Meting 网关的字段风格统一成 name/artist/url/pic/lrc。
+        // qijieya 用 name/artist，i-meto 用 title/author；下游只认统一后的字段。
+        function normalizeMetingItem(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const name = raw.name || raw.title || raw.song || '';
+            const artist = raw.artist || raw.author || raw.singer || '';
+            if (!name) return null;
+            return {
+                name,
+                artist,
+                url: raw.url || '',
+                pic: raw.pic || raw.picture || '',
+                lrc: raw.lrc || raw.lyric || ''
+            };
+        }
+
+        function normalizeMetingList(data, fields) {
+            if (!Array.isArray(data)) return [];
+            return data.map(normalizeMetingItem).filter(Boolean);
+        }
+
+        // 单次请求：不做重试，返回值区分「有结果 / 真空包 / 网络错误」。
+        // 空包实测特征：HTTP 200 + []，耗时 200~300ms（正常响应 500~2500ms）。
+        // 关键：超时计时器必须一直覆盖到 res.json() 解析完成，
+        // 否则「连上了但响应体迟迟不返回」的慢端点会绕过 abort 无限等待（实测曾出现 143s / 211s）。
+        async function requestMetingOnce(endpoint, paramsStr, timeout, opts = {}) {
+            const controller = new AbortController();
+            const startedAt = Date.now();
+            let timer = null;
+            let hardTimer = null;
+            const abortNow = () => { try { controller.abort(); } catch (e) {} };
+            timer = setTimeout(abortNow, timeout);
+            // 兜底硬停：即便 fetch 内部卡在不可中断阶段，也保证在 timeout + 1.5s 内返回。
+            const settled = new Promise((resolve) => {
+                hardTimer = setTimeout(() => resolve({
+                    state: 'timeout', list: [], ms: Date.now() - startedAt
+                }), timeout + 1500);
+            });
+            const work = (async () => {
+                try {
+                    const res = await fetch(`${endpoint.base}?${paramsStr}`, { signal: controller.signal });
+                    if (!res.ok) return { state: 'http', status: res.status, list: [], ms: Date.now() - startedAt };
+                    const data = await res.json();
+                    // 端点异常时会返回 {"error":"..."}，必须排除，否则会被下游当成数据
+                    if (data && !Array.isArray(data) && data.error) {
+                        return { state: 'error-object', list: [], ms: Date.now() - startedAt };
+                    }
+                    const list = normalizeMetingList(data, endpoint.fields);
+                    // 仅在「采集可播放音源」时抹掉不可播端点的 url：
+                    // i-meto 的直链实测是 404（带 auth 也打不开），若不清空会被当成可用音源，
+                    // 白白消耗采集时间并污染候选列表。
+                    // 搜索场景必须保留曲目信息（用户要的是找到歌，不是立刻能播）。
+                    if (!endpoint.urlPlayable && opts.strippingUrl) {
+                        list.forEach(it => { it.url = ''; });
+                    }
+                    return { state: list.length ? 'ok' : 'empty', list, ms: Date.now() - startedAt };
+                } catch (e) {
+                    return { state: 'network', list: [], ms: Date.now() - startedAt, err: e && e.name };
+                }
+            })();
+            try {
+                return await Promise.race([work, settled]);
+            } finally {
+                if (timer) clearTimeout(timer);
+                if (hardTimer) clearTimeout(hardTimer);
+                // 竞速结束后主动 abort，释放可能仍在进行的底层请求。
+                abortNow();
+            }
+        }
+
+        // 端点并发 + 总时间预算：
+        // 旧实现串行走「2 端点 × 3 轮退避」，单次检索最坏要十几秒（实测搜索一屏曾花 52s）。
+        // 现在改为：两个端点同时发出，谁先有结果用谁；整体受 budget 约束，超预算就带着已有结果收手。
         async function requestMeting(paramsStr, timeout = 5500, options = {}) {
             // 默认仍按“可播放音源”过滤；纯搜索时允许只返回曲目信息，播放时再解析音源。
             const requireUrl = options.requireUrl !== false;
-            for (let endpoint of METING_ENDPOINTS) {
-                const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), timeout);
-                try {
-                    const res = await fetch(`${endpoint}?${paramsStr}`, { signal: controller.signal });
-                    clearTimeout(timer);
-                    if (!res.ok) continue;
-                    const data = await res.json();
-                    // 端点异常时会返回 {"error":"..."}，必须排除，否则会被下游当成数据
-                    if (data && !Array.isArray(data) && data.error) continue;
-                    if (Array.isArray(data) && data.length > 0) {
-                        // 搜索发现与可播放直链是两件事：仅在音源采集场景强制要求 url。
-                        const clean = data.filter(it => it && (it.name || it.title)
-                            && (!requireUrl || (typeof it.url === 'string' && it.url.trim())));
-                        if (clean.length > 0) return clean;
+            const budget = Math.max(1200, Number(options.budget) || 9000);
+            const deadline = Date.now() + budget;
+
+            const pickClean = (list) => {
+                const clean = (list || []).filter(it => it && (it.name || it.title)
+                    && (!requireUrl || (typeof it.url === 'string' && it.url.trim())));
+                if (clean.length > 0) return clean;
+                // 有曲目但都没直链：搜索发现场景可以接受，采集场景视为无可用音源。
+                return requireUrl ? [] : (list || []);
+            };
+
+            // 第一轮：两端点并发，谁先成功谁返回，不等慢的那个。
+            // 关键：慢端点（i-meto 实测有 143s 的极端长尾）必须有独立的硬上限，
+            // 不能只按「剩余预算」放行，否则慢端点会把整次检索拖死。
+            const now0 = Date.now();
+            const firstRound = METING_ENDPOINTS.map(endpoint => {
+                const scale = endpoint.timeoutScale || 1;
+                const hardCap = endpoint.maxTimeout || Math.round(timeout * scale);
+                // 三重约束：端点自身硬上限、按 scale 放宽的软超时、以及剩余预算。
+                const effTimeout = Math.max(800, Math.min(
+                    Math.round(timeout * scale),
+                    hardCap,
+                    deadline - now0
+                ));
+                return requestMetingOnce(endpoint, paramsStr, effTimeout, { strippingUrl: requireUrl })
+                    .catch(() => ({ state: 'network', list: [] }));
+            });
+
+            return await new Promise((resolve) => {
+                let resolved = false;
+                let pending = firstRound.length;
+                let sawTransient = false;
+
+                const finish = (value) => {
+                    if (resolved) return;
+                    resolved = true;
+                    resolve(value);
+                };
+
+                firstRound.forEach(p => p.then(result => {
+                    if (resolved) return;
+                    if (result.state === 'ok') {
+                        const clean = pickClean(result.list);
+                        if (clean.length > 0) return finish(clean);
                     }
-                } catch (e) {
-                    clearTimeout(timer);
-                }
-            }
-            return [];
+                    // 空包 / 网络错误 / error-object 都算瞬态失败，值得换端点再试
+                    sawTransient = true;
+                    pending--;
+                    if (pending <= 0 && !resolved) {
+                        // 第一轮全空：在剩余预算内做一次换端点重试（不再多轮退避，避免拖慢整体）
+                        if (!sawTransient || Date.now() >= deadline - 600) return finish([]);
+                        const retryTimeout = Math.max(800, Math.min(timeout, deadline - Date.now()));
+                        Promise.allSettled(METING_ENDPOINTS.map(endpoint =>
+                            requestMetingOnce(endpoint, paramsStr, retryTimeout, { strippingUrl: requireUrl })
+                        )).then(results => {
+                            for (const r of results) {
+                                if (r.status === 'fulfilled' && r.value.state === 'ok') {
+                                    const clean = pickClean(r.value.list);
+                                    if (clean.length > 0) return finish(clean);
+                                }
+                            }
+                            finish([]);
+                        }).catch(() => finish([]));
+                    }
+                }));
+            });
         }
 
-        // GD Studio 的浏览器直连层。搜索结果短缓存，播放直链不做长缓存（避免收藏里的 URL 过期）。
-        const GD_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
-        const GD_SEARCH_CACHE = new Map();
-        const GD_SEARCH_CACHE_TTL = 15 * 1000;
-
-        function normalizeGDText(value) {
+        // 文本归一化：用于采集阶段做歌名/歌手匹配打分。
+        function normalizeMatchText(value) {
             return String(value || '')
                 .normalize('NFKC')
                 .replace(/\(.*?\)|（.*?）|\[.*?\]/g, '')
                 .toLowerCase()
                 .replace(/[^\p{L}\p{N}]/gu, '');
-        }
-
-        async function queryGDTracks(source, keyword, timeoutMs = 2600) {
-            const trimmed = String(keyword || '').trim();
-            if (!trimmed) return [];
-            const cacheKey = `${source}:${trimmed.toLowerCase()}`;
-            const cached = GD_SEARCH_CACHE.get(cacheKey);
-            if (cached && cached.expiresAt > Date.now()) return cached.tracks;
-
-            const url = `${GD_API_BASE}?types=search&source=${encodeURIComponent(source)}`
-                      + `&name=${encodeURIComponent(trimmed)}&count=20`;
-            try {
-                const res = await fetchWithTimeout(url, timeoutMs);
-                if (!res.ok) throw new Error(`GD search HTTP ${res.status}`);
-                const data = await res.json();
-                const tracks = Array.isArray(data)
-                    ? data.filter(it => it && (it.name || it.title) && it.id != null)
-                    : [];
-                // 正结果短缓存；空结果只缓存 1 秒，避免接口瞬时空回包让用户重试时仍拿到旧空结果。
-                GD_SEARCH_CACHE.set(cacheKey, {
-                    tracks,
-                    expiresAt: Date.now() + (tracks.length ? GD_SEARCH_CACHE_TTL : 1000)
-                });
-                if (GD_SEARCH_CACHE.size > 80) {
-                    const now = Date.now();
-                    for (const [key, value] of GD_SEARCH_CACHE) {
-                        if (value.expiresAt <= now || GD_SEARCH_CACHE.size > 60) GD_SEARCH_CACHE.delete(key);
-                    }
-                }
-                return tracks;
-            } catch (e) {
-                // 网络错误/超时不缓存：下一次点击应该真正发起新请求。
-                GD_SEARCH_CACHE.delete(cacheKey);
-                return [];
-            }
-        }
-
-        async function resolveGDTrackUrl(source, trackId, timeoutMs = 7000, retryEmpty = false) {
-            // 轻量播放器采用流畅优先：先请求 320k，必要时再探索 740 无损；不请求 999。
-            // 严格限制实际返回档位为 320/740，避免 API 忽略请求参数后返回低码率或超高码率。
-            const qualities = ['320', '740'];
-            for (const quality of qualities) {
-                try {
-                    const url = `${GD_API_BASE}?types=url&source=${encodeURIComponent(source)}`
-                              + `&id=${encodeURIComponent(trackId)}&br=${quality}`;
-                    const res = await fetchWithTimeout(url, timeoutMs);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data && typeof data.url === 'string' && data.url.trim()) {
-                            const actualBr = String(data.br == null ? '' : data.br).trim();
-                            // 不能确认实际码率时不将它当作合格音源；也不接受 128/192 或 999。
-                            if (actualBr !== '320' && actualBr !== '740') continue;
-                            return data;
-                        }
-                    }
-                } catch (e) {
-                    // 当前档位失败后尝试下一档，控制等待时间与公共 API 频率。
-                }
-            }
-            return null;
-        }
-
-        function scoreGDTrack(track, wantedTitle, wantedArtist) {
-            const title = normalizeGDText(track.name || track.title);
-            const artistValue = Array.isArray(track.artist) ? track.artist.join(' ') : (track.artist || '');
-            const artist = normalizeGDText(artistValue);
-            const targetTitle = normalizeGDText(wantedTitle);
-            const targetArtist = normalizeGDText(wantedArtist);
-            let score = 0;
-            if (targetTitle && title === targetTitle) score += 100;
-            else if (targetTitle && title && (title.includes(targetTitle) || targetTitle.includes(title))) score += 55;
-            if (targetArtist && artist === targetArtist) score += 35;
-            else if (targetArtist && artist && (artist.includes(targetArtist) || targetArtist.includes(artist))) score += 20;
-            return score;
-        }
-
-        function formatGDQuality(br) {
-            const value = String(br == null || br === '' ? '320' : br).trim();
-            if (value === '740') return '16bit无损';
-            if (value === '999') return '24bit无损';
-            if (value === '未知音质') return value;
-            return /^\d+$/.test(value) ? `${value}k` : value;
-        }
-
-        // GD 常规采集：只查网易云（JOOX 已移除）
-        async function searchGDStudio(keyword, preferredSource = null, wantedTitle = '', wantedArtist = '') {
-            // 即便 preferredSource 传了 joox，也在这里剔除
-            const candidates = [preferredSource, 'netease'].filter(s => s && s !== 'joox');
-            const sources = [...new Set(candidates)];
-            const tasks = sources.map(async (srv) => {
-                const tracks = await queryGDTracks(srv, keyword, 2600);
-                if (!tracks.length) return [];
-                const ranked = tracks.map((track, index) => ({
-                    track, index,
-                    score: scoreGDTrack(track, wantedTitle, wantedArtist)
-                })).sort((a, b) => b.score - a.score || a.index - b.index);
-                const picked = ranked.slice(0, 1);
-                const resolved = await Promise.all(picked.map(async ({ track }) => {
-                    const data = await resolveGDTrackUrl(srv, track.id, 2600, false);
-                    if (!data || !data.url) return null;
-                    return {
-                        url: data.url,
-                        label: `GD-NETEASE·${formatGDQuality(data.br)}`,
-                        title: track.name || track.title || wantedTitle,
-                        artist: Array.isArray(track.artist) ? track.artist.join(' / ') : (track.artist || wantedArtist),
-                        lyricId: track.lyric_id || track.id,
-                        srv,
-                        gdSource: srv,
-                        gdId: track.id,
-                        br: data.br
-                    };
-                }));
-                return resolved.filter(Boolean);
-            });
-            const settled = await Promise.allSettled(tasks);
-            const results = [];
-            settled.forEach((r) => {
-                if (r.status === 'fulfilled' && Array.isArray(r.value)) results.push(...r.value);
-            });
-            return results;
         }
 
         /* ================= 收藏与穿透互补自动覆写采集链模块 ================= */
@@ -3516,28 +3519,70 @@
             }
         }
 
+        // 歌曲指纹：用于「同一首歌跨平台合并」与收藏匹配。
+        // 关键约束：指纹必须足够严格，否则不同版本会互相吞掉。
+        // 实测事故：「稻香(治愈版)/周杰伦./街道办GDC/欧阳耀莹.」取首歌手 + 去括号后，
+        // 指纹与真正的「稻香/周杰伦」完全相同，导致原版被当成重复项丢弃，
+        // 用户搜「稻香」反而搜不到周杰伦原版。所以：
+        //   1) 标题保留「版本信息」（不做去括号），版本不同 => 指纹不同；
+        //   2) 歌手去掉尾点等噪声，但不并入跨歌手拼接。
+        const FP_ARTIST_SPLIT = /[\/&,、;；]/;
         function getSongFingerprint(title, artist) {
-            const cleanTitle = (title || '').replace(/\(.*?\)|（.*?）|\[.*?\]/g, '').trim().toLowerCase();
-            const cleanArtist = (artist || '').split(/[\/&,、]/)[0].trim().toLowerCase();
+            const normStrict = (value) => String(value || '')
+                .normalize('NFKC')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+
+            // 标题保留版本标识（(Live)/(治愈版)/[原唱:x] 等），只把标点归一
+            const cleanTitle = normStrict(title)
+                .replace(/[【】\[\]]/g, (m) => (m === '【' || m === '[' ? '(' : ')'))
+                .replace(/[（）]/g, '(')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            // 歌手：取第一段，去掉尾部的点/空白（网易云常返回「周杰伦.」）
+            const firstArtist = String(artist || '').split(FP_ARTIST_SPLIT)[0]
+                .replace(/[.。\s]+$/g, '');
+            const cleanArtist = normStrict(firstArtist);
+
             return `${cleanTitle}__${cleanArtist}`;
+        }
+
+        // 宽松指纹：只用于「收藏是否点亮」这类跨版本容错场景。
+        // 精确指纹用于搜索聚合（必须区分版本），宽松指纹用于认人（晴天 与 晴天(Live) 视为同一首）。
+        // 这样既不会让翻唱吞掉原版，又不会因为标题多了「(Live)」就丢掉收藏状态。
+        function getSongFingerprintLoose(title, artist) {
+            const normLoose = (value) => String(value || '')
+                .normalize('NFKC')
+                .replace(/\(.*?\)|（.*?）|\[.*?\]|【.*?】/g, ' ')
+                .replace(/[^\p{L}\p{N}]/gu, '')
+                .toLowerCase();
+            const firstArtist = String(artist || '').split(FP_ARTIST_SPLIT)[0];
+            return `${normLoose(title)}__${normLoose(firstArtist)}`;
+        }
+
+        // 判定两首歌是否「同一首」（收藏、当前播放高亮等场景）
+        function isSameSongByFingerprint(titleA, artistA, titleB, artistB) {
+            if (getSongFingerprint(titleA, artistA) === getSongFingerprint(titleB, artistB)) return true;
+            return getSongFingerprintLoose(titleA, artistA) === getSongFingerprintLoose(titleB, artistB);
         }
 
         function isSongFavorited(song) {
             if (!song) return false;
-            const fp = getSongFingerprint(song.title, song.artist);
-            return favorites.some(f => getSongFingerprint(f.title, f.artist) === fp);
+            return favorites.some(f => isSameSongByFingerprint(song.title, song.artist, f.title, f.artist));
         }
 
         function isSameSong(songA, songB) {
             if (!songA || !songB) return false;
-            return getSongFingerprint(songA.title, songA.artist) === getSongFingerprint(songB.title, songB.artist);
+            return isSameSongByFingerprint(songA.title, songA.artist, songB.title, songB.artist);
         }
 
         // 穿透互补核心：只要某首已收藏歌曲播放成功，永远将其收藏记录更新为最后一次实际播放成功的采集链
         function syncFavoriteLatestChain(song, latestSourceObj, durationSec) {
             if (!song || !latestSourceObj || !latestSourceObj.url) return;
-            const fp = getSongFingerprint(song.title, song.artist);
-            const favIdx = favorites.findIndex(f => getSongFingerprint(f.title, f.artist) === fp);
+            const favIdx = favorites.findIndex(f =>
+                isSameSongByFingerprint(song.title, song.artist, f.title, f.artist));
             if (favIdx > -1) {
                 const cleanChain = { url: latestSourceObj.url, label: latestSourceObj.label || '直连链' };
                 favorites[favIdx].sources = [cleanChain];
@@ -3546,14 +3591,10 @@
                 // 记录本次播放成功的时间：同步时以此判断哪一侧数据更新
                 favorites[favIdx].playedAt = Date.now();
                 favorites[favIdx].playedLabel = cleanChain.label;
-                // GD 的稳定身份（source + song ID）比 CDN 直链更适合长期收藏；播放时再取新 URL。
-                if (latestSourceObj.gdSource && latestSourceObj.gdId != null) {
-                    favorites[favIdx].gdSource = latestSourceObj.gdSource;
-                    favorites[favIdx].gdId = latestSourceObj.gdId;
-                } else {
-                    delete favorites[favIdx].gdSource;
-                    delete favorites[favIdx].gdId;
-                }
+                // 清理历史数据里残留的旧字段（尤其旧收藏可能存过已下线的来源标识）
+                delete favorites[favIdx].gdSource;
+                delete favorites[favIdx].gdId;
+                delete favorites[favIdx].gdLabel;
                 if (song.cover && !song.cover.includes('picsum.photos')) {
                     favorites[favIdx].cover = song.cover;
                 }
@@ -3668,8 +3709,8 @@
             if (event) event.stopPropagation();
             if (!song) return;
 
-            const fp = getSongFingerprint(song.title, song.artist);
-            const idx = favorites.findIndex(f => getSongFingerprint(f.title, f.artist) === fp);
+            const idx = favorites.findIndex(f =>
+                isSameSongByFingerprint(song.title, song.artist, f.title, f.artist));
             const addingToOneMusic = idx < 0;
 
             if (idx > -1) {
@@ -3689,10 +3730,6 @@
                     cover: song.cover,
                     platform: song.platform || null,
                     platformId: song.platformId || null,
-                    gdSource: (currentPlayingSong && isSameSong(currentPlayingSong, song) && activeWorkingChain)
-                        ? activeWorkingChain.gdSource : song.gdSource,
-                    gdId: (currentPlayingSong && isSameSong(currentPlayingSong, song) && activeWorkingChain)
-                        ? activeWorkingChain.gdId : song.gdId,
                     sources: lockedSources.map(s => ({ url: s.url, label: s.label })),
                     badgeText: lockedSources.length > 0 ? `⚡ 锁定(${lockedSources[0].label})` : '已收藏',
                     verifiedFull: true,
@@ -3827,8 +3864,6 @@
                     artist: item.artist || '',
                     cover: item.cover || 'https://picsum.photos/seed/music/100/100',
                     sources: Array.isArray(item.sources) ? item.sources : [],
-                    gdSource: item.gdSource,
-                    gdId: item.gdId,
                     badgeText: item.badgeText || '已收藏',
                     verifiedFull: item.verifiedFull !== false,
                     playedAt: favPlayedAt(item),
@@ -3939,8 +3974,6 @@
                     artist: f.artist,
                     cover: f.cover,
                     sources: (f.sources || []).map(s => ({ url: s.url, label: s.label })),
-                    gdSource: f.gdSource,
-                    gdId: f.gdId,
                     badgeText: f.badgeText,
                     // 时间戳随数据一起上传，否则下次同步无法判断新旧
                     playedAt: favPlayedAt(f),
@@ -4049,11 +4082,26 @@
             const query = `${cleanTitle} ${cleanArtist}`.trim();
 
             try {
-                const list = await requestMeting(`server=netease&type=search&id=${encodeURIComponent(query)}`, 4500);
+                // 歌词同样受上游空包影响：按变体 + 双平台找第一首带 lrc 的结果。
+                let list = [];
+                const lyricVariants = buildKeywordVariants(query);
+                for (const code of ['tencent', 'netease']) {
+                    for (const kw of lyricVariants) {
+                        const got = await requestMeting(
+                            `server=${code}&type=search&id=${encodeURIComponent(kw)}`, 4500
+                        );
+                        if (Array.isArray(got) && got.length > 0) {
+                            list = got;
+                            if (got.some(it => it && it.lrc)) break;
+                        }
+                    }
+                    if (list.some(it => it && it.lrc)) break;
+                }
                 if (token !== activePlayToken) return;
 
-                if (Array.isArray(list) && list.length > 0 && list[0].lrc) {
-                    const res = await fetch(list[0].lrc);
+                const withLrc = Array.isArray(list) ? list.filter(it => it && it.lrc) : [];
+                if (withLrc.length > 0) {
+                    const res = await fetch(withLrc[0].lrc);
                     const lrcStr = await res.text();
                     const parsed = parseLrc(lrcStr);
                     if (parsed.length > 0) {
@@ -4964,8 +5012,7 @@
             await loadBillboardStaticChart();
         }
 
-        /* ================= 搜索：GD 兜底源（仅 netease） ================= */
-        const GD_SEARCH_TIMEOUT = 4500;
+        /* ================= 搜索：Meting 多平台聚合 ================= */
 
         function fetchWithTimeout(url, timeoutMs) {
             const controller = new AbortController();
@@ -4973,30 +5020,143 @@
             return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
         }
 
-        // 只做搜索，不逐首取流；同一关键词复用短缓存，减少重复点歌时的公共 API 请求。
-        async function searchGDForSearch(keyword, timeoutMs = GD_SEARCH_TIMEOUT) {
-            // JOOX 已移除（最慢且取流不稳）；只保留 GD 网易云
-            const sources = ['netease'];
-            const tasks = sources.map(async (srv) => {
-                const tracks = await queryGDTracks(srv, keyword, Math.min(timeoutMs, 4500));
-                return tracks.map(it => ({
-                    title: it.name || it.title,
-                    artist: Array.isArray(it.artist) ? it.artist.join(' / ') : (it.artist || '未知歌手'),
-                    cover: it.pic_id
-                        ? `${GD_API_BASE}?types=pic&source=${encodeURIComponent(srv)}&id=${encodeURIComponent(it.pic_id)}&size=300`
-                        : 'https://picsum.photos/seed/music/300/300',
-                    gdSource: srv,
-                    gdId: it.id,
-                    gdLabel: 'GD-NETEASE'
-                }));
+        // ---- 关键词变体：主词空包时按「由宽到窄」换词重试，而不是原样死磕 ----
+        // 实测：netease 对某些关键词会持续返回空包（同一时刻 tencent 正常），
+        // 因此变体搜索必须换词 = 换上游缓存键，才有机会命中。
+        const KW_NOISE_RE = /\((?:[^()]*)\)|（[^（）]*）|\[[^\[\]]*\]|【[^【】]*】/g;
+        const KW_SUFFIX_RE = /\s*[-–—_|｜]\s*(?:live|remix|伴奏|纯音乐|完整版|官方|高音质|无损|mv|mv版|现场版|翻唱|cover|版)\s*$/gi;
+
+        function stripKeywordNoise(text) {
+            return String(text || '')
+                .replace(KW_NOISE_RE, ' ')
+                .replace(KW_SUFFIX_RE, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // 生成去重后的查询变体。第一个永远是原始关键词（保证原搜索行为优先）。
+        // 变体的唯一目的是「救空包」：换一个上游会认的检索词，而不是扩召回。
+        function buildKeywordVariants(rawKeyword) {
+            const raw = String(rawKeyword || '').trim();
+            if (!raw) return [];
+            const variants = [];
+            // 只收「看起来像检索词」的变体：必须含字母/数字/汉字，且过滤掉纯括注残留。
+            const isUsable = (v) => {
+                if (!v) return false;
+                if (!/[\p{L}\p{N}]/u.test(v)) return false;
+                // 形如 "(Live)" "（伴奏）" "【原唱】" 的纯括注残留不是检索词
+                if (/^[（(\[【][^）)\]】]*[）)\]】]$/.test(v)) return false;
+                return true;
+            };
+            const push = (value) => {
+                const v = String(value || '').replace(/\s+/g, ' ').trim();
+                if (!isUsable(v)) return;
+                if (variants.some(x => x.toLowerCase() === v.toLowerCase())) return;
+                variants.push(v);
+            };
+
+            push(raw);
+
+            // 去掉括号备注（(Live)(伴奏)(原唱:xxx) 等），保留主歌名
+            const noNoise = stripKeywordNoise(raw);
+            push(noNoise);
+
+            // 「歌名 歌手」拆成单独歌名 / 单独歌手：歌手名往往能召回同歌手歌曲。
+            // 但英文标题（如 "Taylor Swift - Love Story"）被拆开只会搜出无关结果，必须保护。
+            const splitTokens = (text) => {
+                const src = String(text || '');
+                const hasCjk = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(src);
+                const hasLatin = /[a-zA-Z]/.test(src);
+                // 纯拉丁或半拉丁 + 含连字符分隔：视为英文标题，不拆
+                if (hasLatin && !hasCjk && /[-–—_|｜]/.test(src)) return null;
+                const parts = src.split(/[\s\-–—_|｜]+/).map(t => t.trim()).filter(Boolean);
+                // 超过 4 段基本是英文长标题，不做拆分
+                if (parts.length < 2 || parts.length > 4) return null;
+                // 单段过长（>12 字符）视为英文标题的一部分，不拆
+                if (parts.some(p => p.length > 12)) return null;
+                return parts;
+            };
+
+            const parts = splitTokens(raw);
+            if (parts) {
+                push(parts[0]);
+                const rest = parts.slice(1).join(' ');
+                if (rest && rest !== parts[0]) push(rest);
+            }
+            if (noNoise && noNoise !== raw) {
+                const nparts = splitTokens(noNoise);
+                if (nparts) {
+                    push(nparts[0]);
+                    const nrest = nparts.slice(1).join(' ');
+                    if (nrest && nrest !== nparts[0]) push(nrest);
+                }
+            }
+            return variants.slice(0, 4);
+        }
+
+        // 一次「单平台 × 单关键词」检索，返回归一化曲目
+        async function searchPlatformOnce(code, keyword, timeout, opts = {}) {
+            const list = await requestMeting(
+                `server=${code}&type=search&id=${encodeURIComponent(keyword)}`,
+                timeout,
+                { requireUrl: false, budget: opts.budget }
+            );
+            return Array.isArray(list) ? list : [];
+        }
+
+        // 单平台带变体重试的检索。
+        // 策略：原始词与所有变体并发（都受同一总预算约束），但**原始词有优先窗口**：
+        // 变体先回来时先暂存，给原始词一个短暂窗口；窗口内原始词命中就用原始词，否则用变体。
+        // 这样既避免串行叠加耗时（实测 kugou 串行 13.7s），又不会让相似结果抢占精确匹配。
+        async function searchPlatformWithVariants(code, variants, timeout, budgetMs = 12000) {
+            const list = variants && variants.length ? variants : [];
+            if (!list.length) return [];
+            const deadline = Date.now() + budgetMs;
+            const tasks = list.map((kw, idx) => {
+                const remain = Math.max(1200, Math.min(timeout, deadline - Date.now()));
+                return searchPlatformOnce(code, kw, remain, { budget: remain })
+                    .then(r => ({ kw, idx, list: r }))
+                    .catch(() => ({ kw, idx, list: [] }));
             });
 
-            const settled = await Promise.allSettled(tasks);
-            const out = [];
-            settled.forEach(r => {
-                if (r.status === 'fulfilled' && Array.isArray(r.value)) out.push(...r.value);
+            return await new Promise((resolve) => {
+                let done = 0;
+                let resolved = false;
+                let fallback = [];
+                const graceMs = 1200;
+                let timer = null;
+
+                const finish = (value) => {
+                    if (resolved) return;
+                    resolved = true;
+                    if (timer) clearTimeout(timer);
+                    resolve(value);
+                };
+                const flushFallback = () => {
+                    if (!resolved && fallback.length) finish(fallback);
+                };
+
+                timer = setTimeout(() => finish(fallback), Math.max(1500, budgetMs));
+
+                tasks.forEach(t => t.then(r => {
+                    if (resolved) return;
+                    done++;
+                    if (r.list.length > 0) {
+                        // 原始词命中：立即采用，精确匹配优先
+                        if (r.idx === 0) return finish(r.list);
+                        if (!fallback.length) {
+                            fallback = r.list;
+                            setTimeout(flushFallback, graceMs);
+                        }
+                    }
+                    if (done === tasks.length) finish(fallback);
+                }));
             });
-            return out;
+        }
+
+        function searchResultTimeout() {
+            // i-meto 端点慢，requestMeting 内部会按 timeoutScale 放宽；这里给基础值。
+            return 6000;
         }
 
         async function doAggregatedSearch() {
@@ -5009,115 +5169,233 @@
 
             songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--accent);">正在全网并发检索「${keyword}」...</div>`;
 
-            const tasks = UPSTREAM_PLATFORMS.map(plat =>
-                requestMeting(`server=${plat.code}&type=search&id=${encodeURIComponent(keyword)}`, 6000, { requireUrl: false })
-                    .then(list => ({ plat, list: list.slice(0, 20) }))
-            );
-
-            const settled = await Promise.allSettled(tasks);
-            if (requestToken !== activeSearchToken) return;
+            const variants = buildKeywordVariants(keyword);
             const mergedMap = new Map();
 
-            settled.forEach(res => {
-                if (res.status === 'fulfilled' && Array.isArray(res.value.list)) {
-                    const { plat, list } = res.value;
-                    list.forEach(item => {
-                        const title = item.name || item.title || "未知歌曲";
-                        const artist = item.artist || item.author || "未知歌手";
-                        const hasUrl = typeof item.url === 'string' && item.url.trim();
-                        const source = hasUrl ? { url: item.url, label: plat.label } : null;
-                        const fp = getSongFingerprint(title, artist);
-                        if (!mergedMap.has(fp)) {
-                            mergedMap.set(fp, {
-                                title,
-                                artist,
-                                cover: item.pic || "https://picsum.photos/seed/music/300/300",
-                                sources: source ? [source] : [],
-                                labels: source ? [plat.label] : []
-                            });
-                        } else {
-                            const existing = mergedMap.get(fp);
-                            if (source && !existing.labels.includes(plat.label)) {
-                                existing.sources.push(source);
-                                existing.labels.push(plat.label);
-                            }
-                            if (existing.cover.includes('picsum.photos') && item.pic) {
-                                existing.cover = item.pic;
-                            }
+            // 记录每个平台的原始结果数，用于判断「是真没歌」还是「上游空包」
+            const platformStats = new Map();
+
+            const ingest = (list, platLabel, extra = {}) => {
+                let added = 0;
+                // 每平台取更多条目：gateway 默认返回 30 条，旧代码 slice(0,20) 会把
+                // 排在后面的原版（如「稻香/周杰伦」）直接丢掉，导致搜原曲反而搜不到。
+                (list || []).slice(0, 30).forEach((item, rank) => {
+                    const title = item.name || item.title || "未知歌曲";
+                    const artist = item.artist || item.author || "未知歌手";
+                    const hasUrl = typeof item.url === 'string' && item.url.trim();
+                    const source = hasUrl ? { url: item.url, label: platLabel, pic: item.pic, title, artist } : null;
+                    const fp = getSongFingerprint(title, artist);
+                    // 相关性：与用户输入的原始关键词匹配度 + 上游给出的排序位次。
+                    // 没有它的话，「谁先返回谁排前面」，并发下会让翻唱/伴奏版顶到首位。
+                    const relevance = scoreSearchRelevance(title, artist, keyword) - rank * 0.5;
+                    if (!mergedMap.has(fp)) {
+                        mergedMap.set(fp, {
+                            title,
+                            artist,
+                            cover: item.pic || "https://picsum.photos/seed/music/300/300",
+                            sources: source ? [source] : [],
+                            labels: source ? [platLabel] : [],
+                            relevance,
+                            ...extra
+                        });
+                        added++;
+                    } else {
+                        const existing = mergedMap.get(fp);
+                        if (existing.labels.indexOf(platLabel) === -1) {
+                            existing.labels.push(platLabel);
+                            if (source) existing.sources.push(source);
                         }
-                    });
+                        if (existing.cover.includes('picsum.photos') && item.pic) {
+                            existing.cover = item.pic;
+                        }
+                        if (extra.similarOnly) existing.similarOnly = true;
+                        // 多源命中说明更常见，给予小幅加权。
+                        // 上限必须远小于版本扣分（-60），否则翻唱靠多源聚合就能反超原版。
+                        existing.relevance = Math.max(existing.relevance || 0, relevance) + 4;
+                    }
+                });
+                return added;
+            };
+
+            // 与搜索词的相关度打分。
+            // 设计目标（按优先级）：用户搜的是「歌名」时，最想要原唱原版。
+            // 实测教训：只按「标题包含关键词」打分，会让「稻香(治愈版)/周杰伦./街道办GDC/欧阳耀莹.」
+            // 靠多源聚合加分顶掉真正的原版「稻香/周杰伦」，所以版本纯净度权重必须最高。
+            function scoreSearchRelevance(title, artist, wanted) {
+                const norm = (s) => String(s || '')
+                    .toLowerCase()
+                    .replace(/[\s\-–—_|｜/]+/g, '')
+                    .replace(/[()（）\[\]【】]/g, '');
+                const rawTitle = String(title || '');
+                const t = norm(rawTitle);
+                const a = norm(artist);
+                const w = norm(wanted);
+                if (!w) return 0;
+
+                // 1) 标题匹配度（基础分）
+                let titleScore = 0;
+                if (t === w) titleScore = 200;
+                else if (t.indexOf(w) !== -1) titleScore = 120;
+                else if (w.indexOf(t) !== -1 && t.length >= 2) titleScore = 60;
+                else titleScore = 0;
+
+                // 2) 艺人匹配（搜索词里含艺人名时，原唱会明显加分）
+                let artistScore = 0;
+                if (a === w) artistScore = 90;
+                else if (w.indexOf(a) !== -1 && a.length >= 2) artistScore = 50;
+                else if (t === w) artistScore = 10;
+
+                // 3) 版本纯净度：这是决定「原版 vs 翻唱」的关键扣分项
+                let purity = 0;
+                if (/[（(\[【]/.test(rawTitle)) purity -= 25;
+                if (/(cover|伴奏|翻唱|纯音乐|钢琴|吉他|dj|remix|live|女声|男声|童声|治愈|深情|片段|剪辑|铃声|慢摇|版)/i.test(rawTitle)) {
+                    purity -= 60;
                 }
-            });
+                // 多人拼接的艺人（拼盘/合唱/翻唱合集）也降权
+                const artistStr = String(artist || '').replace(/[.。]+$/, '');
+                if (/[\/&,、;；]/.test(artistStr)) purity -= 25;
 
-            const buildResult = () => Array.from(mergedMap.values()).map(item => ({
-                ...item,
-                badgeText: item.sources.length
-                    ? `聚合 ${item.sources.length} 源`
-                    : (item.gdSource ? `兜底 ${item.gdLabel || 'GD-NETEASE'}` : '已找到曲目 · 播放时解析音源')
-            }));
+                // 4) 极短关键词（如单字）无法判断版本优劣，弱化纯度影响
+                if (w.length <= 1) purity = Math.round(purity / 3);
 
-            // ---- 第一阶段：Meting 结果先上屏（通常 <1s） ----
-            searchResults = buildResult();
-            if (requestToken === activeSearchToken && currentTab === 'search') {
+                return titleScore + artistScore + purity;
+            }
+
+            const buildResult = () => Array.from(mergedMap.values())
+                // 稳定排序：相关度高的在前；相关度相同则保持插入顺序（同源内仍按上游位次）
+                .map((item, idx) => ({ item, idx }))
+                .sort((x, y) => (y.item.relevance || 0) - (x.item.relevance || 0) || x.idx - y.idx)
+                .map(({ item }) => ({
+                    ...item,
+                    badgeText: item.similarOnly
+                        ? '相似推荐 · 播放时解析音源'
+                        : (item.sources.length
+                            ? `聚合 ${item.sources.length} 源`
+                            : '已找到曲目 · 播放时解析音源')
+                }));
+
+            const renderNow = () => {
+                searchResults = buildResult();
                 viewList = [...searchResults];
                 renderList();
-                if (searchResults.length === 0) {
-                    songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">主源暂无结果，正在尝试兜底音源…</div>`;
-                }
-            }
+            };
 
-            // ---- 第二阶段：GD 兜底在 4s 内返回则追加 ----
-            let gdList = [];
-            try {
-                gdList = await searchGDForSearch(keyword, GD_SEARCH_TIMEOUT);
-            } catch (e) {
-                gdList = [];
-            }
+            // ---- 第一阶段：主源并发（每平台自带变体重试，各有总预算） ----
+            // 渐进式渲染：任一平台先回来就立刻上屏（保证「快」），
+            // 其余平台陆续返回时继续合并重渲染（保证「聚合 N 源」和播放候选完整）。
+            // 窗口只用于决定「什么时候不再等」，不阻塞首屏。
+            const primaryTasks = UPSTREAM_PLATFORMS.map(plat =>
+                searchPlatformWithVariants(plat.code, variants, searchResultTimeout(), 12000)
+                    .then(list => ({ plat, list }))
+                    .catch(() => ({ plat, list: [] }))
+            );
 
-            // 用户可能已发起新搜索或切走，旧请求不能再覆盖新列表。
-            if (requestToken !== activeSearchToken || currentTab !== 'search') return;
-            if (gdList.length === 0) {
-                if (searchResults.length === 0) {
-                    songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--fav-red);">未找到「${keyword}」的可用音源</div>`;
-                }
-                return;
-            }
-
-            let added = 0;
-            gdList.forEach(item => {
-                const fp = getSongFingerprint(item.title, item.artist);
-                if (!mergedMap.has(fp)) {
-                    mergedMap.set(fp, {
-                        title: item.title,
-                        artist: item.artist,
-                        cover: item.cover,
-                        // GD 条目的直链在播放时按需解析，这里先记录来源信息
-                        sources: [],
-                        gdSource: item.gdSource,
-                        gdId: item.gdId,
-                        gdLabel: item.gdLabel,
-                        labels: [],
-                        badgeText: `兜底 ${item.gdLabel}`
+            const AGGREGATE_WINDOW_MS = 5000;
+            {
+                let finished = 0;
+                await new Promise((resolve) => {
+                    let done = false;
+                    const finish = () => { if (!done) { done = true; resolve(); } };
+                    const guard = setTimeout(finish, AGGREGATE_WINDOW_MS);
+                    primaryTasks.forEach((p, i) => {
+                        p.then(r => {
+                            platformStats.set(r.plat.label, r.list.length);
+                            ingest(r.list, r.plat.label);
+                            // 首个平台结果立刻上屏，避免「等全部」造成的空屏
+                            if (requestToken === activeSearchToken && currentTab === 'search') {
+                                renderNow();
+                            }
+                        })
+                         .catch(() => { platformStats.set(UPSTREAM_PLATFORMS[i].label, 0); })
+                         .finally(() => {
+                             finished++;
+                             if (finished === primaryTasks.length) {
+                                 clearTimeout(guard);
+                                 finish();
+                             }
+                         });
                     });
-                    added++;
-                } else {
-                    // 元数据搜索已经发现、但没给直链的歌曲，也要补上 GD 的稳定 song ID。
-                    const existing = mergedMap.get(fp);
-                    if (existing.gdId == null) {
-                        existing.gdSource = item.gdSource;
-                        existing.gdId = item.gdId;
-                        existing.gdLabel = item.gdLabel;
-                        if (existing.cover.includes('picsum.photos') && item.cover) existing.cover = item.cover;
-                        added++;
+                    setTimeout(() => { clearTimeout(guard); finish(); }, AGGREGATE_WINDOW_MS);
+                });
+            }
+            if (requestToken !== activeSearchToken || currentTab !== 'search') return;
+
+            // 各平台的 ingest 已在上面「一返回就合并」时执行过，这里只做一次最终重渲染。
+            renderNow();
+            if (searchResults.length === 0) {
+                songListEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);">主源暂无结果，正在尝试相似推荐…</div>`;
+            }
+
+            // ---- 第二阶段：相似推荐兜底（关键：空列表绝不直接呈现给用户） ----
+            // 目标：主词搜不到时，返回「歌名相近」的歌曲，而不是空列表。
+            // 但如果原始关键词本身已经是单个短词（如「晴天」），换词并不能变出相似结果，
+            // 这时用「最后一个可用变体 + 逐字放宽」组合；仍为空才认输。
+            let similarFrom = '';
+            if (searchResults.length === 0) {
+                const allEmpty = Array.from(platformStats.values()).every(n => n === 0);
+                const similarDeadline = Date.now() + 15000;
+
+                // 构造「放宽词池」：去修饰主词 → 原始词 → 分词 → 截断前缀（做相似联想）
+                const widenPool = [];
+                const pushWide = (v) => {
+                    const s = String(v || '').replace(/\s+/g, ' ').trim();
+                    if (!s) return;
+                    if (!/[\p{L}\p{N}]/u.test(s)) return;
+                    if (widenPool.some(x => x.toLowerCase() === s.toLowerCase())) return;
+                    widenPool.push(s);
+                };
+
+                const base = stripKeywordNoise(keyword) || keyword;
+                pushWide(base);
+                pushWide(keyword);
+                variants.forEach(v => {
+                    pushWide(v);
+                    String(v).split(/[\s\-–—_|｜]+/).forEach(t => { if (t.length > 1) pushWide(t); });
+                });
+                // 相似联想：对 3 字以上的词做前缀截断（如「晴天」→「晴」太短，保留；
+                //「稻香」→ 2 字不截；「孤勇者」→「孤勇」），只在前面都没捞到时才用。
+                const prefixPool = [];
+                const src = String(base || '');
+                if (src.length >= 3 && /[\u4e00-\u9fff]/.test(src)) {
+                    for (let cut = src.length - 1; cut >= 2; cut--) {
+                        prefixPool.push(src.slice(0, cut));
                     }
                 }
-            });
 
-            searchResults = buildResult();
-            viewList = [...searchResults];
-            renderList();
-            if (added > 0) {
-                npStatus.innerText = `兜底源补充 ${added} 首`;
+                outer:
+                for (const code of SIMILAR_FALLBACK_PLATFORMS) {
+                    for (const kw of widenPool.concat(prefixPool)) {
+                        if (requestToken !== activeSearchToken || currentTab !== 'search') return;
+                        if (Date.now() >= similarDeadline) break outer;
+                        const remain = Math.max(1500, Math.min(searchResultTimeout(), similarDeadline - Date.now()));
+                        const list = await searchPlatformOnce(code, kw, remain, { budget: remain });
+                        if (list.length > 0) {
+                            ingest(list, `相似·${code === 'tencent' ? 'QQ' : '网易云'}`, { similarOnly: true });
+                            similarFrom = code;
+                            break outer;
+                        }
+                    }
+                }
+                if (similarFrom) {
+                    renderNow();
+                    npStatus.innerText = allEmpty
+                        ? `主源空包，已用相似推荐兜底 ${searchResults.length} 首`
+                        : `已用相似推荐兜底 ${searchResults.length} 首`;
+                }
+            }
+
+            if (requestToken !== activeSearchToken || currentTab !== 'search') return;
+
+            // ---- 终态：真的什么都没有，也要给出可操作提示，而不是一句冷冰冰的「未找到」----
+            if (searchResults.length === 0) {
+                songListEl.innerHTML = `
+                    <div style="text-align:center;padding:36px 20px;color:var(--text-secondary);line-height:1.9;">
+                        <div style="color:var(--fav-red);margin-bottom:8px;">未找到「${escapePrivateText(keyword)}」</div>
+                        <div style="font-size:13px;">上游返回空结果（可能是网关瞬时空包，也可能是曲库确实没有）。</div>
+                        <div style="font-size:13px;margin-top:4px;">可以试试：换用歌名或歌手单独搜索、去掉括号备注、或稍后重试。</div>
+                        <button class="btn-secondary" style="margin-top:14px;" onclick="doAggregatedSearch()">重试一次</button>
+                    </div>`;
+                npStatus.innerText = '未找到可用音源';
             }
         }
 
@@ -5195,7 +5473,6 @@
             durTimeEl.innerText = '00:00';
             syncLyricProgressBar();
             triedSourceUrls = new Set();
-            triedSourceIds = new Set();
             activePenetrationCandidates = [];
             setContinuePenetrationVisible(false);
 
@@ -5203,7 +5480,7 @@
             fetchLyricsForSong(song, myToken);
 
             // 收藏里保存的直链优先直接尝试（能秒播），只有失败后才在后台重新解析。
-            // 注意：不再按标签前缀过滤，否则所有 GD 来源的收藏都会失去秒播能力。
+            // 注意：不按标签前缀过滤，任何来源的收藏都应保留秒播能力。
             const favMatch = favorites.find(f => isSameSong(f, song));
             const favoriteSources = favMatch && Array.isArray(favMatch.sources) ? favMatch.sources : [];
             const songSources = Array.isArray(song.sources) ? song.sources : [];
@@ -5218,17 +5495,11 @@
                     if (!srcObj.url) continue;
                     npStatus.innerText = `直连 [${srcObj.label}]…`;
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
-                    const sourceIdKey = srcObj.gdSource && srcObj.gdId != null ? `${srcObj.gdSource}:${srcObj.gdId}` : null;
-                    if (sourceIdKey) triedSourceIds.add(sourceIdKey);
                     // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
                     const check = await verifyAndPlayStream(srcObj.url, myToken, 6000);
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
-                        if (srcObj.gdSource) {
-                            song.gdSource = srcObj.gdSource;
-                            song.gdId = srcObj.gdId;
-                        }
                         song.badgeText = `⚡ ${formatTime(check.duration)} · ${srcObj.label}`;
                         syncFavoriteLatestChain(song, srcObj, check.duration);
                         renderList();
@@ -5240,45 +5511,6 @@
                     }
                 }
             }
-
-            // 直链都失败后，才按需刷新 GD 直链（不阻塞在收藏秒播之前）
-            const preferredGDSource = song.gdSource || (favMatch && favMatch.gdSource);
-            const preferredGDId = song.gdId != null ? song.gdId : (favMatch && favMatch.gdId);
-            if (myToken !== activePlayToken) return;
-            if (preferredGDSource && preferredGDId != null) {
-                npStatus.innerText = `刷新 [${preferredGDSource.toUpperCase()}] 直链…`;
-                const data = await resolveGDTrackUrl(preferredGDSource, preferredGDId, 3000, false);
-                if (myToken !== activePlayToken) return;
-                if (data && data.url) {
-                    const fresh = {
-                        url: data.url,
-                        label: `GD-${String(preferredGDSource).toUpperCase()}·${formatGDQuality(data.br)}`,
-                        gdSource: preferredGDSource,
-                        gdId: preferredGDId,
-                        br: data.br
-                    };
-                    npStatus.innerText = `直连 [${fresh.label}]…`;
-                    const check2 = await verifyAndPlayStream(fresh.url, myToken, 6000);
-                    if (myToken !== activePlayToken) return;
-                    if (check2.ok) {
-                        song.sources = [fresh];
-                        song.gdSource = preferredGDSource;
-                        song.gdId = preferredGDId;
-                        song.verifiedFull = true;
-                        activeWorkingChain = fresh;
-                        song.badgeText = `✓ ${formatTime(check2.duration)} · ${fresh.label}`;
-                        syncFavoriteLatestChain(song, fresh, check2.duration);
-                        renderList();
-                        renderNowPlaying(song);
-                        setContinuePenetrationVisible(true);
-                        npStatus.innerText = `✓ ${formatTime(check2.duration)} · ${fresh.label}`;
-                        updateMediaSession(song);
-                        return;
-                    }
-                }
-            }
-
-            if (myToken !== activePlayToken) return;
 
             if (myToken !== activePlayToken) return;
 
@@ -5302,10 +5534,8 @@
             let tried = 0;
             for (let cand of activePenetrationCandidates) {
                 if (myToken !== activePlayToken) return;
-                const sourceIdKey = cand.gdSource && cand.gdId != null ? `${cand.gdSource}:${cand.gdId}` : null;
-                if (!cand.url || triedSourceUrls.has(cand.url) || (sourceIdKey && triedSourceIds.has(sourceIdKey))) continue;
+                if (!cand.url || triedSourceUrls.has(cand.url)) continue;
                 triedSourceUrls.add(cand.url);
-                if (sourceIdKey) triedSourceIds.add(sourceIdKey);
                 tried++;
 
                 const shortLabel = String(cand.label || '').replace(/·自动$/, '');
@@ -5314,12 +5544,8 @@
                 penetrationResult(shortLabel, check.ok);
 
                 if (check.ok) {
-                    const latestChain = { url: cand.url, label: cand.label, gdSource: cand.gdSource, gdId: cand.gdId, br: cand.br };
+                    const latestChain = { url: cand.url, label: cand.label, br: cand.br };
                     song.sources = [latestChain];
-                    if (cand.gdSource) {
-                        song.gdSource = cand.gdSource;
-                        song.gdId = cand.gdId;
-                    }
                     song.verifiedFull = true;
                     activeWorkingChain = latestChain;
                     song.badgeText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
@@ -5412,15 +5638,18 @@
             npStatus.innerText = text;
         }
 
-        // 采集链顺位定义：数值越小越先尝试
-        // 采集链顺位：按 30 首实测命中率排序（数值越小越先试）
+        // 采集链顺位定义：数值越小越先尝试。
+        // 2026-10 实测（关键区分）：
+        //   · 「搜索稳定性」腾讯最好（40/40 有结果）；
+        //   · 「直链可播率」网易云最好（样本 5/5 返回 audio/mpeg），腾讯约 2/5，
+        //     其余腾讯链接返回 200 但 0 字节 text/html（版权/试听限制）。
+        // 两者不能混为一谈：搜索用腾讯保召回，**采集优先网易云保可播**。
         function getSourceRank(cand) {
             const label = String(cand.label || '');
             if (/^NETEASE-ID/.test(label)) return 5;   // 账号接口给出的歌曲 ID 直链优先验证
-            if (/^MT-NETEASE/.test(label)) return 10;   // 70%
-            if (/^MT-QQ/.test(label))      return 20;   // 23%
-            if (/^MT-KUGOU/.test(label))   return 30;   //  7%
-            if (/^GD-NETEASE/.test(label)) return 40;   // 兜底
+            if (/^MT-NETEASE/.test(label)) return 10;   // 采集首选：直链可播率高
+            if (/^MT-QQ/.test(label))      return 20;   // 搜索稳定，但直链经常 0 字节
+            if (/^MT-KUGOU/.test(label))   return 30;   // 仅在 i-meto 端点偶尔可用
             return 50;
         }
 
@@ -5441,12 +5670,12 @@
                 });
             };
 
-            // 采集专用：状态显示
+            // 采集专用：状态显示。
+            // 顺序按「直链可播率」排：网易云 > 腾讯 > 酷狗。
             const collectState = [
                 { key: 'MT-NETEASE', state: 'wait' },
                 { key: 'MT-QQ',      state: 'wait' },
-                { key: 'MT-KUGOU',   state: 'wait' },
-                { key: 'GD-NE',      state: 'wait' }
+                { key: 'MT-KUGOU',   state: 'wait' }
             ];
             const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
             if (hasNativeNeteaseId) collectState.push({ key: 'NETEASE-ID', state: 'wait' });
@@ -5460,22 +5689,44 @@
                 npStatus.innerText = `采集 ${doneCount}/${collectState.length} · ${parts.join(' ')}`;
             };
 
-            const settle = (idx, ok) => {
-                collectState[idx].state = ok ? 'ok' : 'fail';
+            // 采集时也做关键词变体：主词空包是当前最常见的「有资源却搜不到」原因。
+            const collectVariants = buildKeywordVariants(query);
+
+            // 带变体重试的采集请求：空包时换词再试，避免整条链被判死。
+            // 采集有全局 6 秒硬上限，所以这里也必须给每次尝试一个预算，否则变体叠加会撑爆上限。
+            async function metingWithVariants(code, label, timeout) {
+                const deadline = Date.now() + 4000;
+                for (const kw of collectVariants) {
+                    if (Date.now() >= deadline) break;
+                    const remain = Math.max(1000, Math.min(timeout, deadline - Date.now()));
+                    const list = await requestMeting(
+                        `server=${code}&type=search&id=${encodeURIComponent(kw)}`,
+                        remain, { requireUrl: true, budget: remain }
+                    );
+                    if (Array.isArray(list) && list.length > 0) return list;
+                }
+                return [];
+            }
+
+            // 用 key 定位状态项，避免「状态表顺序」与「发起顺序」耦合（曾因顺序调整导致 ✓/✗ 错位）
+            const settle = (key, ok) => {
+                const item = collectState.find(s => s.key === key);
+                if (!item) return;
+                item.state = ok ? 'ok' : 'fail';
                 renderCollect();
             };
 
-            const mtNE = requestMeting(`server=netease&type=search&id=${encodeURIComponent(query)}`, 2600)
-                .then(list => { pushAllMeting(list, 'MT-NETEASE'); settle(0, list && list.length > 0); })
-                .catch(() => settle(0, false));
+            const mtNE = metingWithVariants('netease', 'MT-NETEASE', 3200)
+                .then(list => { pushAllMeting(list, 'MT-NETEASE'); settle('MT-NETEASE', list && list.length > 0); })
+                .catch(() => settle('MT-NETEASE', false));
 
-            const mtQQ = requestMeting(`server=tencent&type=search&id=${encodeURIComponent(query)}`, 2600)
-                .then(list => { pushAllMeting(list, 'MT-QQ'); settle(1, list && list.length > 0); })
-                .catch(() => settle(1, false));
+            const mtQQ = metingWithVariants('tencent', 'MT-QQ', 3200)
+                .then(list => { pushAllMeting(list, 'MT-QQ'); settle('MT-QQ', list && list.length > 0); })
+                .catch(() => settle('MT-QQ', false));
 
-            const mtKG = requestMeting(`server=kugou&type=search&id=${encodeURIComponent(query)}`, 2600)
-                .then(list => { pushAllMeting(list, 'MT-KUGOU'); settle(2, list && list.length > 0); })
-                .catch(() => settle(2, false));
+            const mtKG = metingWithVariants('kugou', 'MT-KUGOU', 3200)
+                .then(list => { pushAllMeting(list, 'MT-KUGOU'); settle('MT-KUGOU', list && list.length > 0); })
+                .catch(() => settle('MT-KUGOU', false));
 
             function pushAllMeting(list, label) {
                 if (!Array.isArray(list)) return;
@@ -5493,35 +5744,31 @@
 
             renderCollect();
 
-            const gdTask = searchGDStudio(query, song.gdSource || null, cleanTitle, cleanArtist)
-                .then(list => { if (Array.isArray(list)) pushAll(list); settle(3, list && list.length > 0); })
-                .catch(() => settle(3, false));
-
             // 私人每日推荐/FM 自带网易云 song ID，直接取账号 API 的可播 URL，
             // 与第三方按歌名检索并行，避免把可用曲目误判成“全无音源”。
             const nativeNeteaseTask = hasNativeNeteaseId
                 ? resolveNeteasePrivateTrackUrl(song, 3200)
                     .then(item => {
                         if (item?.url) pushAll([item]);
-                        settle(4, !!item?.url);
+                        settle('NETEASE-ID', !!item?.url);
                     })
-                    .catch(() => settle(4, false))
+                    .catch(() => settle('NETEASE-ID', false))
                 : Promise.resolve();
 
             // 采集阶段硬上限 6 秒：超时就带着已拿到的候选继续，不再干等
             const collectGuard = new Promise(resolve => setTimeout(resolve, 6000));
-            const allTasks = [mtNE, mtQQ, mtKG, gdTask];
+            const allTasks = [mtNE, mtQQ, mtKG];
             if (hasNativeNeteaseId) allTasks.push(nativeNeteaseTask);
             await Promise.race([Promise.all(allTasks), collectGuard]);
 
             if (token !== activePlayToken) return [];
 
             // 先按采集链顺位，再按标题/歌手匹配度
-            const targetTitle = normalizeGDText(cleanTitle);
-            const targetArtist = normalizeGDText(cleanArtist);
+            const targetTitle = normalizeMatchText(cleanTitle);
+            const targetArtist = normalizeMatchText(cleanArtist);
             const matchScore = c => {
-                const title = normalizeGDText(c.title || '');
-                const artist = normalizeGDText(c.artist || '');
+                const title = normalizeMatchText(c.title || '');
+                const artist = normalizeMatchText(c.artist || '');
                 let score = 0;
                 if (title && title === targetTitle) score += 100;
                 else if (title && targetTitle && (title.includes(targetTitle) || targetTitle.includes(title))) score += 50;
@@ -5562,10 +5809,8 @@
                 let attempted = 0;
                 for (const cand of candidates) {
                     if (token !== activePlayToken) return;
-                    const sourceIdKey = cand.gdSource && cand.gdId != null ? `${cand.gdSource}:${cand.gdId}` : null;
-                    if (!cand.url || triedSourceUrls.has(cand.url) || (sourceIdKey && triedSourceIds.has(sourceIdKey))) continue;
+                    if (!cand.url || triedSourceUrls.has(cand.url)) continue;
                     triedSourceUrls.add(cand.url);
-                    if (sourceIdKey) triedSourceIds.add(sourceIdKey);
                     attempted++;
                     const shortLabel = String(cand.label || '').replace(/·自动$/, '');
                     penetrationTry(shortLabel);
@@ -5574,14 +5819,9 @@
                     if (!check.ok) continue;
 
                     const chain = {
-                        url: cand.url, label: cand.label,
-                        gdSource: cand.gdSource, gdId: cand.gdId, br: cand.br
+                        url: cand.url, label: cand.label, br: cand.br
                     };
                     song.sources = [chain];
-                    if (cand.gdSource) {
-                        song.gdSource = cand.gdSource;
-                        song.gdId = cand.gdId;
-                    }
                     activeWorkingChain = chain;
                     song.verifiedFull = true;
                     song.badgeText = `✓ ${formatTime(check.duration)} · ${cand.label}`;
@@ -5630,10 +5870,23 @@
                         audio.removeAttribute('src');
                         return finish({ ok: false, reason: 'trial_30s', duration: dur });
                     }
+                    // 音源是否可用，判断依据是「能载入元数据且时长合格」，而不是 play() 是否成功。
+                    // play() 失败常见于浏览器自动播放策略（无用户手势）或设备无音频输出，
+                    // 这跟音源好坏无关；把它当成音源无效会误杀完全可播的链接。
+                    const settledDuration = dur || 200;
                     audio.play().then(() => {
                         setPlayButtonVisual(true);
-                        finish({ ok: true, duration: dur || 200 });
-                    }).catch(() => finish({ ok: false, reason: 'play_error' }));
+                        finish({ ok: true, duration: settledDuration });
+                    }).catch((err) => {
+                        // 自动播放被拦截：音源本身是好的，仍然算校验通过，
+                        // 由用户点击播放按钮时再触发真正的播放。
+                        const blocked = err && (err.name === 'NotAllowedError' || err.name === 'AbortError');
+                        if (blocked) {
+                            finish({ ok: true, duration: settledDuration, needsGesture: true });
+                        } else {
+                            finish({ ok: false, reason: 'play_error', duration: settledDuration });
+                        }
+                    });
                 };
 
                 const onError = () => finish({ ok: false, reason: 'network_error' });
