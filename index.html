@@ -3088,11 +3088,11 @@
 
     <div class="modal-mask" id="privateApiModal" onclick="closePrivateApiSettings()">
         <div class="modal-card" onclick="event.stopPropagation()" style="max-width:520px;">
-            <h3>私人推荐接口设置</h3>
+            <h3>音源与接口设置</h3>
             <p>网易云使用兼容 NeteaseCloudMusicApi 的实例。服务地址只保存在此浏览器。</p>
             <div class="form-group">
                 <label for="neteaseApiBaseInput">网易云 API 基址</label>
-                <input id="neteaseApiBaseInput" type="url" placeholder="https://ncm.zhenxin.me" autocomplete="url">
+                <input id="neteaseApiBaseInput" type="url" placeholder="https://zm.wwoyun.cn" autocomplete="url">
             </div>
             <div class="form-group" style="margin-top:10px;">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -3169,6 +3169,60 @@
         // 所以超时必须放宽，否则会把「慢但合格」的源误判成失败。
         const BITRATE_PROBE_BYTES = 32 * 1024;
         const BITRATE_PROBE_TIMEOUT_MS = 20000;
+
+        /* ================= GD Studio 第二上游 =================
+           2026-11 实测：api.gdstudio.xyz 可用（CORS *），netease/joox 两源有结果，
+           直链为官方 CDN 320k MP3（types=url 返回 {url,br}）。此前 GD 被移除的原因是
+           不接受低码率，现在作为「第二采集上游」回归：搜索发现 + 播放时二次解析直链。
+           缺点：响应慢（4~10s），url 接口偶发超时，所以穿透顺位排在 Meting 网易云之后。
+        */
+        const GD_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
+        const GD_SOURCES = ['netease', 'joox'];
+        const GD_LABEL = { netease: 'GD-NETEASE', joox: 'GD-JOOX' };
+
+        function gdApiUrl(params) {
+            return GD_API_BASE + '?' + new URLSearchParams(params).toString();
+        }
+
+        async function gdFetch(params, timeoutMs = 8000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(gdApiUrl(params), { signal: controller.signal });
+                if (!res.ok) throw new Error('gd_http_' + res.status);
+                return await res.json();
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        // GD 搜索：返回统一条目（无直链，urlId 留给播放时二次解析），并携带 gdRef 供穿透直取。
+        async function gdSearch(keyword, source, count = 20, timeoutMs = 8000) {
+            const data = await gdFetch({ types: 'search', source, name: keyword, count: String(count) }, timeoutMs);
+            if (!Array.isArray(data)) return [];
+            return data.map(it => {
+                if (!it || !it.name) return null;
+                return {
+                    name: String(it.name),
+                    artist: Array.isArray(it.artist) ? it.artist.join('/') : String(it.artist || ''),
+                    url: '',
+                    // GD 封面走 types=pic 网关地址（可直接作 img src，只是加载略慢）
+                    pic: it.pic_id ? gdApiUrl({ types: 'pic', source, size: '300', id: it.pic_id }) : '',
+                    lrc: '',
+                    gdRef: { source, id: it.url_id, picId: it.pic_id }
+                };
+            }).filter(Boolean);
+        }
+
+        // GD 直链解析：types=url&br=320 → {url, br, size}
+        async function gdResolveUrl(ref, timeoutMs = 6000) {
+            if (!ref || !ref.id) return null;
+            const data = await gdFetch({ types: 'url', source: ref.source, id: ref.id, br: '320' }, timeoutMs);
+            const url = data && typeof data.url === 'string' ? data.url : '';
+            if (!url || !/^https?:/i.test(url)) return null;
+            return { url, br: Number(data.br) || 320 };
+        }
+
 
         const SVG_PLAY_PATH = `<path d="M8.5 6.8c0-1.1 1.2-1.8 2.1-1.2l8.1 5.2c.9.6.9 1.8 0 2.4l-8.1 5.2c-.9.6-2.1-.1-2.1-1.2V6.8z"/>`;
         const SVG_PAUSE_PATH = `<rect x="7" y="6" width="3.6" height="12" rx="1.8"/><rect x="13.4" y="6" width="3.6" height="12" rx="1.8"/>`;
@@ -4488,7 +4542,12 @@
         const PRIVATE_NETEASE_COOKIE_KEY = 'ONEMUSIC_PRIVATE_NETEASE_COOKIE_V1';
         const PRIVATE_NETEASE_USER_KEY = 'ONEMUSIC_PRIVATE_NETEASE_USER_V1';
         const PRIVATE_OFFICIAL_FAV_SYNC_KEY = 'ONEMUSIC_SYNC_OFFICIAL_FAVORITES_V1';
-        const DEFAULT_NETEASE_API_BASE = 'https://ncm.zhenxin.me';
+        // 2026-11 实测：原 6 个公开实例中 5 个已死（ncm.zhenxin.me / ncme.zhenxin.me 返回
+        // 403「当前 API 仅限 ZMusic 使用」；zm.i9mr.com / ncm.landdy.cn 502；
+        // music.mcseekeri.com 403 Forbidden），仅剩 zm.wwoyun.cn 存活，
+        // 且 /search 与 /song/url 均可用（CORS *）。
+        // 单点不可靠：长期方案是自建 NeteaseCloudMusicApi（Vercel/Docker 免费部署）。
+        const DEFAULT_NETEASE_API_BASE = 'https://zm.wwoyun.cn';
         const PRIVATE_NETEASE_ACTIVE_BASE_KEY = 'ONEMUSIC_PRIVATE_NETEASE_ACTIVE_BASE_V1';
         // 登录态元数据：登录时间、来源实例、最后一次校验结果
         const PRIVATE_NETEASE_SESSION_KEY = 'ONEMUSIC_PRIVATE_NETEASE_SESSION_V1';
@@ -4581,14 +4640,13 @@
             }
         }
         // 来源：ZMusic 文档列出的公开 NeteaseCloudMusicApi 兼容实例。
-        // 这里只对二维码 key 请求做并发探测；拿到可用实例后，创建二维码、轮询与每日推荐均使用同一实例。
+        // 2026-11 复测：下列地址全部失效，已从探测列表移除——
+        //   ncm.zhenxin.me / ncme.zhenxin.me → 403「当前 API 仅限 ZMusic 使用」
+        //   zm.i9mr.com / ncm.landdy.cn      → 502 Bad Gateway
+        //   music.mcseekeri.com              → 403 Forbidden
+        // 仅保留实测存活的 zm.wwoyun.cn；用户手动填写的自定义地址不受此列表影响。
         const PUBLIC_NETEASE_API_BASES = [
-            'https://ncm.zhenxin.me',
-            'https://zm.i9mr.com',
-            'https://music.mcseekeri.com',
-            'https://zm.wwoyun.cn',
-            'https://ncme.zhenxin.me',
-            'https://ncm.landdy.cn'
+            'https://zm.wwoyun.cn'
         ];
         let privateQrProvider = '';
         let privateQrPollTimer = null;
@@ -4712,6 +4770,7 @@
             document.getElementById('privateApiModal').classList.add('open');
         }
         function closePrivateApiSettings() { document.getElementById('privateApiModal').classList.remove('open'); }
+
         function savePrivateApiSettings() {
             const nBase = document.getElementById('neteaseApiBaseInput').value.trim();
             try {
@@ -5336,6 +5395,8 @@
                             sources: source ? [source] : [],
                             labels: source ? [platLabel] : [],
                             relevance,
+                            // GD 条目携带 gdRef，播放时按 urlId 二次解析 320k 直链
+                            ...(item.gdRef ? { gdRef: item.gdRef } : {}),
                             ...extra
                         });
                         added++;
@@ -5345,6 +5406,8 @@
                             existing.labels.push(platLabel);
                             if (source) existing.sources.push(source);
                         }
+                        // 已有条目（如先到的 Meting 结果）可被后到的 GD 条目补上解析凭据
+                        if (!existing.gdRef && item.gdRef) existing.gdRef = item.gdRef;
                         if (existing.cover.includes('picsum.photos') && item.pic) {
                             existing.cover = item.pic;
                         }
@@ -5430,6 +5493,17 @@
                     .catch(() => ({ plat, list: [] }))
             );
 
+            // GD Studio 第二上游（netease/joox）：搜索只做「发现」，直链播放时解析。
+            // GD 实测 4~15s 波动大（偶发 20s+），超时放宽到 20s：
+            // 窗口外返回的结果仍会被 ingest 合并渲染，不阻塞首屏。
+            const gdTasks = GD_SOURCES.map(src =>
+                gdSearch(keyword, src, 20, 20000)
+                    .then(list => ({ plat: { label: GD_LABEL[src] }, list }))
+                    .catch(() => ({ plat: { label: GD_LABEL[src] }, list: [] }))
+            );
+
+            const allPrimaryTasks = [...primaryTasks, ...gdTasks];
+
             const AGGREGATE_WINDOW_MS = 5000;
             {
                 let finished = 0;
@@ -5437,7 +5511,7 @@
                     let done = false;
                     const finish = () => { if (!done) { done = true; resolve(); } };
                     const guard = setTimeout(finish, AGGREGATE_WINDOW_MS);
-                    primaryTasks.forEach((p, i) => {
+                    allPrimaryTasks.forEach((p) => {
                         p.then(r => {
                             platformStats.set(r.plat.label, r.list.length);
                             ingest(r.list, r.plat.label);
@@ -5446,10 +5520,10 @@
                                 renderNow();
                             }
                         })
-                         .catch(() => { platformStats.set(UPSTREAM_PLATFORMS[i].label, 0); })
+                         .catch(() => {})
                          .finally(() => {
                              finished++;
-                             if (finished === primaryTasks.length) {
+                             if (finished === allPrimaryTasks.length) {
                                  clearTimeout(guard);
                                  finish();
                              }
@@ -5636,6 +5710,7 @@
                     npStatus.innerText = `直连 [${srcObj.label}]…`;
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
                     // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
+                    // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
                     const check = await verifyAndPlayStream(srcObj.url, myToken, 6000);
                     if (check.ok) {
                         song.verifiedFull = true;
@@ -5685,7 +5760,9 @@
                 penetrationResult(shortLabel, check.ok, check.reason);
 
                 if (check.ok) {
-                    const latestChain = { url: cand.url, label: cand.label, br: cand.br };
+                    const latestChain = {
+                        url: cand.url, label: cand.label, br: cand.br
+                    };
                     song.sources = [latestChain];
                     song.verifiedFull = true;
                     activeWorkingChain = latestChain;
@@ -5794,6 +5871,7 @@
             const label = String(cand.label || '');
             if (/^NETEASE-ID/.test(label)) return 5;   // 账号接口给出的歌曲 ID 直链优先验证
             if (/^MT-NETEASE/.test(label)) return 10;   // 采集首选：直链可播率高
+            if (/^GD-/.test(label))        return 12;   // GD 二次解析的官方 320k 直链
             if (/^MT-QQ/.test(label))      return 20;   // 搜索稳定，但直链经常 0 字节
             return 50;
         }
@@ -5816,10 +5894,11 @@
             };
 
             // 采集专用：状态显示。
-            // 顺序按「直链可播率」排：网易云 > 腾讯。
+            // 顺序按「直链可播率」排：网易云 > 腾讯；GD 为 2026-11 新增兜底链。
             const collectState = [
                 { key: 'MT-NETEASE', state: 'wait' },
-                { key: 'MT-QQ',      state: 'wait' }
+                { key: 'MT-QQ',      state: 'wait' },
+                { key: 'GD',         state: 'wait' }
             ];
             const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
             if (hasNativeNeteaseId) collectState.push({ key: 'NETEASE-ID', state: 'wait' });
@@ -5895,9 +5974,40 @@
                     .catch(() => settle('NETEASE-ID', false))
                 : Promise.resolve();
 
-            // 采集阶段硬上限 6 秒：超时就带着已拿到的候选继续，不再干等
-            const collectGuard = new Promise(resolve => setTimeout(resolve, 6000));
-            const allTasks = [mtNE, mtQQ];
+            // GD Studio 兜底链：优先解析搜索时记录的 gdRef（省一次搜索），失败再按歌名搜。
+            // GD 响应慢（实测 4~10s），所以预算放在 7s，赶不上 7.5s 硬上限就交给「继续找音源」。
+            const gdDeadline = Date.now() + 7000;
+            const gdTask = (async () => {
+                const tryRef = async (ref, title, artist) => {
+                    const r = await gdResolveUrl(ref, Math.max(2500, Math.min(4500, gdDeadline - Date.now())));
+                    if (r && r.url) {
+                        pushAll([{ url: r.url, label: GD_LABEL[ref.source] || 'GD', br: r.br, pic: '', title: title || '', artist: artist || '' }]);
+                        return true;
+                    }
+                    return false;
+                };
+                try {
+                    if (song && song.gdRef && song.gdRef.id) {
+                        // 用户点的就是 GD 搜索结果：标记 DIRECT 优先验证
+                        const r = await gdResolveUrl(song.gdRef, Math.max(2500, Math.min(4500, gdDeadline - Date.now())));
+                        if (r && r.url) {
+                            pushAll([{ url: r.url, label: 'GD-DIRECT', br: r.br, pic: '', title: song.title || '', artist: song.artist || '', priority: 1 }]);
+                            return true;
+                        }
+                    }
+                    const list = await gdSearch(query, 'netease', 5, Math.max(2500, Math.min(4500, gdDeadline - Date.now())));
+                    for (const it of list.slice(0, 3)) {
+                        if (Date.now() >= gdDeadline) break;
+                        if (it.gdRef && await tryRef(it.gdRef, it.name, it.artist)) return true;
+                    }
+                    return false;
+                } catch (e) { return false; }
+            })().then(ok => settle('GD', ok)).catch(() => settle('GD', false));
+
+            // 采集阶段硬上限 7.5 秒：超时就带着已拿到的候选继续，不再干等
+            // （2026-11 从 6s 放宽：GD 二次解析本身就要 4~5s）
+            const collectGuard = new Promise(resolve => setTimeout(resolve, 7500));
+            const allTasks = [mtNE, mtQQ, gdTask];
             if (hasNativeNeteaseId) allTasks.push(nativeNeteaseTask);
             await Promise.race([Promise.all(allTasks), collectGuard]);
 
@@ -5918,6 +6028,9 @@
             };
 
             return candidates.sort((a, b) => {
+                // priority 高的先试（用户点的就是 GD 搜索结果时，直取候选优先）
+                const pa = a.priority || 0, pb = b.priority || 0;
+                if (pa !== pb) return pb - pa;
                 const ra = getSourceRank(a), rb = getSourceRank(b);
                 if (ra !== rb) return ra - rb;
                 return matchScore(b) - matchScore(a);
