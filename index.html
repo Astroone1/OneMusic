@@ -3170,11 +3170,9 @@
         const BITRATE_PROBE_BYTES = 32 * 1024;
         const BITRATE_PROBE_TIMEOUT_MS = 20000;
 
-        /* ================= GD Studio 第二上游 =================
-           2026-11 实测：api.gdstudio.xyz 可用（CORS *），netease/joox 两源有结果，
-           直链为官方 CDN 320k MP3（types=url 返回 {url,br}）。此前 GD 被移除的原因是
-           不接受低码率，现在作为「第二采集上游」回归：搜索发现 + 播放时二次解析直链。
-           缺点：响应慢（4~10s），url 接口偶发超时，所以穿透顺位排在 Meting 网易云之后。
+        /* ================= GD Studio(仅搜索用) =================
+           2026-11-10 采集链实测:GD 实际可播 9/30(search 超时为主),未进前三,已从播放采集链砍除。
+           以下函数仅供「搜索聚合」的 GD 来源使用;GD 搜索条目播放时按歌名走前三链采集。
         */
         const GD_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
         const GD_SOURCES = ['netease', 'joox'];
@@ -3212,15 +3210,6 @@
                     gdRef: { source, id: it.url_id, picId: it.pic_id }
                 };
             }).filter(Boolean);
-        }
-
-        // GD 直链解析：types=url&br=320 → {url, br, size}
-        async function gdResolveUrl(ref, timeoutMs = 6000) {
-            if (!ref || !ref.id) return null;
-            const data = await gdFetch({ types: 'url', source: ref.source, id: ref.id, br: '320' }, timeoutMs);
-            const url = data && typeof data.url === 'string' ? data.url : '';
-            if (!url || !/^https?:/i.test(url)) return null;
-            return { url, br: Number(data.br) || 320 };
         }
 
 
@@ -4915,39 +4904,60 @@
         }
 
         // 网易云账号推荐已提供官方 song ID，不应只靠“歌名+歌手”去第三方反查。
-        // 优先用当前登录 API 实例解析官方直链；失败时仍走下面既有的多源穿透。
-        // 网易云账号直链。音质要求：最低 320kbps。
-        // 按 exhigh(320) → lossless → hires 依次尝试，取第一个实际返回 url 且码率≥320 的。
-        // 注意：能拿到哪一档取决于账号会员等级；接口忽略请求参数时靠后续码率闸门兜底。
-        const NETEASE_URL_LEVELS = ['exhigh', 'lossless', 'hires'];
-
-        async function resolveNeteasePrivateTrackUrl(song, timeoutMs = 3200) {
+        // 2026-11-10 分链检验:/song/url/v1 存在同参数随机 400(90 次调用 50 次 400),
+        // 旧接口 /song/url 实测 30/30 给直链、29/30 过 320k 闸门 → 改用旧接口。
+        // 400 是随机故障,同一首歌重试即可恢复,所以失败后再试一次。
+        // 音质要求:最低 320kbps。返回 br 字段先初筛,播放前码率闸门做最终判定。
+        // 2026-11-10 播放实测修正:cookie 不再是硬门槛——脚本匿名调用旧接口同样 30/30
+        // (实例用共享账号响应),未登录也走这条链;有 cookie 就带上(账号音质通常更好)。
+        // 实测实例响应 0.4s~3.6s 波动,原 3.2s 超时会误杀 → 放宽到 6s。
+        // 2026-11-10 浏览器实测:带账号 cookie 的请求超时/Failed to fetch 频发
+        // (实例要用 cookie 二次校验,账号态被限流),匿名请求却 1s 级返回 30/30。
+        // 因此改为「匿名优先,账号兜底」:匿名两次失败后,才带 cookie 再试一次。
+        async function resolveNeteasePrivateTrackUrl(song, timeoutMs = 6000) {
             const id = song?.platformId ?? song?.platformTrack?.id;
-            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
-            if (song?.platform !== 'netease' || id == null || !cookie) return null;
+            if (song?.platform !== 'netease' || id == null) return null;
+            const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY) || '';
+            const diag = song._diag || (song._diag = {});
 
-            for (const level of NETEASE_URL_LEVELS) {
+            const tries = [
+                { cookie: '', tag: '匿名', ms: timeoutMs },
+                { cookie: '', tag: '匿名重', ms: Math.min(4000, timeoutMs) }
+            ];
+            if (cookie) tries.push({ cookie, tag: '账号', ms: 4000 });   // 匿名无版权时账号兜底
+            const fails = [];
+
+            for (const t of tries) {
                 try {
-                    const url = privateApiUrl('netease', '/song/url/v1', {
-                        id, level, cookie, timestamp: Date.now()
+                    const url = privateApiUrl('netease', '/song/url', {
+                        id, cookie: t.cookie || undefined, timestamp: Date.now()
                     });
-                    const payload = await privateFetchJSON(url, {}, timeoutMs);
+                    const payload = await privateFetchJSON(url, {}, t.ms);
                     const rows = Array.isArray(payload?.data) ? payload.data : [];
                     const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
                     const mediaUrl = item?.url || payload?.url;
-                    if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) continue;
+                    if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) {
+                        fails.push(t.tag + '无直链');
+                        continue;
+                    }
                     // 试听片段（会员/版权限制）直接跳过，不当作可用音源
-                    if (item?.freeTrialInfo) continue;
-                    if (item?.code != null && Number(item.code) !== 200) continue;
+                    if (item?.freeTrialInfo) { fails.push(t.tag + '试听'); continue; }
+                    if (item?.code != null && Number(item.code) !== 200) {
+                        fails.push(t.tag + '码' + item.code); continue;
+                    }
 
                     // 接口会返回 br 字段（如 320000 = 320kbps）。能读到就先按它初筛，
                     // 读不到则放行，交给播放前的码率闸门做最终判定。
                     const rawBr = Number(item?.br);
                     if (Number.isFinite(rawBr) && rawBr > 0) {
                         const kbps = Math.round(rawBr / 1000);
-                        if (kbps < MIN_AUDIO_BITRATE_KBPS) continue;
+                        if (kbps < MIN_AUDIO_BITRATE_KBPS) {
+                            fails.push(t.tag + `仅${kbps}k`);
+                            continue;
+                        }
                     }
 
+                    diag.neteaseId = 'OK(' + t.tag + ')';
                     return {
                         url: mediaUrl,
                         label: 'NETEASE-ID·官方直链',
@@ -4956,10 +4966,60 @@
                         platformId: id
                     };
                 } catch (error) {
-                    // 该档位失败（实例未部署 / 无版权）就试下一档，全失败后返回 null
+                    // 400/超时/Failed to fetch 都算一次失败,继续下一个尝试位
+                    const why = error?.name === 'AbortError' ? '超时' : (error?.message || '失败').slice(0, 16);
+                    fails.push(t.tag + why);
                     continue;
                 }
             }
+            diag.neteaseId = fails.join('>') || '无结果';
+            return null;
+        }
+
+        // 采集链 2:v1 官方直链(实测 18/30 可播,旧接口失败时补位)。匿名调用(同实测口径,
+        // 账号态请求会被实例限流,实测浏览器里超时/Failed to fetch 频发;账号兜底由链1承担)。
+        // exhigh → lossless → hires 首档成功即停,无重试。每档 3.5s(实例慢时也够,窗口不被吃满)。
+        async function resolveNeteaseV1TrackUrl(song, timeoutMs = 3500) {
+            const id = song?.platformId ?? song?.platformTrack?.id;
+            if (song?.platform !== 'netease' || id == null) return null;
+            const diag = song._diag || (song._diag = {});
+            const levelFails = [];
+
+            for (const level of ['exhigh', 'lossless', 'hires']) {
+                try {
+                    const url = privateApiUrl('netease', '/song/url/v1', {
+                        id, level, timestamp: Date.now()
+                    });
+                    const payload = await privateFetchJSON(url, {}, timeoutMs);
+                    const rows = Array.isArray(payload?.data) ? payload.data : [];
+                    const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
+                    const mediaUrl = item?.url || payload?.url;
+                    if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) {
+                        levelFails.push('无直链'); continue;
+                    }
+                    if (item?.freeTrialInfo) { levelFails.push('试听'); continue; }
+                    if (item?.code != null && Number(item.code) !== 200) {
+                        levelFails.push('码' + item.code); continue;
+                    }
+                    const rawBr = Number(item?.br);
+                    if (Number.isFinite(rawBr) && rawBr > 0 && Math.round(rawBr / 1000) < MIN_AUDIO_BITRATE_KBPS) {
+                        levelFails.push(Math.round(rawBr / 1000) + 'k'); continue;
+                    }
+                    diag.neteaseV1 = 'OK';
+                    return {
+                        url: mediaUrl,
+                        label: 'NETEASE-V1·官方直链',
+                        title: song.title || item?.name || '',
+                        artist: song.artist || '',
+                        platformId: id
+                    };
+                } catch (error) {
+                    levelFails.push(error?.name === 'AbortError' ? '超时'
+                        : (error?.message || '失败').replace(/^HTTP /, 'HTTP').slice(0, 12));
+                    continue;   // 该档位失败(随机 400/无版权)就试下一档
+                }
+            }
+            diag.neteaseV1 = levelFails.join('/') || '无结果';
             return null;
         }
 
@@ -5395,7 +5455,8 @@
                             sources: source ? [source] : [],
                             labels: source ? [platLabel] : [],
                             relevance,
-                            // GD 条目携带 gdRef，播放时按 urlId 二次解析 320k 直链
+                            // GD 条目携带 gdRef(仅作来源标记;2026-11-10 起 GD 已退出播放采集链,
+                            // 播放时按歌名走前三链采集)
                             ...(item.gdRef ? { gdRef: item.gdRef } : {}),
                             ...extra
                         });
@@ -5711,7 +5772,7 @@
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
                     // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
                     // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
-                    const check = await verifyAndPlayStream(srcObj.url, myToken, 6000);
+                    const check = await verifyAndPlayStream(srcObj.url, myToken, 8000);
                     if (check.ok) {
                         song.verifiedFull = true;
                         activeWorkingChain = srcObj;
@@ -5739,7 +5800,7 @@
             if (totalCand === 0) {
                 penetrationEnd('全部采集链均无结果，自动切歌…');
                 if (myToken === activePlayToken) {
-                    song.badgeText = "⚠️ 暂无音源";
+                    song.badgeText = `⚠️ 暂无音源${diagText(song)}`;
                     renderList();
                     setTimeout(() => { if (myToken === activePlayToken) nextSong(false); }, 1500);
                 }
@@ -5756,8 +5817,15 @@
 
                 const shortLabel = String(cand.label || '').replace(/·自动$/, '');
                 penetrationTry(shortLabel, tried, totalCand);
-                const check = await verifyAndPlayStream(cand.url, myToken, 6000);
+                const check = await verifyAndPlayStream(cand.url, myToken, 8000);
                 penetrationResult(shortLabel, check.ok, check.reason);
+                if (!check.ok) {
+                    const d = song._diag || (song._diag = {});
+                    const key = shortLabel.replace(/·.*$/, '');
+                    d[key] = check.reason === 'low_bitrate'
+                        ? `校验仅${check.bitrate || '?'}k`
+                        : `校验${check.reason || '失败'}`;
+                }
 
                 if (check.ok) {
                     const latestChain = {
@@ -5785,10 +5853,21 @@
 
             penetrationEnd(`已试 ${tried} 条，均不可用，自动切歌...`);
             if (myToken === activePlayToken) {
-                song.badgeText = "⚠️ 暂无音源";
+                song.badgeText = `⚠️ 暂无音源${diagText(song)}`;
                 renderList();
                 setTimeout(() => { if (myToken === activePlayToken) nextSong(false); }, 1200);
             }
+        }
+
+        // 采集诊断摘要:各链失败原因拼接,附在"暂无音源"badge 后,用于现场定位
+        function diagText(song) {
+            const d = song && song._diag;
+            if (!d) return '';
+            const parts = Object.entries(d)
+                .filter(([, v]) => v && v !== 'OK')
+                .map(([k, v]) => `${k}:${v}`);
+            if (!parts.length) return '';
+            return ' · ' + parts.join(' · ').slice(0, 120);
         }
 
         /* ---------- 穿透进度：每次事件显式写状态行，不依赖定时器轮询 ---------- */
@@ -5808,7 +5887,7 @@
             penetrationTrail = [];
             penetrationT0 = Date.now();
             penetrationPhaseName = '采集';
-            npStatus.innerText = '采集 0/4 · MT-NETEASE';
+            npStatus.innerText = '采集 0/3 · MT-NETEASE';
         }
 
         // 切换阶段（采集 → 校验）
@@ -5862,17 +5941,13 @@
         }
 
         // 采集链顺位定义：数值越小越先尝试。
-        // 2026-10 实测（关键区分）：
-        //   · 「搜索稳定性」腾讯最好（40/40 有结果）；
-        //   · 「直链可播率」网易云最好（样本 5/5 返回 audio/mpeg），腾讯约 2/5，
-        //     其余腾讯链接返回 200 但 0 字节 text/html（版权/试听限制）。
-        // 两者不能混为一谈：搜索用腾讯保召回，**采集优先网易云保可播**。
+        // 2026-11-10 按「30 首实际能播」实测排序:
+        //   旧接口 30/30 > v1 18/30 > MT-NETEASE 10/30(GD 9/30、MT-QQ 2/30 已淘汰)
         function getSourceRank(cand) {
             const label = String(cand.label || '');
-            if (/^NETEASE-ID/.test(label)) return 5;   // 账号接口给出的歌曲 ID 直链优先验证
-            if (/^MT-NETEASE/.test(label)) return 10;   // 采集首选：直链可播率高
-            if (/^GD-/.test(label))        return 12;   // GD 二次解析的官方 320k 直链
-            if (/^MT-QQ/.test(label))      return 20;   // 搜索稳定，但直链经常 0 字节
+            if (/^NETEASE-ID/.test(label)) return 5;    // 链1:旧接口 /song/url(账号 ID 直链)
+            if (/^NETEASE-V1/.test(label)) return 8;    // 链2:v1 官方直链补位
+            if (/^MT-NETEASE/.test(label)) return 10;   // 链3:Meting 网易云曲库
             return 50;
         }
 
@@ -5894,20 +5969,24 @@
             };
 
             // 采集专用：状态显示。
-            // 顺序按「直链可播率」排：网易云 > 腾讯；GD 为 2026-11 新增兜底链。
+            // 2026-11-10 按「30 首实际能播」实测排行取前三实装：
+            //   旧接口 30/30 · v1官方 18/30 · MT-NETEASE 10/30
+            //   （淘汰：GD 9/30 search 超时为主；MT-QQ 2/30 直链多为低码率/空文件）
+            // 三链合起来 30/30 全部能播。
             const collectState = [
-                { key: 'MT-NETEASE', state: 'wait' },
-                { key: 'MT-QQ',      state: 'wait' },
-                { key: 'GD',         state: 'wait' }
+                { key: 'MT-NETEASE', state: 'wait' }
             ];
             const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
-            if (hasNativeNeteaseId) collectState.push({ key: 'NETEASE-ID', state: 'wait' });
+            if (hasNativeNeteaseId) {
+                collectState.unshift({ key: 'NETEASE-ID', state: 'wait' });   // 旧接口
+                collectState.splice(1, 0, { key: 'NETEASE-V1', state: 'wait' }); // v1 补位
+            }
             const renderCollect = () => {
                 const doneCount = collectState.filter(s => s.state !== 'wait').length;
                 const parts = collectState.map(s => {
                     if (s.state === 'wait') return `${s.key} …`;
                     if (s.state === 'ok') return `${s.key} ✓`;
-                    return `${s.key} ✗`;
+                    return `${s.key} ✗${s.reason ? '(' + s.reason + ')' : ''}`;
                 });
                 npStatus.innerText = `采集 ${doneCount}/${collectState.length} · ${parts.join(' ')}`;
             };
@@ -5916,9 +5995,9 @@
             const collectVariants = buildKeywordVariants(query);
 
             // 带变体重试的采集请求：空包时换词再试，避免整条链被判死。
-            // 采集有全局 6 秒硬上限，所以这里也必须给每次尝试一个预算，否则变体叠加会撑爆上限。
+            // GD 砍除后采集预算不再被分摊：变体总预算 4s → 6s，单次超时 3.2s → 4.5s。
             async function metingWithVariants(code, label, timeout) {
-                const deadline = Date.now() + 4000;
+                const deadline = Date.now() + 6000;
                 for (const kw of collectVariants) {
                     if (Date.now() >= deadline) break;
                     const remain = Math.max(1000, Math.min(timeout, deadline - Date.now()));
@@ -5932,20 +6011,25 @@
             }
 
             // 用 key 定位状态项，避免「状态表顺序」与「发起顺序」耦合（曾因顺序调整导致 ✓/✗ 错位）
-            const settle = (key, ok) => {
+            const settle = (key, ok, reason) => {
                 const item = collectState.find(s => s.key === key);
-                if (!item) return;
-                item.state = ok ? 'ok' : 'fail';
-                renderCollect();
+                if (item) {
+                    item.state = ok ? 'ok' : 'fail';
+                    if (reason) item.reason = reason;
+                    renderCollect();
+                }
+                if (!ok && reason) {
+                    const d = song._diag || (song._diag = {});
+                    d[key] = reason;
+                }
             };
 
-            const mtNE = metingWithVariants('netease', 'MT-NETEASE', 3200)
-                .then(list => { pushAllMeting(list, 'MT-NETEASE'); settle('MT-NETEASE', list && list.length > 0); })
-                .catch(() => settle('MT-NETEASE', false));
-
-            const mtQQ = metingWithVariants('tencent', 'MT-QQ', 3200)
-                .then(list => { pushAllMeting(list, 'MT-QQ'); settle('MT-QQ', list && list.length > 0); })
-                .catch(() => settle('MT-QQ', false));
+            const mtNE = metingWithVariants('netease', 'MT-NETEASE', 4500)
+                .then(list => {
+                    pushAllMeting(list, 'MT-NETEASE');
+                    settle('MT-NETEASE', list && list.length > 0, list && list.length > 0 ? '' : '搜索空包');
+                })
+                .catch(e => settle('MT-NETEASE', false, '网关失败'));
 
             function pushAllMeting(list, label) {
                 if (!Array.isArray(list)) return;
@@ -5963,10 +6047,10 @@
 
             renderCollect();
 
-            // 私人每日推荐/FM 自带网易云 song ID，直接取账号 API 的可播 URL，
-            // 与第三方按歌名检索并行，避免把可用曲目误判成“全无音源”。
+            // 私人每日推荐/FM 自带网易云 song ID:两条官方链并行(旧接口为主、v1 补位),
+            // 与 MT 按歌名检索并行,避免把可用曲目误判成"全无音源"。
             const nativeNeteaseTask = hasNativeNeteaseId
-                ? resolveNeteasePrivateTrackUrl(song, 3200)
+                ? resolveNeteasePrivateTrackUrl(song, 6000)
                     .then(item => {
                         if (item?.url) pushAll([item]);
                         settle('NETEASE-ID', !!item?.url);
@@ -5974,41 +6058,20 @@
                     .catch(() => settle('NETEASE-ID', false))
                 : Promise.resolve();
 
-            // GD Studio 兜底链：优先解析搜索时记录的 gdRef（省一次搜索），失败再按歌名搜。
-            // GD 响应慢（实测 4~10s），所以预算放在 7s，赶不上 7.5s 硬上限就交给「继续找音源」。
-            const gdDeadline = Date.now() + 7000;
-            const gdTask = (async () => {
-                const tryRef = async (ref, title, artist) => {
-                    const r = await gdResolveUrl(ref, Math.max(2500, Math.min(4500, gdDeadline - Date.now())));
-                    if (r && r.url) {
-                        pushAll([{ url: r.url, label: GD_LABEL[ref.source] || 'GD', br: r.br, pic: '', title: title || '', artist: artist || '' }]);
-                        return true;
-                    }
-                    return false;
-                };
-                try {
-                    if (song && song.gdRef && song.gdRef.id) {
-                        // 用户点的就是 GD 搜索结果：标记 DIRECT 优先验证
-                        const r = await gdResolveUrl(song.gdRef, Math.max(2500, Math.min(4500, gdDeadline - Date.now())));
-                        if (r && r.url) {
-                            pushAll([{ url: r.url, label: 'GD-DIRECT', br: r.br, pic: '', title: song.title || '', artist: song.artist || '', priority: 1 }]);
-                            return true;
-                        }
-                    }
-                    const list = await gdSearch(query, 'netease', 5, Math.max(2500, Math.min(4500, gdDeadline - Date.now())));
-                    for (const it of list.slice(0, 3)) {
-                        if (Date.now() >= gdDeadline) break;
-                        if (it.gdRef && await tryRef(it.gdRef, it.name, it.artist)) return true;
-                    }
-                    return false;
-                } catch (e) { return false; }
-            })().then(ok => settle('GD', ok)).catch(() => settle('GD', false));
+            const nativeV1Task = hasNativeNeteaseId
+                ? resolveNeteaseV1TrackUrl(song, 5000)
+                    .then(item => {
+                        if (item?.url) pushAll([item]);
+                        settle('NETEASE-V1', !!item?.url);
+                    })
+                    .catch(() => settle('NETEASE-V1', false))
+                : Promise.resolve();
 
-            // 采集阶段硬上限 7.5 秒：超时就带着已拿到的候选继续，不再干等
-            // （2026-11 从 6s 放宽：GD 二次解析本身就要 4~5s）
-            const collectGuard = new Promise(resolve => setTimeout(resolve, 7500));
-            const allTasks = [mtNE, mtQQ, gdTask];
-            if (hasNativeNeteaseId) allTasks.push(nativeNeteaseTask);
+            // 采集阶段硬上限 12 秒:实例响应 0.4~3.6s 波动 + 重试/三档,v1 补位需要时间。
+            // 宁可多等几秒拿到可用音源,也不要 7.5s 一到就判"暂无音源"。
+            const collectGuard = new Promise(resolve => setTimeout(resolve, 12000));
+            const allTasks = [mtNE, nativeNeteaseTask, nativeV1Task];
+            if (!hasNativeNeteaseId) allTasks = [mtNE];
             await Promise.race([Promise.all(allTasks), collectGuard]);
 
             if (token !== activePlayToken) return [];
@@ -6067,7 +6130,7 @@
                     attempted++;
                     const shortLabel = String(cand.label || '').replace(/·自动$/, '');
                     penetrationTry(shortLabel);
-                    const check = await verifyAndPlayStream(cand.url, token, 6000);
+                    const check = await verifyAndPlayStream(cand.url, token, 8000);
                     penetrationResult(shortLabel, check.ok, check.reason);
                     if (!check.ok) continue;
 
@@ -6281,7 +6344,7 @@
         //   2) 通过后再做码率闸门。此时浏览器已缓存开头数据，探测通常几十毫秒完成，
         //      不会像「先探测」那样把首字节延迟（实测最高 15.9s）扛在播放链路上。
         // 码率不达标会撤销已开始的播放，继续尝试下一个候选。
-        async function verifyAndPlayStream(url, token, timeoutMs = 6000) {
+        async function verifyAndPlayStream(url, token, timeoutMs = 8000) {
             if (!url) return { ok: false, reason: 'empty' };
 
             // 第一步：可播性
@@ -6567,6 +6630,32 @@
                 return;
             }
             nextSong(false);
+        });
+
+        // 播放中断流恢复：音源播到一半 error(直链限流/断流,如"播 8 秒自动停"),
+        // 清掉当前链重新采集。校验阶段的 error 由 playStreamOnAudioElement 临时监听处理
+        // (那时 activeWorkingChain 为空),这里只处理"校验通过、正在播"时断流。
+        // 同一首最多自动恢复 2 次,避免坏源死循环。
+        audio.addEventListener('error', () => {
+            if (!activeWorkingChain || !currentPlayingSong) return;
+            const song = currentPlayingSong;
+            const idx = playingIndex;
+            const now = Date.now();
+            if (song._recoverAt && now - song._recoverAt < 1500) return;   // 同一 error 连发节流
+            song._recoverAt = now;
+            song._recoverCount = (song._recoverCount || 0) + 1;
+            if (song._recoverCount > 2) {
+                npStatus.innerText = '音源连续中断，请点"继续找音源"或换歌';
+                return;
+            }
+            npStatus.innerText = '音源中断，自动重新查找…';
+            song.sources = [];
+            activeWorkingChain = null;
+            activePenetrationCandidates = [];
+            triedSourceUrls = new Set();
+            setTimeout(() => {
+                if (song === currentPlayingSong) playSongInQueue(idx);
+            }, 300);
         });
 
         progressBar.addEventListener('input', () => {
