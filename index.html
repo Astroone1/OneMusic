@@ -3809,6 +3809,50 @@
             return match ? { id: match.id, track: match } : null;
         }
 
+        /* ---------- 匿名搜 ID：给无 platformId 的歌补开官方链 ----------
+           背景：旧链收藏(当年从 Meting/GD/B站搜索收藏)没有网易云 song ID，
+           采集时两条官方链(官方·网易云 / 官方·网易云2)不会启动，只剩聚合链单打，
+           命中率 10/30。这里在采集前匿名搜一次 ID：
+             - 搜到 → 三链齐跑,并把 ID 回写收藏(一次性成本,以后永久三链);
+             - 搜不到(冷门/下架/翻唱名对不上) → 维持单链,不阻塞采集。
+           匹配用 strictPrivateTrackMatch(标题归一全等 + 歌手包含),不会错抓翻唱。
+           带会话级缓存:同一首歌本轮播放会话内不重复搜。 */
+        const neteaseIdLookupCache = new Map();   // 指纹 -> Promise<{id}|null>
+
+        function lookupNeteaseIdForSong(song) {
+            const fp = getSongFingerprintLoose(song.title, song.artist);
+            if (!fp) return Promise.resolve(null);
+            if (neteaseIdLookupCache.has(fp)) return neteaseIdLookupCache.get(fp);
+
+            const task = (async () => {
+                const query = `${String(song.title || '').replace(/\(.*?\)|（.*?）/g, '').trim()} ${String(song.artist || '').split(/[\/&,、]/)[0].trim()}`.trim();
+                if (!query) return null;
+                const payload = await privateFetchJSON(privateApiUrl('netease', '/search', {
+                    keywords: query, type: 1, limit: 8, timestamp: Date.now()
+                }), {}, 5000);
+                const match = getNeteaseSearchTracks(payload).find(item => strictPrivateTrackMatch(song, item, 'netease'));
+                return match ? { id: match.id, track: match } : null;
+            })().catch(() => null);
+
+            neteaseIdLookupCache.set(fp, task);
+            return task;
+        }
+
+        // 搜到 ID 后回写收藏：platform/platformId 一次落库,之后永久三链采集。
+        function persistNeteaseIdToFavorite(song, id, track) {
+            if (!id) return;
+            const favIdx = favorites.findIndex(f =>
+                isSameSongByFingerprint(song.title, song.artist, f.title, f.artist));
+            if (favIdx > -1 && favorites[favIdx].platformId == null) {
+                favorites[favIdx].platform = 'netease';
+                favorites[favIdx].platformId = id;
+                if (track && !favorites[favIdx].platformTrack) {
+                    favorites[favIdx].platformTrack = { id: track.id, name: track.name || '', artist: '' };
+                }
+                saveFavorites();
+            }
+        }
+
         async function syncSongToNeteaseFavorite(song) {
             const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY);
             if (!cookie) return { provider: '网易云', state: 'skipped', reason: '未登录' };
@@ -5979,7 +6023,36 @@
             const collectState = [
                 { key: '聚合·网易云', state: 'wait' }
             ];
-            const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
+
+            // ---------- 补 ID：给无 platformId 的歌(旧链收藏主体)开官方链 ----------
+            // 命中后回写收藏,以后永久三链;未命中(冷门/下架)不阻塞,维持聚合单链。
+            let hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
+            let idLookupTask = null;
+            if (!hasNativeNeteaseId) {
+                collectState.unshift({ key: '补ID', state: 'wait' });
+                idLookupTask = lookupNeteaseIdForSong(song)
+                    .then(found => {
+                        if (token !== activePlayToken) return;   // 已切歌:不再动状态表,外层拦截
+                        if (found?.id != null) {
+                            hasNativeNeteaseId = true;
+                            song.platform = 'netease';
+                            song.platformId = found.id;
+                            if (found.track && !song.platformTrack) {
+                                song.platformTrack = { id: found.track.id, name: found.track.name || '', artist: '' };
+                            }
+                            persistNeteaseIdToFavorite(song, found.id, found.track);
+                            // 补 ID 成功:官方两链进入状态行并立即发起采集
+                            collectState.splice(collectState.findIndex(s => s.key === '补ID'), 1);
+                            collectState.unshift({ key: '官方·网易云', state: 'wait' });
+                            collectState.splice(1, 0, { key: '官方·网易云2', state: 'wait' });
+                            renderCollect();
+                            launchOfficialChains();
+                        } else {
+                            settle('补ID', false, '未匹配');
+                        }
+                    })
+                    .catch(() => { if (token === activePlayToken) settle('补ID', false, '失败'); });
+            }
             if (hasNativeNeteaseId) {
                 collectState.unshift({ key: '官方·网易云', state: 'wait' });     // 链1 旧接口
                 collectState.splice(1, 0, { key: '官方·网易云2', state: 'wait' }); // 链2 v1 补位
@@ -5992,6 +6065,22 @@
                     return `${s.key} ✗${s.reason ? '(' + s.reason + ')' : ''}`;
                 });
                 npStatus.innerText = `采集 ${doneCount}/${collectState.length} · ${parts.join(' ')}`;
+            };
+
+            // 官方两链(旧接口为主、v1 补位)并行发起;有 ID 的歌立即调,补 ID 命中的歌在回调里调。
+            const launchOfficialChains = () => {
+                resolveNeteasePrivateTrackUrl(song, 6000)
+                    .then(item => {
+                        if (item?.url) pushAll([item]);
+                        settle('官方·网易云', !!item?.url);
+                    })
+                    .catch(() => settle('官方·网易云', false));
+                resolveNeteaseV1TrackUrl(song, 5000)
+                    .then(item => {
+                        if (item?.url) pushAll([item]);
+                        settle('官方·网易云2', !!item?.url);
+                    })
+                    .catch(() => settle('官方·网易云2', false));
             };
 
             // 采集时也做关键词变体：主词空包是当前最常见的「有资源却搜不到」原因。
@@ -6050,32 +6139,25 @@
 
             renderCollect();
 
-            // 私人每日推荐/FM 自带网易云 song ID:两条官方链并行(旧接口为主、v1 补位),
-            // 与聚合链按歌名检索并行,避免把可用曲目误判成"全无音源"。
-            const nativeNeteaseTask = hasNativeNeteaseId
-                ? resolveNeteasePrivateTrackUrl(song, 6000)
-                    .then(item => {
-                        if (item?.url) pushAll([item]);
-                        settle('官方·网易云', !!item?.url);
-                    })
-                    .catch(() => settle('官方·网易云', false))
-                : Promise.resolve();
-
-            const nativeV1Task = hasNativeNeteaseId
-                ? resolveNeteaseV1TrackUrl(song, 5000)
-                    .then(item => {
-                        if (item?.url) pushAll([item]);
-                        settle('官方·网易云2', !!item?.url);
-                    })
-                    .catch(() => settle('官方·网易云2', false))
-                : Promise.resolve();
+            // 有 ID 的歌(私人推荐/FM/已回写的收藏):官方两链立即发起。
+            if (hasNativeNeteaseId) launchOfficialChains();
 
             // 采集阶段硬上限 12 秒:实例响应 0.4~3.6s 波动 + 重试/三档,v1 补位需要时间。
             // 宁可多等几秒拿到可用音源,也不要 7.5s 一到就判"暂无音源"。
+            // 官方链为 fire-and-forget(补 ID 命中后异步发起),落定信号用状态表:
+            // 所有「已加入状态表的链」全部离开 wait 即视为采集完成,12s 硬上限兜底。
             const collectGuard = new Promise(resolve => setTimeout(resolve, 12000));
-            const allTasks = [mtNE, nativeNeteaseTask, nativeV1Task];
-            if (!hasNativeNeteaseId) allTasks = [mtNE];
-            await Promise.race([Promise.all(allTasks), collectGuard]);
+            const allSettled = new Promise(resolve => {
+                const poll = setInterval(() => {
+                    if (token !== activePlayToken) { clearInterval(poll); resolve(); return; }
+                    const pending = collectState.filter(s => s.state === 'wait');
+                    // 补ID 完成后官方两链会动态入表;未入表说明补ID还在路上,继续等
+                    if (pending.length === 0) { clearInterval(poll); resolve(); }
+                }, 150);
+                // 12s 兜底到达时也要清掉轮询
+                collectGuard.then(() => { clearInterval(poll); resolve(); });
+            });
+            await Promise.race([allSettled, collectGuard]);
 
             if (token !== activePlayToken) return [];
 
