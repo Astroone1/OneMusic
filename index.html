@@ -3145,13 +3145,13 @@
         ];
 
         // 搜索与播放时的统一上游列表（全部走 Meting 网关）
-        // 实测（2026-10）：MT-QQ 40/40 稳定；MT-NETEASE 命中率最高但会按关键词持续返回空包。
         // 酷狗已移除：qijieya 网关恒返回 []（10/10 空包）；i-meto 网关虽能返回 30 条搜索结果，
         // 但实测直链 0/5 可播（empty / TimeoutError / TypeError），且耗时 2.3~8 秒，
         // 在 6 秒采集上限内纯属拖累，没有任何产出。
+        // 搜索专用链仅用于「搜索发现」，不属于播放采集链，不写入收藏。
         const UPSTREAM_PLATFORMS = [
-            { code: 'tencent', label: 'MT-QQ',      primary: true },
-            { code: 'netease', label: 'MT-NETEASE', primary: true }
+            { code: 'tencent', label: '聚合·QQ音乐',   primary: true },
+            { code: 'netease', label: '聚合·网易云', primary: true }
         ];
 
         // 相似推荐：主词全空时用来兜底，保证「搜不到也不返回空列表」。
@@ -3176,7 +3176,6 @@
         */
         const GD_API_BASE = 'https://music-api.gdstudio.xyz/api.php';
         const GD_SOURCES = ['netease', 'joox'];
-        const GD_LABEL = { netease: 'GD-NETEASE', joox: 'GD-JOOX' };
 
         function gdApiUrl(params) {
             return GD_API_BASE + '?' + new URLSearchParams(params).toString();
@@ -3545,89 +3544,68 @@
             return Number.isFinite(v) && v > 0 ? v : 0;
         }
 
-        // ---- 收藏徽章清洗（历史数据兼容） ----
-        // 背景：早期版本接过一些后来下线的音源（如「B站音源」），收藏时把当时的 label
-        // 原样拼进了 badgeText 并持久化到 localStorage / GitHub 仓库。代码里早已没有这些音源，
-        // 但旧记录里的文本不会自动更新，界面上就长期显示「锁定(B站音源)」这种误导性徽章。
-        //
-        // 处理原则：
-        //   1) 只改「文案」，绝不动 sources 里的 url —— 老收藏的秒播能力必须保留；
-        //   2) 无法确认来源的旧标签统一收敛成中性文案「已收藏」，不编造新来源名；
-        //   3) 可识别的现役来源（MT-*）继续保留可读标签。
-        //
-        // 已知下线/不可追溯的来源关键词（命中即视为历史标签）。
-        const LEGACY_SOURCE_LABEL_RE = /(bilibili|bili|B站|哔哩|GD[-_]?NETEASE|GD[-_]?Studio|joox|JOOX)/i;
+        /* ================= 采集链统一命名（唯一事实源） =================
+           三条现役播放采集链的内部代号与显示名只在这里定义一次；
+           采集状态行、列表徽章、收藏数据、云上/下行全部使用同一套显示名。
 
-        // 现役采集链标签 → 展示名。键是小写匹配片段。
-        const CURRENT_SOURCE_DISPLAY = [
-            { match: /^MT-NETEASE/i, name: '网易云' },
-            { match: /^MT-QQ/i,      name: 'QQ音乐' },
-            { match: /^NETEASE-ID/i, name: '网易云账号' }
-        ];
+           收藏只负责记录「最后一次播放成功的链」：该哪条链写哪条链，
+           不带任何状态词（锁定/上次可播/直连链均已废除）。
 
-        function displaySourceName(label) {
+           已下线旧链（B站/GD/JOOX/直连链等）不再保留任何标记：
+           旧收藏砍掉来源后重新播放一次，实际播放链即会如实写入。 */
+        const CHAIN_DISPLAY_NAMES = {
+            'MT-NETEASE': '聚合·网易云',
+            'NETEASE-ID': '官方·网易云',
+            'NETEASE-V1': '官方·网易云2'
+        };
+
+        // 仅用于搜索发现的链：直连时如实显示，但不属于播放采集链，不写入收藏。
+        const SEARCH_ONLY_CHAIN_NAMES = {
+            'MT-QQ': '聚合·QQ音乐'
+        };
+
+        const COLLECTIBLE_CHAIN_NAMES = new Set(Object.values(CHAIN_DISPLAY_NAMES));
+        const SEARCH_ONLY_NAMES = new Set(Object.values(SEARCH_ONLY_CHAIN_NAMES));
+
+        // 任何链标签 → 统一显示名。旧链/未知链返回 ''（显示层按无链处理）。
+        // 兼容三类输入：内部代号(MT-NETEASE)、带后缀代号(MT-NETEASE·自动)、显示名本体。
+        function chainDisplayName(label) {
             const raw = String(label || '').trim();
             if (!raw) return '';
-            for (const rule of CURRENT_SOURCE_DISPLAY) {
-                if (rule.match.test(raw)) return rule.name;
-            }
-            return '';
+            if (COLLECTIBLE_CHAIN_NAMES.has(raw) || SEARCH_ONLY_NAMES.has(raw)) return raw;
+            const code = raw.replace(/·.*$/, '').trim().toUpperCase();
+            return CHAIN_DISPLAY_NAMES[code] || SEARCH_ONLY_CHAIN_NAMES[code] || '';
         }
 
-        // 把一条 badgeText 清洗成可展示文案。返回值永远是非空中性文案。
-        function sanitizeBadgeText(badgeText) {
-            const raw = String(badgeText || '').trim();
-            if (!raw) return '已收藏';
-
-            // 从 "⚡ 锁定(X)" / "⚡ 上次可播(X)" / "✓ 02:00 · X" 里取出括号/点号后的来源部分
-            const prefixMatch = raw.match(/^[⚡✓⚠️\s]*\s*(锁定|上次可播)\s*[(（](.*)[)）]\s*$/);
-            const sourcePart = prefixMatch ? prefixMatch[2].trim() : '';
-            const which = prefixMatch ? prefixMatch[1] : '';
-
-            // 命中历史下线来源：收敛成中性文案，不暴露已不存在的来源名
-            if (LEGACY_SOURCE_LABEL_RE.test(prefixMatch ? sourcePart : raw)) {
-                return which === '上次可播' ? '⚡ 上次可播' : '已收藏';
-            }
-
-            // 现役来源：换成友好展示名（"MT-NETEASE·自动" → "网易云"）
-            const friendly = displaySourceName(sourcePart);
-            if (friendly) {
-                return which === '上次可播' ? `⚡ 上次可播(${friendly})` : `⚡ 收藏(${friendly})`;
-            }
-
-            // 其它情况（含"⚠️ 暂无音源"、播放时长徽章等）保持原样
-            return raw;
+        // 判断一条链是否允许写入收藏：只有三条现役播放采集链可以。
+        function isCollectibleChain(label) {
+            return COLLECTIBLE_CHAIN_NAMES.has(chainDisplayName(label));
         }
 
-        // 就地清洗全部收藏的 badgeText 与 sources 里的 label。
-        // 返回被改动条数，便于提示用户。
-        function sanitizeFavoritesBadges() {
-            let changed = 0;
-            favorites.forEach(f => {
-                if (!f) return;
-                const before = String(f.badgeText || '');
-                const after = sanitizeBadgeText(before);
-                if (after !== before) { f.badgeText = after; changed++; }
+        // 收藏数据规整：砍掉旧链 sources，徽章/playedLabel 由现役链重新推导。
+        // 无现役链时徽章为中性文案「已收藏」——没有播放事实就不写链名。
+        // 返回是否发生改动，供存量迁移落盘判断。
+        function normalizeFavoriteChain(fav) {
+            if (!fav) return false;
+            let changed = false;
 
-                // 历史 sources 的 label 同样清洗，避免「聚合 2 源」气泡里仍露出旧来源
-                if (Array.isArray(f.sources)) {
-                    f.sources.forEach(s => {
-                        if (!s || !s.label) return;
-                        if (LEGACY_SOURCE_LABEL_RE.test(String(s.label))) {
-                            const friendly = displaySourceName(s.label);
-                            s.label = friendly || '历史音源';
-                            changed++;
-                        }
-                    });
-                }
+            const rawSources = Array.isArray(fav.sources) ? fav.sources : [];
+            const sources = rawSources
+                .filter(s => s && s.url && isCollectibleChain(s.label))
+                .map(s => ({ url: s.url, label: chainDisplayName(s.label) }));
+            if (JSON.stringify(rawSources) !== JSON.stringify(sources)) changed = true;
+            fav.sources = sources;
 
-                // playedLabel 也会随云上传写入仓库，必须一并清洗，
-                // 否则「B站音源」这类已下线来源名会通过同步继续传播。
-                if (f.playedLabel && LEGACY_SOURCE_LABEL_RE.test(String(f.playedLabel))) {
-                    f.playedLabel = displaySourceName(f.playedLabel) || '历史音源';
-                    changed++;
-                }
-            });
+            const label = sources.length > 0 ? sources[0].label : '';
+            const targetBadge = label || '已收藏';
+            if (fav.badgeText !== targetBadge) { fav.badgeText = targetBadge; changed = true; }
+            if (fav.playedLabel !== label) { fav.playedLabel = label; changed = true; }
+
+            // 清理历史版本残留的 GD 来源标识字段
+            if (fav.gdSource || fav.gdId || fav.gdLabel) {
+                delete fav.gdSource; delete fav.gdId; delete fav.gdLabel;
+                changed = true;
+            }
             return changed;
         }
 
@@ -3639,13 +3617,14 @@
             } catch (e) {
                 favorites = [];
             }
-            // 启动即执行一次历史徽章清洗（B 方案）：把误导性文案改写掉并落盘，
-            // 这样云上传也会带上清洗后的文案，避免旧标签继续传播到 GitHub。
+            // 启动即执行一次存量迁移：砍掉旧链 sources（B站/GD/JOOX/直连链等），
+            // 徽章由现役链重新推导。旧链收藏重新播放一次后即写入实际播放链。
             try {
-                const cleaned = sanitizeFavoritesBadges();
-                if (cleaned > 0) {
+                let changedCount = 0;
+                favorites.forEach(f => { if (normalizeFavoriteChain(f)) changedCount++; });
+                if (changedCount > 0) {
                     localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(favorites));
-                    console.info(`[OneMusic] 已清洗 ${cleaned} 处历史收藏文案`);
+                    console.info(`[OneMusic] 已迁移 ${changedCount} 条收藏的采集链数据`);
                 }
             } catch (e) {}
             updateFavCountUI();
@@ -3731,20 +3710,20 @@
         // 穿透互补核心：只要某首已收藏歌曲播放成功，永远将其收藏记录更新为最后一次实际播放成功的采集链
         function syncFavoriteLatestChain(song, latestSourceObj, durationSec) {
             if (!song || !latestSourceObj || !latestSourceObj.url) return;
+            // 收藏只记录现役三条采集链；其余（搜索专用链/历史链）一律不写
+            const label = chainDisplayName(latestSourceObj.label);
+            if (!label || !isCollectibleChain(label)) return;
             const favIdx = favorites.findIndex(f =>
                 isSameSongByFingerprint(song.title, song.artist, f.title, f.artist));
             if (favIdx > -1) {
-                const cleanChain = { url: latestSourceObj.url, label: latestSourceObj.label || '直连链' };
+                const cleanChain = { url: latestSourceObj.url, label };
                 favorites[favIdx].sources = [cleanChain];
-                favorites[favIdx].badgeText = `⚡ 上次可播(${cleanChain.label})`;
+                // 徽章只写链名本身，不带任何状态词
+                favorites[favIdx].badgeText = label;
                 favorites[favIdx].verifiedFull = true;
                 // 记录本次播放成功的时间：同步时以此判断哪一侧数据更新
                 favorites[favIdx].playedAt = Date.now();
-                favorites[favIdx].playedLabel = cleanChain.label;
-                // 清理历史数据里残留的旧字段（尤其旧收藏可能存过已下线的来源标识）
-                delete favorites[favIdx].gdSource;
-                delete favorites[favIdx].gdId;
-                delete favorites[favIdx].gdLabel;
+                favorites[favIdx].playedLabel = label;
                 if (song.cover && !song.cover.includes('picsum.photos')) {
                     favorites[favIdx].cover = song.cover;
                 }
@@ -3866,26 +3845,31 @@
             if (idx > -1) {
                 favorites.splice(idx, 1);
             } else {
-                let lockedSources = song.sources || [];
-                if (currentPlayingSong && isSameSong(currentPlayingSong, song)) {
-                    if (activeWorkingChain) {
-                        lockedSources = [activeWorkingChain];
-                    } else if (audio.src) {
-                        lockedSources = [{ url: audio.src, label: "直连链" }];
-                    }
+                // 收藏只记录现役三条采集链；正在播放但无链（如裸 audio.src）不编造链名。
+                let lockedSources = (song.sources || []).filter(s => s && s.url && isCollectibleChain(s.label));
+                if (currentPlayingSong && isSameSong(currentPlayingSong, song) && activeWorkingChain
+                        && isCollectibleChain(activeWorkingChain.label)) {
+                    lockedSources = [activeWorkingChain];
                 }
-                favorites.unshift({
+                lockedSources = lockedSources
+                    .map(s => ({ url: s.url, label: chainDisplayName(s.label) }))
+                    .filter(s => s.label);
+                const chainLabel = lockedSources.length > 0 ? lockedSources[0].label : '';
+                // 新增收藏一律追加到列表末尾：与云下行新增条目的落位保持一致，
+                // 列表顺序稳定不插队，老收藏位置不动，新收藏排在最下面。
+                favorites.push({
                     title: song.title,
                     artist: song.artist,
                     cover: song.cover,
                     platform: song.platform || null,
                     platformId: song.platformId || null,
-                    sources: lockedSources.map(s => ({ url: s.url, label: s.label })),
-                    badgeText: lockedSources.length > 0 ? `⚡ 锁定(${lockedSources[0].label})` : '已收藏',
+                    sources: lockedSources,
+                    // 徽章只写链名；无链时为中性文案，不写任何状态词
+                    badgeText: chainLabel || '已收藏',
                     verifiedFull: true,
                     // 新增收藏视为一次"播放记录"，写入时间戳参与同步比对
                     playedAt: (currentPlayingSong && isSameSong(currentPlayingSong, song)) ? Date.now() : 0,
-                    playedLabel: lockedSources.length > 0 ? lockedSources[0].label : ''
+                    playedLabel: chainLabel
                 });
             }
             saveFavorites();
@@ -4009,22 +3993,24 @@
                 //   - 时间相同（含都无时间）-> 云端覆盖（保持旧行为，无明显新旧时以云为准）
                 // 不做字段级合并：时间更新的一侧整条胜出。
                 // ============================================================
-                const normalizeFav = (item) => ({
-                    title: item.title,
-                    artist: item.artist || '',
-                    cover: item.cover || 'https://picsum.photos/seed/music/100/100',
-                    sources: Array.isArray(item.sources) ? item.sources.map(s => ({
-                        ...s,
-                        label: LEGACY_SOURCE_LABEL_RE.test(String(s && s.label || ''))
-                            ? (displaySourceName(s && s.label) || '历史音源')
-                            : (s && s.label)
-                    })) : [],
-                    // 云下行时也清洗：仓库里可能还留着历史版本写入的旧文案
-                    badgeText: sanitizeBadgeText(item.badgeText),
-                    verifiedFull: item.verifiedFull !== false,
-                    playedAt: favPlayedAt(item),
-                    playedLabel: item.playedLabel || ''
-                });
+                // 云下行规整：旧链 sources 整条丢弃（不迁移 URL），
+                // 徽章/playedLabel 由现役链重新推导；无现役链即中性文案。
+                const normalizeFav = (item) => {
+                    const fav = {
+                        title: item.title,
+                        artist: item.artist || '',
+                        cover: item.cover || 'https://picsum.photos/seed/music/100/100',
+                        platform: item.platform || null,
+                        platformId: item.platformId != null ? item.platformId : null,
+                        sources: [],
+                        badgeText: '',
+                        verifiedFull: item.verifiedFull !== false,
+                        playedAt: favPlayedAt(item),
+                        playedLabel: ''
+                    };
+                    normalizeFavoriteChain(fav);
+                    return fav;
+                };
 
                 const mergedMap = new Map();
 
@@ -4132,12 +4118,10 @@
                     // sources 的 label 同样清洗：避免已下线来源名继续写进仓库
                     sources: (f.sources || []).map(s => ({
                         url: s.url,
-                        label: LEGACY_SOURCE_LABEL_RE.test(String(s.label || ''))
-                            ? (displaySourceName(s.label) || '历史音源')
-                            : s.label
+                        label: s.label
                     })),
-                    // 徽章文案清洗后再上传，防止误导性文案在 GitHub 里长期留存
-                    badgeText: sanitizeBadgeText(f.badgeText),
+                    // 徽章即链名，如实上传
+                    badgeText: f.badgeText,
                     // 时间戳随数据一起上传，否则下次同步无法判断新旧
                     playedAt: favPlayedAt(f),
                     playedLabel: f.playedLabel || ''
@@ -4957,10 +4941,10 @@
                         }
                     }
 
-                    diag.neteaseId = 'OK(' + t.tag + ')';
+                    diag['官方·网易云'] = 'OK(' + t.tag + ')';
                     return {
                         url: mediaUrl,
-                        label: 'NETEASE-ID·官方直链',
+                        label: '官方·网易云',
                         title: song.title || item?.name || '',
                         artist: song.artist || '',
                         platformId: id
@@ -4972,20 +4956,30 @@
                     continue;
                 }
             }
-            diag.neteaseId = fails.join('>') || '无结果';
+            diag['官方·网易云'] = fails.join('>') || '无结果';
             return null;
         }
 
         // 采集链 2:v1 官方直链(实测 18/30 可播,旧接口失败时补位)。匿名调用(同实测口径,
         // 账号态请求会被实例限流,实测浏览器里超时/Failed to fetch 频发;账号兜底由链1承担)。
-        // exhigh → lossless → hires 首档成功即停,无重试。每档 3.5s(实例慢时也够,窗口不被吃满)。
+        // 失败分类处理(2026-11-15 重构):
+        //   - 确定性拒绝(试听/无直链/码≠200):歌级状态,换档救不回来 → 立即弃链,不烧多余请求;
+        //   - 随机故障(400/超时):保留 3 次尝试,档间 ~400ms 退避错开实例故障窗口
+        //     (实测 400 率约 56%,零间隔三连发等于一次采样,三连败 ≈17%);
+        //   - 低码率:升一档重试(128k → lossless 通常 ≥320k 过闸),仅一次。
+        // 总尝试次数上限仍为 3,采集硬上限 12s 不变。
         async function resolveNeteaseV1TrackUrl(song, timeoutMs = 3500) {
             const id = song?.platformId ?? song?.platformTrack?.id;
             if (song?.platform !== 'netease' || id == null) return null;
             const diag = song._diag || (song._diag = {});
             const levelFails = [];
 
-            for (const level of ['exhigh', 'lossless', 'hires']) {
+            const levels = ['exhigh', 'lossless', 'hires'];
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+            let idx = 0;
+
+            while (idx < levels.length) {
+                const level = levels[idx];
                 try {
                     const url = privateApiUrl('netease', '/song/url/v1', {
                         id, level, timestamp: Date.now()
@@ -4995,20 +4989,27 @@
                     const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
                     const mediaUrl = item?.url || payload?.url;
                     if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) {
-                        levelFails.push('无直链'); continue;
+                        levelFails.push('无直链');
+                        return null;              // 确定性拒绝:歌级状态,换档无意义
                     }
-                    if (item?.freeTrialInfo) { levelFails.push('试听'); continue; }
+                    if (item?.freeTrialInfo) {
+                        levelFails.push('试听');
+                        return null;              // 匿名下版权是歌级的,三档必然同样试听
+                    }
                     if (item?.code != null && Number(item.code) !== 200) {
-                        levelFails.push('码' + item.code); continue;
+                        levelFails.push('码' + item.code);
+                        return null;              // 确定性拒绝
                     }
                     const rawBr = Number(item?.br);
                     if (Number.isFinite(rawBr) && rawBr > 0 && Math.round(rawBr / 1000) < MIN_AUDIO_BITRATE_KBPS) {
-                        levelFails.push(Math.round(rawBr / 1000) + 'k'); continue;
+                        levelFails.push(Math.round(rawBr / 1000) + 'k');
+                        idx++;                    // 低码率:升一档再试(唯一值得换档的场景)
+                        continue;
                     }
-                    diag.neteaseV1 = 'OK';
+                    diag['官方·网易云2'] = 'OK';
                     return {
                         url: mediaUrl,
-                        label: 'NETEASE-V1·官方直链',
+                        label: '官方·网易云2',
                         title: song.title || item?.name || '',
                         artist: song.artist || '',
                         platformId: id
@@ -5016,10 +5017,12 @@
                 } catch (error) {
                     levelFails.push(error?.name === 'AbortError' ? '超时'
                         : (error?.message || '失败').replace(/^HTTP /, 'HTTP').slice(0, 12));
-                    continue;   // 该档位失败(随机 400/无版权)就试下一档
+                    // 随机故障(400/超时):退避后换档重试,错开实例故障窗口
+                    idx++;
+                    if (idx < levels.length) await sleep(400);
                 }
             }
-            diag.neteaseV1 = levelFails.join('/') || '无结果';
+            diag['官方·网易云2'] = levelFails.join('/') || '无结果';
             return null;
         }
 
@@ -5048,7 +5051,7 @@
                     return {
                         title: String(item.name || item.title || '').trim(), artist: String(artists || '').trim(),
                         cover: album.picUrl || album.cover || item.picUrl || item.cover || 'https://picsum.photos/seed/privaterec/300/300',
-                        sources: [], badgeText: '网易云私人每日推荐', platform: 'netease', platformId: item.id || item.songId || null
+                        sources: [], badgeText: '私人每日推荐', platform: 'netease', platformId: item.id || item.songId || null
                     };
                 }).filter(song => song.title && song.artist);
                 if (!viewList.length) throw new Error('接口返回了数据，但没识别到有效歌曲。');
@@ -5103,7 +5106,7 @@
                 const tracks = extractNeteasePrivateTracks(payload);
                 if (code === 301 || code === 401) throw new Error('登录态已失效，请重新扫码。');
                 if (!tracks.length) throw new Error(payload?.message || payload?.msg || '私人 FM 接口没有返回歌曲；当前实例可能不支持该接口。');
-                const fmTracks = tracks.map(item => mapNeteasePrivateTrack(item, '网易云私人 FM', 'netease_fm')).filter(song => song.title && song.artist);
+                const fmTracks = tracks.map(item => mapNeteasePrivateTrack(item, '私人 FM', 'netease_fm')).filter(song => song.title && song.artist);
                 if (!fmTracks.length) throw new Error('私人 FM 返回了数据，但没识别到有效歌曲。');
                 // 私人 FM 接口每次通常只返回 3 首。到达本批最后一首后，nextSong 会自动拉下一批；
                 // 如果用户仍停留在私人推荐页，也要刷新可见列表，不能只替换播放队列。
@@ -5442,7 +5445,8 @@
                     const title = item.name || item.title || "未知歌曲";
                     const artist = item.artist || item.author || "未知歌手";
                     const hasUrl = typeof item.url === 'string' && item.url.trim();
-                    const source = hasUrl ? { url: item.url, label: platLabel, pic: item.pic, title, artist } : null;
+                    // 搜索结果的候选链：只在「直连秒播」时使用，展示用统一链名
+                    const source = hasUrl ? { url: item.url, label: chainDisplayName(platLabel) || platLabel, pic: item.pic, title, artist } : null;
                     const fp = getSongFingerprint(title, artist);
                     // 相关性：与用户输入的原始关键词匹配度 + 上游给出的排序位次。
                     // 没有它的话，「谁先返回谁排前面」，并发下会让翻唱/伴奏版顶到首位。
@@ -5453,7 +5457,7 @@
                             artist,
                             cover: item.pic || "https://picsum.photos/seed/music/300/300",
                             sources: source ? [source] : [],
-                            labels: source ? [platLabel] : [],
+                            labels: source ? [source.label] : [],
                             relevance,
                             // GD 条目携带 gdRef(仅作来源标记;2026-11-10 起 GD 已退出播放采集链,
                             // 播放时按歌名走前三链采集)
@@ -5463,9 +5467,9 @@
                         added++;
                     } else {
                         const existing = mergedMap.get(fp);
-                        if (existing.labels.indexOf(platLabel) === -1) {
-                            existing.labels.push(platLabel);
-                            if (source) existing.sources.push(source);
+                        if (source && existing.labels.indexOf(source.label) === -1) {
+                            existing.labels.push(source.label);
+                            existing.sources.push(source);
                         }
                         // 已有条目（如先到的 Meting 结果）可被后到的 GD 条目补上解析凭据
                         if (!existing.gdRef && item.gdRef) existing.gdRef = item.gdRef;
@@ -5533,8 +5537,8 @@
                     ...item,
                     badgeText: item.similarOnly
                         ? '相似推荐 · 播放时解析音源'
-                        : (item.sources.length
-                            ? `聚合 ${item.sources.length} 源`
+                        : (item.labels && item.labels.length
+                            ? item.labels.join(' · ')
                             : '已找到曲目 · 播放时解析音源')
                 }));
 
@@ -5557,10 +5561,11 @@
             // GD Studio 第二上游（netease/joox）：搜索只做「发现」，直链播放时解析。
             // GD 实测 4~15s 波动大（偶发 20s+），超时放宽到 20s：
             // 窗口外返回的结果仍会被 ingest 合并渲染，不阻塞首屏。
+            // GD 无直链产出（urlId 留给播放时二次解析），不占用链名。
             const gdTasks = GD_SOURCES.map(src =>
                 gdSearch(keyword, src, 20, 20000)
-                    .then(list => ({ plat: { label: GD_LABEL[src] }, list }))
-                    .catch(() => ({ plat: { label: GD_LABEL[src] }, list: [] }))
+                    .then(list => ({ plat: { label: '聚合·网易云(发现)' }, list }))
+                    .catch(() => ({ plat: { label: '聚合·网易云(发现)' }, list: [] }))
             );
 
             const allPrimaryTasks = [...primaryTasks, ...gdTasks];
@@ -5700,7 +5705,7 @@
                         </div>
                     </div>
                     <div class="song-right">
-                        <span class="badge ${song.verifiedFull ? 'full-verified' : ''}">${escapePrivateText(sanitizeBadgeText(song.badgeText) || '聚合源')}</span>
+                        <span class="badge ${song.verifiedFull ? 'full-verified' : ''}">${escapePrivateText(song.badgeText || '未验证')}</span>
                         <button class="fav-btn ${liked ? 'is-fav' : ''}" title="${liked ? '取消收藏' : '收藏'}">
                             <svg class="ico-heart" aria-hidden="true"><use href="#ico-heart"></use></svg>
                             <svg class="ico-heart-fill" aria-hidden="true"><use href="#ico-heart-fill"></use></svg>
@@ -5768,21 +5773,20 @@
                 for (let srcObj of combinedSources) {
                     if (myToken !== activePlayToken) return;
                     if (!srcObj.url) continue;
-                    npStatus.innerText = `直连 [${srcObj.label}]…`;
+                    npStatus.innerText = `直连 [${chainDisplayName(srcObj.label) || '收藏链'}]…`;
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
-                    // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
-                    // 收藏直链给短超时（2.2s），失败立刻转入重新解析/穿透
                     const check = await verifyAndPlayStream(srcObj.url, myToken, 8000);
                     if (check.ok) {
                         song.verifiedFull = true;
-                        activeWorkingChain = srcObj;
-                        const q = formatQualityTag(check);
-                        song.badgeText = `⚡ ${formatTime(check.duration)} · ${q ? q + ' · ' : ''}${srcObj.label}`;
-                        syncFavoriteLatestChain(song, srcObj, check.duration);
+                        const directLabel = chainDisplayName(srcObj.label) || '收藏链';
+                        activeWorkingChain = { url: srcObj.url, label: directLabel, br: srcObj.br };
+                        // 徽章只写链名，如实反映实际在播链
+                        song.badgeText = directLabel;
+                        syncFavoriteLatestChain(song, activeWorkingChain, check.duration);
                         renderList();
                         renderNowPlaying(song);
                         setContinuePenetrationVisible(true);
-                        npStatus.innerText = `⚡ ${formatTime(check.duration)} · ${q ? q + ' · ' : ''}${srcObj.label}`;
+                        npStatus.innerText = `✓ ${directLabel} · ${formatTime(check.duration)}`;
                         updateMediaSession(song);
                         return;
                     }
@@ -5815,27 +5819,26 @@
                 triedSourceUrls.add(cand.url);
                 tried++;
 
-                const shortLabel = String(cand.label || '').replace(/·自动$/, '');
+                const shortLabel = chainDisplayName(cand.label) || String(cand.label || '未知链');
                 penetrationTry(shortLabel, tried, totalCand);
                 const check = await verifyAndPlayStream(cand.url, myToken, 8000);
                 penetrationResult(shortLabel, check.ok, check.reason);
                 if (!check.ok) {
                     const d = song._diag || (song._diag = {});
-                    const key = shortLabel.replace(/·.*$/, '');
-                    d[key] = check.reason === 'low_bitrate'
+                    d[shortLabel] = check.reason === 'low_bitrate'
                         ? `校验仅${check.bitrate || '?'}k`
                         : `校验${check.reason || '失败'}`;
                 }
 
                 if (check.ok) {
                     const latestChain = {
-                        url: cand.url, label: cand.label, br: cand.br
+                        url: cand.url, label: shortLabel, br: cand.br
                     };
                     song.sources = [latestChain];
                     song.verifiedFull = true;
                     activeWorkingChain = latestChain;
-                    const q1 = formatQualityTag(check);
-                    song.badgeText = `✓ ${formatTime(check.duration)} · ${q1 ? q1 + ' · ' : ''}${cand.label}`;
+                    // 徽章只写链名，如实反映实际在播链
+                    song.badgeText = shortLabel;
                     if (cand.pic && song.cover.includes('picsum.photos')) {
                         song.cover = cand.pic;
                         npCover.src = cand.pic;
@@ -5845,7 +5848,7 @@
                     renderList();
                     renderNowPlaying(song);
                     setContinuePenetrationVisible(true);
-                    penetrationEnd(`✓ ${formatTime(check.duration)} · ${q1 ? q1 + ' · ' : ''}${cand.label}`);
+                    penetrationEnd(`✓ ${shortLabel} · ${formatTime(check.duration)}`);
                     updateMediaSession(song);
                     return;
                 }
@@ -5887,7 +5890,7 @@
             penetrationTrail = [];
             penetrationT0 = Date.now();
             penetrationPhaseName = '采集';
-            npStatus.innerText = '采集 0/3 · MT-NETEASE';
+            npStatus.innerText = '采集 0/3 · 聚合·网易云';
         }
 
         // 切换阶段（采集 → 校验）
@@ -5942,12 +5945,12 @@
 
         // 采集链顺位定义：数值越小越先尝试。
         // 2026-11-10 按「30 首实际能播」实测排序:
-        //   旧接口 30/30 > v1 18/30 > MT-NETEASE 10/30(GD 9/30、MT-QQ 2/30 已淘汰)
+        //   官方·网易云(旧接口) 30/30 > 官方·网易云2(v1) 18/30 > 聚合·网易云 10/30
         function getSourceRank(cand) {
-            const label = String(cand.label || '');
-            if (/^NETEASE-ID/.test(label)) return 5;    // 链1:旧接口 /song/url(账号 ID 直链)
-            if (/^NETEASE-V1/.test(label)) return 8;    // 链2:v1 官方直链补位
-            if (/^MT-NETEASE/.test(label)) return 10;   // 链3:Meting 网易云曲库
+            const label = chainDisplayName(cand.label);
+            if (label === '官方·网易云') return 5;
+            if (label === '官方·网易云2') return 8;
+            if (label === '聚合·网易云') return 10;
             return 50;
         }
 
@@ -5968,18 +5971,18 @@
                 });
             };
 
-            // 采集专用：状态显示。
+            // 采集专用：状态显示。链名统一使用 CHAIN_DISPLAY_NAMES 的显示名。
             // 2026-11-10 按「30 首实际能播」实测排行取前三实装：
-            //   旧接口 30/30 · v1官方 18/30 · MT-NETEASE 10/30
-            //   （淘汰：GD 9/30 search 超时为主；MT-QQ 2/30 直链多为低码率/空文件）
+            //   官方·网易云 30/30 · 官方·网易云2 18/30 · 聚合·网易云 10/30
+            //   （其余旧链已淘汰：GD search 超时为主；QQ音乐直链多为低码率/空文件）
             // 三链合起来 30/30 全部能播。
             const collectState = [
-                { key: 'MT-NETEASE', state: 'wait' }
+                { key: '聚合·网易云', state: 'wait' }
             ];
             const hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
             if (hasNativeNeteaseId) {
-                collectState.unshift({ key: 'NETEASE-ID', state: 'wait' });   // 旧接口
-                collectState.splice(1, 0, { key: 'NETEASE-V1', state: 'wait' }); // v1 补位
+                collectState.unshift({ key: '官方·网易云', state: 'wait' });     // 链1 旧接口
+                collectState.splice(1, 0, { key: '官方·网易云2', state: 'wait' }); // 链2 v1 补位
             }
             const renderCollect = () => {
                 const doneCount = collectState.filter(s => s.state !== 'wait').length;
@@ -6024,12 +6027,12 @@
                 }
             };
 
-            const mtNE = metingWithVariants('netease', 'MT-NETEASE', 4500)
+            const mtNE = metingWithVariants('netease', '聚合·网易云', 4500)
                 .then(list => {
-                    pushAllMeting(list, 'MT-NETEASE');
-                    settle('MT-NETEASE', list && list.length > 0, list && list.length > 0 ? '' : '搜索空包');
+                    pushAllMeting(list, '聚合·网易云');
+                    settle('聚合·网易云', list && list.length > 0, list && list.length > 0 ? '' : '搜索空包');
                 })
-                .catch(e => settle('MT-NETEASE', false, '网关失败'));
+                .catch(e => settle('聚合·网易云', false, '网关失败'));
 
             function pushAllMeting(list, label) {
                 if (!Array.isArray(list)) return;
@@ -6037,7 +6040,7 @@
                     if (!m || !m.url) return;
                     pushAll([{
                         url: m.url,
-                        label: `${label}·自动`,
+                        label: label,
                         pic: m.pic,
                         title: m.name || m.title || '',
                         artist: m.artist || m.author || ''
@@ -6048,23 +6051,23 @@
             renderCollect();
 
             // 私人每日推荐/FM 自带网易云 song ID:两条官方链并行(旧接口为主、v1 补位),
-            // 与 MT 按歌名检索并行,避免把可用曲目误判成"全无音源"。
+            // 与聚合链按歌名检索并行,避免把可用曲目误判成"全无音源"。
             const nativeNeteaseTask = hasNativeNeteaseId
                 ? resolveNeteasePrivateTrackUrl(song, 6000)
                     .then(item => {
                         if (item?.url) pushAll([item]);
-                        settle('NETEASE-ID', !!item?.url);
+                        settle('官方·网易云', !!item?.url);
                     })
-                    .catch(() => settle('NETEASE-ID', false))
+                    .catch(() => settle('官方·网易云', false))
                 : Promise.resolve();
 
             const nativeV1Task = hasNativeNeteaseId
                 ? resolveNeteaseV1TrackUrl(song, 5000)
                     .then(item => {
                         if (item?.url) pushAll([item]);
-                        settle('NETEASE-V1', !!item?.url);
+                        settle('官方·网易云2', !!item?.url);
                     })
-                    .catch(() => settle('NETEASE-V1', false))
+                    .catch(() => settle('官方·网易云2', false))
                 : Promise.resolve();
 
             // 采集阶段硬上限 12 秒:实例响应 0.4~3.6s 波动 + 重试/三档,v1 补位需要时间。
@@ -6128,25 +6131,25 @@
                     if (!cand.url || triedSourceUrls.has(cand.url)) continue;
                     triedSourceUrls.add(cand.url);
                     attempted++;
-                    const shortLabel = String(cand.label || '').replace(/·自动$/, '');
+                    const shortLabel = chainDisplayName(cand.label) || String(cand.label || '未知链');
                     penetrationTry(shortLabel);
                     const check = await verifyAndPlayStream(cand.url, token, 8000);
                     penetrationResult(shortLabel, check.ok, check.reason);
                     if (!check.ok) continue;
 
                     const chain = {
-                        url: cand.url, label: cand.label, br: cand.br
+                        url: cand.url, label: shortLabel, br: cand.br
                     };
                     song.sources = [chain];
                     activeWorkingChain = chain;
                     song.verifiedFull = true;
-                    const q2 = formatQualityTag(check);
-                    song.badgeText = `✓ ${formatTime(check.duration)} · ${q2 ? q2 + ' · ' : ''}${cand.label}`;
+                    // 徽章只写链名，如实反映实际在播链
+                    song.badgeText = shortLabel;
                     syncFavoriteLatestChain(song, chain, check.duration);
                     renderList();
                     renderNowPlaying(song);
                     updateMediaSession(song);
-                    penetrationEnd(`✓ 已切换到 ${cand.label} · ${q2 ? q2 + ' · ' : ''}${formatTime(check.duration)}`);
+                    penetrationEnd(`✓ 已切换到 ${shortLabel} · ${formatTime(check.duration)}`);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerText = '继续找音源';
