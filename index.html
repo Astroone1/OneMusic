@@ -5780,7 +5780,7 @@
             playSongInQueue(idx);
         }
 
-        async function playSongInQueue(idx) {
+        async function playSongInQueue(idx, opts = {}) {
             if (!playingQueue[idx]) return;
             // 先暂停上一首，避免它在新音源解析期间自然 ended，触发并发的下一首切换。
             audio.pause();
@@ -5796,7 +5796,9 @@
             curTimeEl.innerText = '00:00';
             durTimeEl.innerText = '00:00';
             syncLyricProgressBar();
-            triedSourceUrls = new Set();
+            // 换歌(用户点击/自动切歌)重置已试集合;断流恢复(skipDirectLinks)
+            // 保留 error 处理器预埋的坏链标记,避免重播时又直连同一条坏链。
+            if (!opts.skipDirectLinks) triedSourceUrls = new Set();
             activePenetrationCandidates = [];
             setContinuePenetrationVisible(false);
 
@@ -5804,7 +5806,11 @@
             fetchLyricsForSong(song, myToken);
 
             // 收藏里保存的直链优先直接尝试（能秒播），只有失败后才在后台重新解析。
-            // 注意：不按标签前缀过滤，任何来源的收藏都应保留秒播能力。
+            // 断流自动恢复场景（opts.skipDirectLinks）跳过直连直接穿透：
+            // 不能清空 song.sources —— 队列/视图里的 song 与收藏是同一对象引用，
+            // 清了等于连带抹掉收藏的播放链记录（曾导致"记录了的链接变回已收藏"）。
+            // 坏链由 triedSourceUrls 拦截，本次播放不再试它。
+            const skipDirectLinks = opts.skipDirectLinks === true;
             const favMatch = favorites.find(f => isSameSong(f, song));
             const favoriteSources = favMatch && Array.isArray(favMatch.sources) ? favMatch.sources : [];
             const songSources = Array.isArray(song.sources) ? song.sources : [];
@@ -5813,7 +5819,7 @@
                 ...songSources
             ];
 
-            if (combinedSources.length > 0) {
+            if (!skipDirectLinks && combinedSources.length > 0) {
                 for (let srcObj of combinedSources) {
                     if (myToken !== activePlayToken) return;
                     if (!srcObj.url) continue;
@@ -6718,9 +6724,11 @@
         });
 
         // 播放中断流恢复：音源播到一半 error(直链限流/断流,如"播 8 秒自动停"),
-        // 清掉当前链重新采集。校验阶段的 error 由 playStreamOnAudioElement 临时监听处理
+        // 跳过直连重新采集。校验阶段的 error 由 playStreamOnAudioElement 临时监听处理
         // (那时 activeWorkingChain 为空),这里只处理"校验通过、正在播"时断流。
         // 同一首最多自动恢复 2 次,避免坏源死循环。
+        // 注意:绝不清空 song.sources —— 它与收藏数据共享对象引用,
+        // 清空会把收藏里的播放链记录一并抹掉。坏链交给 triedSourceUrls 拦。
         audio.addEventListener('error', () => {
             if (!activeWorkingChain || !currentPlayingSong) return;
             const song = currentPlayingSong;
@@ -6734,12 +6742,12 @@
                 return;
             }
             npStatus.innerText = '音源中断，自动重新查找…';
-            song.sources = [];
+            // 把刚断流的坏链记入已试集合:本次重播不再直连它,直接穿透找新链
+            if (activeWorkingChain.url) triedSourceUrls.add(activeWorkingChain.url);
             activeWorkingChain = null;
             activePenetrationCandidates = [];
-            triedSourceUrls = new Set();
             setTimeout(() => {
-                if (song === currentPlayingSong) playSongInQueue(idx);
+                if (song === currentPlayingSong) playSongInQueue(idx, { skipDirectLinks: true });
             }, 300);
         });
 
