@@ -2721,6 +2721,49 @@
       }
     </style>
 
+    <style id="onemusic-lyric-jump-desktop-fix">
+        /* 跳转按钮必须在所有屏幕尺寸下默认隐藏；原规则误放在手机媒体查询内，
+           导致桌面端每行末尾都显示未设样式的按钮（看起来像竖线）。 */
+        #lyricOverlay .lyric-line {
+            position: relative;
+        }
+
+        #lyricOverlay .lyric-jump-btn {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: rgba(255, 255, 255, .86);
+            cursor: pointer;
+            filter: drop-shadow(0 1px 2px rgba(30, 25, 20, .30));
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #lyricOverlay .lyric-jump-btn svg {
+            width: 15px;
+            height: 15px;
+            display: block;
+            fill: currentColor;
+        }
+
+        #lyricOverlay .lyric-line.preview-current .lyric-jump-btn {
+            display: inline-flex;
+        }
+
+        #lyricOverlay .lyric-jump-btn:active {
+            transform: translateY(-50%) scale(.9);
+        }
+    </style>
+
 </head>
 <body>
 
