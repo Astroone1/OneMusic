@@ -78,7 +78,7 @@
     },
     "verifiedFull": true,
     "sources": [],
-    "badgeText": "⚠️ 暂无音源 · 聚合·网易云:校验network_error · 官方·网易云:匿名无直链>账号无直链",
+    "badgeText": "已收藏",
     "playedAt": 1794720190112,
     "playedLabel": ""
   },
@@ -328,313 +328,573 @@
     "title": "分礼进行曲",
     "artist": "RAiNBOW计划/林姝涵",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166119022675",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 465920705,
+    "platformTrack": {
+      "id": 465920705,
+      "name": "分礼进行曲",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448240208,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=465920705",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450419461,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "时钟",
     "artist": "不靠谱组合",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951162864693504",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 461463653,
+    "platformTrack": {
+      "id": 461463653,
+      "name": "时钟",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448246426,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=461463653",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450427359,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "暖味 (nuǎn wèi)",
     "artist": "不靠谱组合",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165265097998",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1462905862,
+    "platformTrack": {
+      "id": 1462905862,
+      "name": "暖味 (nuǎn wèi)",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448258838,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1462905862",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450431913,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "我碍你",
     "artist": "不靠谱组合",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163265391647",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 554191927,
+    "platformTrack": {
+      "id": 554191927,
+      "name": "我碍你",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448262639,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=554191927",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450435403,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "下雨时候特别想你",
     "artist": "陈壹千",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166077977912",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1852267315,
+    "platformTrack": {
+      "id": 1852267315,
+      "name": "下雨时候特别想你",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448267894,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1852267315",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450441435,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "两个",
     "artist": "陈壹千",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166097645854",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1374490167,
+    "platformTrack": {
+      "id": 1374490167,
+      "name": "两个",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448271744,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1374490167",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450449488,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "关于我爱的你",
     "artist": "孔柏森/很美味",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172443544713",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1434332707,
+    "platformTrack": {
+      "id": 1434332707,
+      "name": "关于我爱的你",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448322720,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1434332707",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450454821,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "偏执",
     "artist": "叶炫清",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164591099405",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1413146224,
+    "platformTrack": {
+      "id": 1413146224,
+      "name": "偏执",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448331522,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1413146224",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450458989,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "一直好想你",
     "artist": "陈子晴",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166156738904",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1859422742,
+    "platformTrack": {
+      "id": 1859422742,
+      "name": "一直好想你",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448335531,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1859422742",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450464803,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "半夜汽笛",
     "artist": "叶琼琳",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165926380550",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1840474273,
+    "platformTrack": {
+      "id": 1840474273,
+      "name": "半夜汽笛",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448341004,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1840474273",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450467854,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "无法拥有的人要好好道别",
     "artist": "棱镜乐队",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165266634946",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1473721141,
+    "platformTrack": {
+      "id": 1473721141,
+      "name": "无法拥有的人要好好道别",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448345940,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1473721141",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450477271,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "想你的时候",
     "artist": "邹月莹",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168612874134",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2047437209,
+    "platformTrack": {
+      "id": 2047437209,
+      "name": "想你的时候",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448349574,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2047437209",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450481500,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "洒脱",
     "artist": "周思涵",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3253454914220178",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 401382412,
+    "platformTrack": {
+      "id": 401382412,
+      "name": "洒脱",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448357126,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=401382412",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450488470,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "病态的爱",
     "artist": "Zkaaai/哈利白特",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170334344630",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2661735192,
+    "platformTrack": {
+      "id": 2661735192,
+      "name": "病态的爱",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448363112,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2661735192",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450495506,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "一晃又一年",
     "artist": "司南",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169661011144",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2164206007,
+    "platformTrack": {
+      "id": 2164206007,
+      "name": "一晃又一年",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710347134,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2164206007",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450503075,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "你为什么不快乐",
     "artist": "林宝馨",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165984807618",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1845430095,
+    "platformTrack": {
+      "id": 1845430095,
+      "name": "你为什么不快乐",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710361354,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1845430095",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450509118,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "别",
     "artist": "凝子",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951167374867988",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1944301267,
+    "platformTrack": {
+      "id": 1944301267,
+      "name": "别",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710357122,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1944301267",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450516935,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "姐姐",
     "artist": "夏之禹",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168602883583",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2046244146,
+    "platformTrack": {
+      "id": 2046244146,
+      "name": "姐姐",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710308312,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2046244146",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450522718,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "两人孤单",
     "artist": "新乐尘符/纳豆nado",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165456735103",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1494086743,
+    "platformTrack": {
+      "id": 1494086743,
+      "name": "两人孤单",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710365174,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1494086743",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450528733,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "一秒",
     "artist": "永彬Ryan.B",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951171550978560",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2731411097,
+    "platformTrack": {
+      "id": 2731411097,
+      "name": "一秒",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 0,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2731411097",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450533377,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "银河飞车",
     "artist": "张叶蕾",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164543234602",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1409003291,
+    "platformTrack": {
+      "id": 1409003291,
+      "name": "银河飞车",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 0,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1409003291",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450539270,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "坏天气",
     "artist": "林宝馨",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169382893580",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2131369879,
+    "platformTrack": {
+      "id": 2131369879,
+      "name": "坏天气",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 0,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2131369879",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450546597,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "爱的副作用",
     "artist": "张玉华",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163669048847",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 329433,
+    "platformTrack": {
+      "id": 329433,
+      "name": "爱的副作用",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1793188271519,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=329433",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450552990,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "生锈游乐场",
     "artist": "蔡健雅",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166195459631",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 208905,
+    "platformTrack": {
+      "id": 208905,
+      "name": "生锈游乐场",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1793019478036,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=208905",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450560145,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "和平分手",
     "artist": "梁文音/萧煌奇",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163293125485",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 559647510,
+    "platformTrack": {
+      "id": 559647510,
+      "name": "和平分手",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795357701006,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=559647510",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450564429,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "如果下次路过我的生活",
     "artist": "槑槑MEIMEI乐队",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169254900774",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2116880483,
+    "platformTrack": {
+      "id": 2116880483,
+      "name": "如果下次路过我的生活",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448444010,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2116880483",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450570839,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "让爱重生",
@@ -643,106 +903,191 @@
     "platform": null,
     "platformId": null,
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448449973,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=354246",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450576238,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "成年",
     "artist": "刘凯迪/牛佳钰",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166726672158",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1903349486,
+    "platformTrack": {
+      "id": 1903349486,
+      "name": "成年",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 0,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1903349486",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450583665,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "答应我",
     "artist": "pro/徐靖雯",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169761730263",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2605985701,
+    "platformTrack": {
+      "id": 2605985701,
+      "name": "答应我",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 0,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2605985701",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450588927,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "后来",
     "artist": "祁弘一/陈池恩/苏艺馨Chency",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170974358406",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2703908101,
+    "platformTrack": {
+      "id": 2703908101,
+      "name": "后来",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 0,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2703908101",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450599688,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "忽然间",
     "artist": "椰子皮",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165309443466",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1478399160,
+    "platformTrack": {
+      "id": 1478399160,
+      "name": "忽然间",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1793174975713,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1478399160",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450603588,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "你可以爱我很久吗",
     "artist": "游艾迪",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=75866302332923",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 4875680,
+    "platformTrack": {
+      "id": 4875680,
+      "name": "你可以爱我很久吗",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1793019085009,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=4875680",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450609671,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "你这辈子还能不能忘掉前女友",
     "artist": "可可",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951173481082757",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 3399716616,
+    "platformTrack": {
+      "id": 3399716616,
+      "name": "你这辈子还能不能忘掉前女友",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710296704,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3399716616",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450615331,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "少年",
     "artist": "很美味/王翰鹏YAC/LZ轮子",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168567708867",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2037903749,
+    "platformTrack": {
+      "id": 2037903749,
+      "name": "少年",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794710269504,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2037903749",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450622430,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "下雨时天晴(PROD BY ATTBEAT)",
     "artist": "tan90’’",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169855994950",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2615585638,
+    "platformTrack": {
+      "id": 2615585638,
+      "name": "下雨时天晴(PROD BY ATTBEAT)",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448399777,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2615585638",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450628547,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "书",
@@ -751,176 +1096,316 @@
     "platform": null,
     "platformId": null,
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448405592,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3426638657",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450636339,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "勇气",
     "artist": "于冬然",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165256410150",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1472899837,
+    "platformTrack": {
+      "id": 1472899837,
+      "name": "勇气",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448409794,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1472899837",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450641613,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "逃避没有不好",
     "artist": "黄丽玲",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164087833607",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 205356,
+    "platformTrack": {
+      "id": 205356,
+      "name": "逃避没有不好",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448419848,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=205356",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450645980,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "因为你",
     "artist": "OneCandy/张叶蕾/Aou",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165066505030",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1455849734,
+    "platformTrack": {
+      "id": 1455849734,
+      "name": "因为你",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448431428,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1455849734",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450760176,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "爱得太多",
     "artist": "张亚飞",
     "cover": "http://p3.music.126.net/XMtajjQSdUXXGsFZvkRVgQ==/47279000006723.jpg",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 350806,
+    "platformTrack": {
+      "id": 350806,
+      "name": "爱得太多",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448436297,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=350806",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450757248,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "像风像雨",
     "artist": "Rezey/陈奕楠/#0000FF",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170155809552",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2646984607,
+    "platformTrack": {
+      "id": 2646984607,
+      "name": "像风像雨",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448372300,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2646984607",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450764381,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "好远",
     "artist": "王金金",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165491371444",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1497575879,
+    "platformTrack": {
+      "id": 1497575879,
+      "name": "好远",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448376491,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1497575879",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450769484,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "还继续爱你",
     "artist": "王小小",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165483151669",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1496849890,
+    "platformTrack": {
+      "id": 1496849890,
+      "name": "还继续爱你",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448381658,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1496849890",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450781367,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "别再哭了",
     "artist": "Yise 罗忆诗",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=570646534830201",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 261435,
+    "platformTrack": {
+      "id": 261435,
+      "name": "别再哭了",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448385204,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=261435",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450783599,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "爱你但说不出口",
     "artist": "Karencici",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169800563507",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2609838360,
+    "platformTrack": {
+      "id": 2609838360,
+      "name": "爱你但说不出口",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448388314,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2609838360",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450787746,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "你会不会想起我",
     "artist": "杨瑜婷",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168793622885",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2069217181,
+    "platformTrack": {
+      "id": 2069217181,
+      "name": "你会不会想起我",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795448393587,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2069217181",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450797418,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "想要你知道",
     "artist": "许亚童",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 32507551,
+    "platformTrack": {
+      "id": 32507551,
+      "name": "想要你知道",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794720119529,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=32507551",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450729140,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "世界末日",
     "artist": "Young 7",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1441514325,
+    "platformTrack": {
+      "id": 1441514325,
+      "name": "世界末日",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794719857486,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1441514325",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450735608,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "今天的祝福明天的孤独",
     "artist": "本多RuRu",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170409954834",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 207257,
+    "platformTrack": {
+      "id": 207257,
+      "name": "今天的祝福明天的孤独",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794719819433,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=207257",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450743905,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "请相信",
     "artist": "Nova / 伯爵Johnny",
     "cover": "http://p4.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 5241871,
+    "platformTrack": {
+      "id": 5241871,
+      "name": "请相信",
+      "artist": ""
+    },
     "verifiedFull": true,
     "sources": [],
-    "badgeText": "已收藏",
+    "badgeText": "⚠️ 暂无音源 · 官方·网易云:匿名仅192k>账号仅1 · 聚合·网易云:校验cancelled",
     "playedAt": 1794719622250,
     "playedLabel": ""
   },
@@ -928,49 +1413,89 @@
     "title": "错过",
     "artist": "KeyKey",
     "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 1890211620,
+    "platformTrack": {
+      "id": 1890211620,
+      "name": "错过",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794719423521,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1890211620",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450812052,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "简简单单",
     "artist": "林俊杰",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951171891432947",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 108868,
+    "platformTrack": {
+      "id": 108868,
+      "name": "简简单单",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794719443451,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=108868",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450716870,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "安蒐蕊",
     "artist": "ᅟᅟㅤ",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172077273572",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 3335999694,
+    "platformTrack": {
+      "id": 3335999694,
+      "name": "安蒐蕊",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794719824565,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3335999694",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450707498,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "过客",
     "artist": "周思涵",
     "cover": "https://api.qijieya.cn/meting/?server=tencent&type=pic&id=003Uofwj46nUDi",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 445665094,
+    "platformTrack": {
+      "id": 445665094,
+      "name": "过客",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794719901299,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445665094",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450695233,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "不是",
@@ -980,7 +1505,7 @@
     "platformId": null,
     "verifiedFull": true,
     "sources": [],
-    "badgeText": "已收藏",
+    "badgeText": "⚠️ 暂无音源 · 补ID:未匹配 · 聚合·网易云:搜索空包",
     "playedAt": 1794719993644,
     "playedLabel": ""
   },
@@ -988,61 +1513,111 @@
     "title": "忘了勇敢",
     "artist": "真名有雪",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172037662769",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 2747956343,
+    "platformTrack": {
+      "id": 2747956343,
+      "name": "忘了勇敢",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794720147332,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2747956343",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450677064,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "都是你的",
     "artist": "RAiNBOW计划/林姝涵",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3273246117001205",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 35625824,
+    "platformTrack": {
+      "id": 35625824,
+      "name": "都是你的",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794720218359,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450670034,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "痛痒",
     "artist": "林凡",
     "cover": "http://p3.music.126.net/saI8W1Ife322XKzKTJEbCw==/109951173213498262.jpg",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 257343,
+    "platformTrack": {
+      "id": 257343,
+      "name": "痛痒",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795260248649,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=257343",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450663352,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "好想再听一遍",
     "artist": "陶莉萍",
     "cover": "http://p3.music.126.net/eWQrlwRfOSL4Svq1QdbBTg==/109951167343091391.jpg",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 295063,
+    "platformTrack": {
+      "id": 295063,
+      "name": "好想再听一遍",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795356404367,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=295063",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450657920,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "彩虹眼泪",
     "artist": "Sweety",
     "cover": "http://p4.music.126.net/VZ49ssjRL8zaceS3qU_qmw==/109951172325765110.jpg",
-    "platform": null,
-    "platformId": null,
+    "platform": "netease",
+    "platformId": 376985,
+    "platformTrack": {
+      "id": 376985,
+      "name": "彩虹眼泪",
+      "artist": ""
+    },
     "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1795447999236,
-    "playedLabel": ""
+    "sources": [
+      {
+        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=376985",
+        "label": "聚合·网易云"
+      }
+    ],
+    "badgeText": "聚合·网易云",
+    "playedAt": 1795450651241,
+    "playedLabel": "聚合·网易云"
   },
   {
     "title": "当爱情经过的时候",
