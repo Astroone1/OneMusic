@@ -3531,6 +3531,11 @@
             const requireUrl = options.requireUrl !== false;
             const budget = Math.max(1200, Number(options.budget) || 9000);
             const deadline = Date.now() + budget;
+            // playableOnly:采集音源时只请求 urlPlayable 的端点。i-meto 的 url 在采集模式会被抹空,
+            // 产出恒为 0,却会在 qijieya 空包时把整次请求拖到它超时(最多 8s)再整体重试一轮。
+            const endpoints = options.playableOnly
+                ? METING_ENDPOINTS.filter(e => e.urlPlayable)
+                : METING_ENDPOINTS;
 
             const pickClean = (list) => {
                 const clean = (list || []).filter(it => it && (it.name || it.title)
@@ -3544,7 +3549,7 @@
             // 关键：慢端点（i-meto 实测有 143s 的极端长尾）必须有独立的硬上限，
             // 不能只按「剩余预算」放行，否则慢端点会把整次检索拖死。
             const now0 = Date.now();
-            const firstRound = METING_ENDPOINTS.map(endpoint => {
+            const firstRound = endpoints.map(endpoint => {
                 const scale = endpoint.timeoutScale || 1;
                 const hardCap = endpoint.maxTimeout || Math.round(timeout * scale);
                 // 三重约束：端点自身硬上限、按 scale 放宽的软超时、以及剩余预算。
@@ -3581,7 +3586,7 @@
                         // 第一轮全空：在剩余预算内做一次换端点重试（不再多轮退避，避免拖慢整体）
                         if (!sawTransient || Date.now() >= deadline - 600) return finish([]);
                         const retryTimeout = Math.max(800, Math.min(timeout, deadline - Date.now()));
-                        Promise.allSettled(METING_ENDPOINTS.map(endpoint =>
+                        Promise.allSettled(endpoints.map(endpoint =>
                             requestMetingOnce(endpoint, paramsStr, retryTimeout, { strippingUrl: requireUrl })
                         )).then(results => {
                             for (const r of results) {
@@ -3882,9 +3887,9 @@
 
         /* ---------- 匿名搜 ID：给无 platformId 的歌补开官方链 ----------
            背景：旧链收藏(当年从 Meting/GD/B站搜索收藏)没有网易云 song ID，
-           采集时两条官方链(官方·网易云 / 官方·网易云2)不会启动，只剩聚合链单打，
+           采集时 ID 直拼与官方链不会启动，只剩聚合搜索单打，
            命中率 10/30。这里在采集前匿名搜一次 ID：
-             - 搜到 → 三链齐跑,并把 ID 回写收藏(一次性成本,以后永久三链);
+             - 搜到 → ID 直拼 + 官方链,并把 ID 回写收藏(一次性成本,以后永久走 ID 直拼);
              - 搜不到(冷门/下架/翻唱名对不上) → 维持单链,不阻塞采集。
            匹配用 strictPrivateTrackMatch(标题归一全等 + 歌手包含),不会错抓翻唱。
            带会话级缓存:同一首歌本轮播放会话内不重复搜。 */
@@ -3915,7 +3920,7 @@
             return task;
         }
 
-        // 搜到 ID 后回写收藏：platform/platformId 一次落库,之后永久三链采集。
+        // 搜到 ID 后回写收藏：platform/platformId 一次落库,之后永久走 ID 直拼采集。
         function persistNeteaseIdToFavorite(song, id, track) {
             if (!id) return;
             const favIdx = favorites.findIndex(f =>
@@ -5025,10 +5030,12 @@
             const cookie = localStorage.getItem(PRIVATE_NETEASE_COOKIE_KEY) || '';
             const diag = song._diag || (song._diag = {});
 
-            const tries = [
-                { cookie: '', tag: '匿名', ms: timeoutMs },
-                { cookie: '', tag: '匿名重', ms: Math.min(4000, timeoutMs) }
-            ];
+            // 2026-11-23 精简:
+            //   - 删除「匿名重」:试听/无直链是歌级状态,同参数重发必然同结果,白耗一次请求;
+            //   - 匿名拿到试听/无直链/码≠200(确定性拒绝)→ 有 cookie 直接换账号,没有就立即收手;
+            //   - 只有网络错误/超时(随机故障)才值得继续下一个尝试位。
+            //   会员歌完整版由「聚合·网易云 ID 直拼」负责,本链只做异机备份,不在这里死磕。
+            const tries = [{ cookie: '', tag: '匿名', ms: timeoutMs }];
             if (cookie) tries.push({ cookie, tag: '账号', ms: 4000 });   // 匿名无版权时账号兜底
             const fails = [];
 
@@ -5078,72 +5085,6 @@
                 }
             }
             diag['官方·网易云'] = fails.join('>') || '无结果';
-            return null;
-        }
-
-        // 采集链 2:v1 官方直链(实测 18/30 可播,旧接口失败时补位)。匿名调用(同实测口径,
-        // 账号态请求会被实例限流,实测浏览器里超时/Failed to fetch 频发;账号兜底由链1承担)。
-        // 失败分类处理(2026-11-15 重构):
-        //   - 确定性拒绝(试听/无直链/码≠200):歌级状态,换档救不回来 → 立即弃链,不烧多余请求;
-        //   - 随机故障(400/超时):保留 3 次尝试,档间 ~400ms 退避错开实例故障窗口
-        //     (实测 400 率约 56%,零间隔三连发等于一次采样,三连败 ≈17%);
-        //   - 低码率:升一档重试(128k → lossless 通常 ≥320k 过闸),仅一次。
-        // 总尝试次数上限仍为 3,采集硬上限 12s 不变。
-        async function resolveNeteaseV1TrackUrl(song, timeoutMs = 3500) {
-            const id = song?.platformId ?? song?.platformTrack?.id;
-            if (song?.platform !== 'netease' || id == null) return null;
-            const diag = song._diag || (song._diag = {});
-            const levelFails = [];
-
-            const levels = ['exhigh', 'lossless', 'hires'];
-            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-            let idx = 0;
-
-            while (idx < levels.length) {
-                const level = levels[idx];
-                try {
-                    const url = privateApiUrl('netease', '/song/url/v1', {
-                        id, level, timestamp: Date.now()
-                    });
-                    const payload = await privateFetchJSON(url, {}, timeoutMs);
-                    const rows = Array.isArray(payload?.data) ? payload.data : [];
-                    const item = rows.find(row => String(row?.id ?? id) === String(id)) || rows[0] || payload?.data;
-                    const mediaUrl = item?.url || payload?.url;
-                    if (typeof mediaUrl !== 'string' || !/^https?:\/\//i.test(mediaUrl)) {
-                        levelFails.push('无直链');
-                        return null;              // 确定性拒绝:歌级状态,换档无意义
-                    }
-                    if (item?.freeTrialInfo) {
-                        levelFails.push('试听');
-                        return null;              // 匿名下版权是歌级的,三档必然同样试听
-                    }
-                    if (item?.code != null && Number(item.code) !== 200) {
-                        levelFails.push('码' + item.code);
-                        return null;              // 确定性拒绝
-                    }
-                    const rawBr = Number(item?.br);
-                    if (Number.isFinite(rawBr) && rawBr > 0 && Math.round(rawBr / 1000) < MIN_AUDIO_BITRATE_KBPS) {
-                        levelFails.push(Math.round(rawBr / 1000) + 'k');
-                        idx++;                    // 低码率:升一档再试(唯一值得换档的场景)
-                        continue;
-                    }
-                    diag['官方·网易云2'] = 'OK';
-                    return {
-                        url: mediaUrl,
-                        label: '官方·网易云2',
-                        title: song.title || item?.name || '',
-                        artist: song.artist || '',
-                        platformId: id
-                    };
-                } catch (error) {
-                    levelFails.push(error?.name === 'AbortError' ? '超时'
-                        : (error?.message || '失败').replace(/^HTTP /, 'HTTP').slice(0, 12));
-                    // 随机故障(400/超时):退避后换档重试,错开实例故障窗口
-                    idx++;
-                    if (idx < levels.length) await sleep(400);
-                }
-            }
-            diag['官方·网易云2'] = levelFails.join('/') || '无结果';
             return null;
         }
 
@@ -6082,11 +6023,12 @@
 
         // 采集链顺位定义：数值越小越先尝试。
         // 2026-11-10 按「30 首实际能播」实测排序:
-        //   官方·网易云(旧接口) 30/30 > 官方·网易云2(v1) 18/30 > 聚合·网易云 10/30
+        //   官方·网易云(旧接口) 30/30 > 聚合·网易云 10/30
+        //   2026-11-23:官方·网易云2(v1) 因网易云风控 -460 全败已删除。
+        //   ID 直拼零请求、最先入池,通常第一个被校验;官方链晚到,作为 qijieya 宕机时的异机备份。
         function getSourceRank(cand) {
             const label = chainDisplayName(cand.label);
             if (label === '官方·网易云') return 5;
-            if (label === '官方·网易云2') return 8;
             // 按 ID 拼出的 302 链:不过期、会员歌给完整版,排在搜索结果之前
             if (cand.byId) return 9;
             if (label === '聚合·网易云') return 10;
@@ -6143,20 +6085,21 @@
             };
 
             // 采集专用：状态显示。链名统一使用 CHAIN_DISPLAY_NAMES 的显示名。
-            // 2026-11-10 按「30 首实际能播」实测排行取前三实装：
-            //   官方·网易云 30/30 · 官方·网易云2 18/30 · 聚合·网易云 10/30
-            //   （其余旧链已淘汰：GD search 超时为主；QQ音乐直链多为低码率/空文件）
-            // 三链合起来 30/30 全部能播。
-            const collectState = [
-                { key: '聚合·网易云', state: 'wait' }
-            ];
-
-            // ---------- 补 ID：给无 platformId 的歌(旧链收藏主体)开官方链 ----------
-            // 命中后回写收藏,以后永久三链;未命中(冷门/下架)不阻塞,维持聚合单链。
+            // 2026-11-23 采集链精简（同批歌横向实测）：
+            //   - 官方·网易云2(/song/url/v1)：5/5 返回 -460「网络环境存在风险」(网易云风控)，
+            //     且与链1同实例同匿名同 CDN 文件，解决不了试听 → 已删除。
+            //   - 聚合·网易云 type=url&id 与官方链免费歌是同一文件、会员歌给完整版 → 按 ID 直拼(零请求)。
+            //   - 有 ID 的歌：聚合搜索只会搜回同一个 ID，跳过；只跑「ID 直拼 + 官方·网易云(异机备份)」。
+            //   - 无 ID 的歌：补ID 与 聚合搜索 并行，补到 ID 后追加 ID 直拼与官方链。
             let hasNativeNeteaseId = song?.platform === 'netease' && song?.platformId != null;
+            const collectState = hasNativeNeteaseId
+                ? [{ key: '官方·网易云', state: 'wait' }]
+                : [{ key: '补ID', state: 'wait' }, { key: '聚合·网易云', state: 'wait' }];
+
+            // ---------- 补 ID：给无 platformId 的歌(旧链收藏主体)开 ID 直拼与官方链 ----------
+            // 命中后回写收藏,以后永久走 ID 直拼;未命中(冷门/下架)不阻塞,维持聚合搜索。
             let idLookupTask = null;
             if (!hasNativeNeteaseId) {
-                collectState.unshift({ key: '补ID', state: 'wait' });
                 idLookupTask = lookupNeteaseIdForSong(song)
                     .then(found => {
                         if (token !== activePlayToken) return;   // 已切歌:不再动状态表,外层拦截
@@ -6168,10 +6111,9 @@
                                 song.platformTrack = { id: found.track.id, name: found.track.name || '', artist: '' };
                             }
                             persistNeteaseIdToFavorite(song, found.id, found.track);
-                            // 补 ID 成功:官方两链进入状态行并立即发起采集
-                            collectState.splice(collectState.findIndex(s => s.key === '补ID'), 1);
+                            // 补 ID 成功:ID 直拼立即入池,官方链进入状态行并发起
+                            settle('补ID', true);
                             collectState.unshift({ key: '官方·网易云', state: 'wait' });
-                            collectState.splice(1, 0, { key: '官方·网易云2', state: 'wait' });
                             renderCollect();
                             pushById(found.id);
                             launchOfficialChains();
@@ -6180,10 +6122,6 @@
                         }
                     })
                     .catch(() => { if (token === activePlayToken) settle('补ID', false, '失败'); });
-            }
-            if (hasNativeNeteaseId) {
-                collectState.unshift({ key: '官方·网易云', state: 'wait' });     // 链1 旧接口
-                collectState.splice(1, 0, { key: '官方·网易云2', state: 'wait' }); // 链2 v1 补位
             }
             const renderCollect = () => {
                 const doneCount = collectState.filter(s => s.state !== 'wait').length;
@@ -6195,20 +6133,14 @@
                 npStatus.innerText = `采集 ${doneCount}/${collectState.length} · ${parts.join(' ')}`;
             };
 
-            // 官方两链(旧接口为主、v1 补位)并行发起;有 ID 的歌立即调,补 ID 命中的歌在回调里调。
+            // 官方链:作为 ID 直拼(qijieya)的异机备份;有 ID 的歌立即调,补 ID 命中的歌在回调里调。
             const launchOfficialChains = () => {
                 resolveNeteasePrivateTrackUrl(song, 6000)
                     .then(item => {
                         if (item?.url) pushAll([item]);
-                        settle('官方·网易云', !!item?.url);
+                        settle('官方·网易云', !!item?.url, item?.url ? '' : (song._diag?.['官方·网易云'] || '').slice(0, 12));
                     })
                     .catch(() => settle('官方·网易云', false));
-                resolveNeteaseV1TrackUrl(song, 5000)
-                    .then(item => {
-                        if (item?.url) pushAll([item]);
-                        settle('官方·网易云2', !!item?.url);
-                    })
-                    .catch(() => settle('官方·网易云2', false));
             };
 
             // 采集时也做关键词变体：主词空包是当前最常见的「有资源却搜不到」原因。
@@ -6223,7 +6155,7 @@
                     const remain = Math.max(1000, Math.min(timeout, deadline - Date.now()));
                     const list = await requestMeting(
                         `server=${code}&type=search&id=${encodeURIComponent(kw)}`,
-                        remain, { requireUrl: true, budget: remain }
+                        remain, { requireUrl: true, budget: remain, playableOnly: true }
                     );
                     if (Array.isArray(list) && list.length > 0) return list;
                 }
@@ -6244,12 +6176,15 @@
                 }
             };
 
-            const mtNE = metingWithVariants('netease', '聚合·网易云', 4500)
-                .then(list => {
-                    pushAllMeting(list, '聚合·网易云');
-                    settle('聚合·网易云', list && list.length > 0, list && list.length > 0 ? '' : '搜索空包');
-                })
-                .catch(e => settle('聚合·网易云', false, '网关失败'));
+            // 聚合搜索只给「没有 ID」的歌跑:有 ID 的歌搜回来的就是同一个 ID,与 ID 直拼完全重复。
+            if (!hasNativeNeteaseId) {
+                metingWithVariants('netease', '聚合·网易云', 4500)
+                    .then(list => {
+                        pushAllMeting(list, '聚合·网易云');
+                        settle('聚合·网易云', list && list.length > 0, list && list.length > 0 ? '' : '搜索空包');
+                    })
+                    .catch(e => settle('聚合·网易云', false, '网关失败'));
+            }
 
             function pushAllMeting(list, label) {
                 if (!Array.isArray(list)) return;
