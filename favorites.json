@@ -66,23 +66,6 @@
     "playedLabel": "聚合·网易云"
   },
   {
-    "title": "谢谢爱",
-    "artist": "花园精灵",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163188532731",
-    "platform": "netease",
-    "platformId": 4874373,
-    "platformTrack": {
-      "id": 4874373,
-      "name": "谢谢爱",
-      "artist": ""
-    },
-    "verifiedFull": true,
-    "sources": [],
-    "badgeText": "已收藏",
-    "playedAt": 1794720190112,
-    "playedLabel": ""
-  },
-  {
     "title": "谢谢参与",
     "artist": "春芽音乐社/刘思佳",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165511240611",
@@ -1393,23 +1376,6 @@
     "playedLabel": "聚合·网易云"
   },
   {
-    "title": "请相信",
-    "artist": "Nova / 伯爵Johnny",
-    "cover": "http://p4.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
-    "platform": "netease",
-    "platformId": 5241871,
-    "platformTrack": {
-      "id": 5241871,
-      "name": "请相信",
-      "artist": ""
-    },
-    "verifiedFull": true,
-    "sources": [],
-    "badgeText": "⚠️ 暂无音源 · 官方·网易云:匿名仅192k>账号仅1 · 聚合·网易云:校验cancelled",
-    "playedAt": 1794719622250,
-    "playedLabel": ""
-  },
-  {
     "title": "错过",
     "artist": "KeyKey",
     "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
@@ -1496,18 +1462,6 @@
     "badgeText": "聚合·网易云",
     "playedAt": 1795450695233,
     "playedLabel": "聚合·网易云"
-  },
-  {
-    "title": "不是",
-    "artist": "Tik",
-    "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164111609300",
-    "platform": null,
-    "platformId": null,
-    "verifiedFull": true,
-    "sources": [],
-    "badgeText": "⚠️ 暂无音源 · 补ID:未匹配 · 聚合·网易云:搜索空包",
-    "playedAt": 1794719993644,
-    "playedLabel": ""
   },
   {
     "title": "忘了勇敢",
