@@ -3,57 +3,37 @@
     "title": "明明爱你",
     "artist": "林凡",
     "cover": "http://p3.music.126.net/Nr5ppqBG4Y7r4LwP4SZD1g==/109951173213504510.jpg",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=28481157",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
-    "playedAt": 1794719964025,
-    "playedLabel": "聚合·网易云"
+    "sources": [],
+    "badgeText": "已收藏",
+    "playedAt": 1795448122811,
+    "playedLabel": ""
   },
   {
     "title": "星河坠落",
     "artist": "橘子听海",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168630575137",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2050582408",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
-    "playedAt": 1794719976510,
-    "playedLabel": "聚合·网易云"
+    "sources": [],
+    "badgeText": "已收藏",
+    "playedAt": 1795448036475,
+    "playedLabel": ""
   },
   {
     "title": "没有谎言的世界",
     "artist": "火晚晴",
     "cover": "http://p4.music.126.net/JQT7EoL6twnXcUvE4junng==/109951172798101269.jpg",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3353183412",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
-    "playedAt": 1794719988138,
-    "playedLabel": "聚合·网易云"
+    "sources": [],
+    "badgeText": "已收藏",
+    "playedAt": 1795448043734,
+    "playedLabel": ""
   },
   {
     "title": "谢谢爱",
     "artist": "花园精灵",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163188532731",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3356346487",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794720190112,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "谢谢参与",
@@ -61,7 +41,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165511240611",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709724486,
+    "playedAt": 1794726031337,
     "playedLabel": ""
   },
   {
@@ -70,7 +50,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168289730485",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794719010171,
+    "playedAt": 1794726105671,
     "playedLabel": ""
   },
   {
@@ -79,7 +59,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163188046115",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794718986161,
+    "playedAt": 1794726116109,
     "playedLabel": ""
   },
   {
@@ -88,7 +68,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=kugou&type=pic&id=25f56d82526f7df9e78d3611ff74bcde",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794718995271,
+    "playedAt": 1794726124260,
     "playedLabel": ""
   },
   {
@@ -97,7 +77,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166518066267",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794719021647,
+    "playedAt": 1794726378525,
     "playedLabel": ""
   },
   {
@@ -106,7 +86,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168901463657",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794719097435,
+    "playedAt": 1795448055873,
     "playedLabel": ""
   },
   {
@@ -115,7 +95,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951173695887584",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794719304380,
+    "playedAt": 1795448064417,
     "playedLabel": ""
   },
   {
@@ -124,7 +104,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164315947124",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794719325507,
+    "playedAt": 1795448126205,
     "playedLabel": ""
   },
   {
@@ -133,7 +113,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168191946033",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794719351410,
+    "playedAt": 1795448135210,
     "playedLabel": ""
   },
   {
@@ -142,7 +122,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951171592169832",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709819716,
+    "playedAt": 1795448170369,
     "playedLabel": ""
   },
   {
@@ -151,7 +131,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166119022675",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709831893,
+    "playedAt": 1795448230613,
     "playedLabel": ""
   },
   {
@@ -160,7 +140,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166119022675",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709827079,
+    "playedAt": 1795448240208,
     "playedLabel": ""
   },
   {
@@ -169,7 +149,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951162864693504",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709836166,
+    "playedAt": 1795448246426,
     "playedLabel": ""
   },
   {
@@ -178,7 +158,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165265097998",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709840207,
+    "playedAt": 1795448258838,
     "playedLabel": ""
   },
   {
@@ -187,7 +167,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163265391647",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709842697,
+    "playedAt": 1795448262639,
     "playedLabel": ""
   },
   {
@@ -196,7 +176,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166077977912",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709849935,
+    "playedAt": 1795448267894,
     "playedLabel": ""
   },
   {
@@ -205,7 +185,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166097645854",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709856305,
+    "playedAt": 1795448271744,
     "playedLabel": ""
   },
   {
@@ -214,7 +194,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172443544713",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709865381,
+    "playedAt": 1795448322720,
     "playedLabel": ""
   },
   {
@@ -223,7 +203,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164591099405",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709870848,
+    "playedAt": 1795448331522,
     "playedLabel": ""
   },
   {
@@ -232,7 +212,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951166156738904",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709874203,
+    "playedAt": 1795448335531,
     "playedLabel": ""
   },
   {
@@ -241,7 +221,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165926380550",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794709886911,
+    "playedAt": 1795448341004,
     "playedLabel": ""
   },
   {
@@ -250,7 +230,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165266634946",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710102614,
+    "playedAt": 1795448345940,
     "playedLabel": ""
   },
   {
@@ -259,7 +239,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168612874134",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710328278,
+    "playedAt": 1795448349574,
     "playedLabel": ""
   },
   {
@@ -268,7 +248,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3253454914220178",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710334482,
+    "playedAt": 1795448357126,
     "playedLabel": ""
   },
   {
@@ -277,7 +257,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170334344630",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710339318,
+    "playedAt": 1795448363112,
     "playedLabel": ""
   },
   {
@@ -376,7 +356,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951163293125485",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1793244503609,
+    "playedAt": 1795357701006,
     "playedLabel": ""
   },
   {
@@ -385,7 +365,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169254900774",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710302609,
+    "playedAt": 1795448444010,
     "playedLabel": ""
   },
   {
@@ -394,7 +374,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172495802667",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 0,
+    "playedAt": 1795448449973,
     "playedLabel": ""
   },
   {
@@ -466,7 +446,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169855994950",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710274670,
+    "playedAt": 1795448399777,
     "playedLabel": ""
   },
   {
@@ -475,7 +455,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951171363745033",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710283924,
+    "playedAt": 1795448405592,
     "playedLabel": ""
   },
   {
@@ -484,7 +464,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165256410150",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710292289,
+    "playedAt": 1795448409794,
     "playedLabel": ""
   },
   {
@@ -493,7 +473,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164087833607",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 0,
+    "playedAt": 1795448419848,
     "playedLabel": ""
   },
   {
@@ -502,7 +482,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165066505030",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 0,
+    "playedAt": 1795448431428,
     "playedLabel": ""
   },
   {
@@ -511,7 +491,7 @@
     "cover": "http://p3.music.126.net/XMtajjQSdUXXGsFZvkRVgQ==/47279000006723.jpg",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794712749088,
+    "playedAt": 1795448436297,
     "playedLabel": ""
   },
   {
@@ -520,7 +500,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170155809552",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710261324,
+    "playedAt": 1795448372300,
     "playedLabel": ""
   },
   {
@@ -529,7 +509,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165491371444",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710253274,
+    "playedAt": 1795448376491,
     "playedLabel": ""
   },
   {
@@ -538,7 +518,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951165483151669",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710256974,
+    "playedAt": 1795448381658,
     "playedLabel": ""
   },
   {
@@ -547,7 +527,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=570646534830201",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1794710249403,
+    "playedAt": 1795448385204,
     "playedLabel": ""
   },
   {
@@ -556,7 +536,7 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951169800563507",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 1793175455198,
+    "playedAt": 1795448388314,
     "playedLabel": ""
   },
   {
@@ -565,161 +545,133 @@
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951168793622885",
     "sources": [],
     "badgeText": "已收藏",
-    "playedAt": 0,
+    "playedAt": 1795448393587,
     "playedLabel": ""
   },
   {
     "title": "想要你知道",
     "artist": "许亚童",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=7736163813941765",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=32507551",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794720119529,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "世界末日",
     "artist": "Young 7",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164916363242",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1441514325",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719857486,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "今天的祝福明天的孤独",
     "artist": "本多RuRu",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951170409954834",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=207257",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719819433,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "请相信",
     "artist": "Nova / 伯爵Johnny",
     "cover": "http://p4.music.126.net/1-EdvKs9sdglQSSF7kkEPg==/848822976664311.jpg",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=478158880",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719622250,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "错过",
     "artist": "KeyKey",
     "cover": "http://p4.music.126.net/1iBX5QCCqWDJjifPxSBwRw==/109951166560786554.jpg",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1890211620",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719423521,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "简简单单",
     "artist": "林俊杰",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951171891432947",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=108868",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719443451,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "安蒐蕊",
     "artist": "ᅟᅟㅤ",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172077273572",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=3335999694",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719824565,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "过客",
     "artist": "周思涵",
     "cover": "https://api.qijieya.cn/meting/?server=tencent&type=pic&id=003Uofwj46nUDi",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=445665094",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719901299,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "不是",
     "artist": "Tik",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951164111609300",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=1437018539",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794719993644,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "忘了勇敢",
     "artist": "真名有雪",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=109951172037662769",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=2747956343",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794720147332,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
   },
   {
     "title": "都是你的",
     "artist": "RAiNBOW计划/林姝涵",
     "cover": "https://api.qijieya.cn/meting/?server=netease&type=pic&id=3273246117001205",
-    "sources": [
-      {
-        "url": "https://api.qijieya.cn/meting/?server=netease&type=url&id=35625824",
-        "label": "聚合·网易云"
-      }
-    ],
-    "badgeText": "聚合·网易云",
+    "sources": [],
+    "badgeText": "已收藏",
     "playedAt": 1794720218359,
-    "playedLabel": "聚合·网易云"
+    "playedLabel": ""
+  },
+  {
+    "title": "痛痒",
+    "artist": "林凡",
+    "cover": "http://p3.music.126.net/saI8W1Ife322XKzKTJEbCw==/109951173213498262.jpg",
+    "sources": [],
+    "badgeText": "已收藏",
+    "playedAt": 1795260248649,
+    "playedLabel": ""
+  },
+  {
+    "title": "好想再听一遍",
+    "artist": "陶莉萍",
+    "cover": "http://p3.music.126.net/eWQrlwRfOSL4Svq1QdbBTg==/109951167343091391.jpg",
+    "sources": [],
+    "badgeText": "已收藏",
+    "playedAt": 1795356404367,
+    "playedLabel": ""
+  },
+  {
+    "title": "彩虹眼泪",
+    "artist": "Sweety",
+    "cover": "http://p4.music.126.net/VZ49ssjRL8zaceS3qU_qmw==/109951172325765110.jpg",
+    "sources": [],
+    "badgeText": "已收藏",
+    "playedAt": 1795447999236,
+    "playedLabel": ""
   }
 ]
