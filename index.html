@@ -4111,16 +4111,16 @@
                 }
 
                 // ============================================================
-                // 合并策略：时间戳优先，新时间无条件覆盖老时间
-                //   - 只在本地有            -> 保留本地
-                //   - 只在云端有            -> 加入
-                //   - 两边都有，云端更新    -> 云端整条覆盖本地
-                //   - 两边都有，本地更新    -> 本地整条保留
-                //   - 时间相同（含都无时间）-> 云端覆盖（保持旧行为，无明显新旧时以云为准）
-                // 不做字段级合并：时间更新的一侧整条胜出。
+                // 合并策略：云端权威
+                //   - 只在本地有 -> 保留本地（本机新收藏，尚未上传）
+                //   - 只在云端有 -> 加入
+                //   - 两边都有   -> 云端整条覆盖本地（含 sources/徽章/ID），不比时间戳
+                // 不做字段级合并。
                 // ============================================================
-                // 云下行规整：旧链 sources 整条丢弃（不迁移 URL），
-                // 徽章/playedLabel 由现役链重新推导；无现役链即中性文案。
+                // 云下行规整：只丢「旧链」sources（B站/GD 等已下线链），现役链原样保留。
+                // BUG 修复(2026-11-23)：旧实现这里写死 sources: []，本地与云端条目都过一遍，
+                // 导致每次下行把所有收藏的「最后一次播放链」清空，徽章全部回落成「已收藏」。
+                // 现在把 sources 一并带入，再交给 normalizeFavoriteChain 只做旧链过滤。
                 const normalizeFav = (item) => {
                     const fav = {
                         title: item.title,
@@ -4128,12 +4128,15 @@
                         cover: item.cover || 'https://picsum.photos/seed/music/100/100',
                         platform: item.platform || null,
                         platformId: item.platformId != null ? item.platformId : null,
-                        sources: [],
-                        badgeText: '',
+                        sources: Array.isArray(item.sources)
+                            ? item.sources.filter(s => s && s.url).map(s => ({ url: s.url, label: s.label }))
+                            : [],
+                        badgeText: item.badgeText || '',
                         verifiedFull: item.verifiedFull !== false,
                         playedAt: favPlayedAt(item),
-                        playedLabel: ''
+                        playedLabel: item.playedLabel || ''
                     };
+                    if (item.platformTrack) fav.platformTrack = item.platformTrack;
                     normalizeFavoriteChain(fav);
                     return fav;
                 };
@@ -4148,7 +4151,7 @@
                 });
 
                 // 2) 云端逐个比对，新时间整条覆盖
-                let localWon = 0, remoteWon = 0, addedNew = 0;
+                let localOnly = 0, remoteWon = 0, addedNew = 0;
                 remoteList.forEach(item => {
                     if (!item || !item.title) return;
                     const fp = getSongFingerprint(item.title, item.artist);
@@ -4159,23 +4162,15 @@
                         return;
                     }
 
-                    const localAt = local.playedAt;
-                    const remoteAt = favPlayedAt(item);
-
-                    if (remoteAt > localAt) {
-                        mergedMap.set(fp, normalizeFav(item));
-                        remoteWon++;
-                    } else if (localAt > remoteAt) {
-                        // 本地更新：保持原样，不做任何字段合并
-                        localWon++;
-                    } else {
-                        // 时间相同或均无时间：云端整条覆盖（旧数据兼容）
-                        mergedMap.set(fp, normalizeFav(item));
-                        remoteWon++;
-                    }
+                    // 规则(2026-11-23 用户确认)：两边都有的歌，云端整条覆盖本地，不比时间戳、不做字段合并。
+                    // 依据：上传只在下行合并后开放，云端是经过整合的权威数据；
+                    // 本地因设备不同可能残留过期/错误信息，不可信。
+                    mergedMap.set(fp, normalizeFav(item));
+                    remoteWon++;
                 });
 
                 favorites = Array.from(mergedMap.values());
+                localOnly = favorites.length - remoteWon - addedNew;
                 saveFavorites();
                 if (currentTab === 'fav') {
                     viewList = [...favorites];
@@ -4188,7 +4183,7 @@
                 refreshCloudUploadButton();
                 startCloudWindowWatch();
                 npStatus.innerText =
-                    `✅ 下行完成 ${favorites.length} 首 · 本地较新 ${localWon} / 云端较新 ${remoteWon} / 新增 ${addedNew}`;
+                    `✅ 下行完成 ${favorites.length} 首 · 云端覆盖 ${remoteWon} / 云端新增 ${addedNew} / 仅本地 ${localOnly}`;
             } catch (err) {
                 setCloudLightStatus(false);
                 npStatus.innerText = `⚠️ 云连接失败`;
@@ -4241,6 +4236,11 @@
                     title: f.title,
                     artist: f.artist,
                     cover: f.cover,
+                    // 网易云 ID 必须上云：另一台设备下行后才能用 ID 直拼永久链秒播
+                    platform: f.platform || null,
+                    platformId: f.platformId != null ? f.platformId : null,
+                    platformTrack: f.platformTrack || undefined,
+                    verifiedFull: f.verifiedFull !== false,
                     // sources 的 label 同样清洗：避免已下线来源名继续写进仓库
                     sources: (f.sources || []).map(s => ({
                         url: s.url,
