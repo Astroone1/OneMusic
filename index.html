@@ -3211,7 +3211,35 @@
         // 实测：上游首字节延迟波动极大（node 侧 0.5s，浏览器侧 2.2s~15.9s 都有），
         // 所以超时必须放宽，否则会把「慢但合格」的源误判成失败。
         const BITRATE_PROBE_BYTES = 32 * 1024;
-        const BITRATE_PROBE_TIMEOUT_MS = 20000;
+        // 探测与 <audio> 加载改为并行（见 verifyAndPlayStream），不再串在播放之后，上限从 20s 收紧到 12s。
+        const BITRATE_PROBE_TIMEOUT_MS = 12000;
+
+        /* ---------- 直链规整（2026-11-23 实测） ----------
+           1) 实例 /song/url 返回的是 http://mXXX.music.126.net 直链。页面以 https 打开时，
+              fetch 码率探测会被「混合内容」拦截 → probe_error → 好链被判失败。
+              该 CDN 的 https 同样可用且带 Access-Control-Allow-Origin:*，统一升级为 https。
+           2) 网易云 CDN 直链路径里带过期时间 /YYYYMMDDHHMMSS/（北京时间，expi=1200s），
+              过期后 403。收藏里存的官方链 20 分钟后必死，直连前先跳过，避免白耗校验。
+           3) Meting 网关 type=url&id=<网易云ID> 是永不过期的 302 跳转链，且实测对实例
+              判为「试听」的会员歌也能给出完整版 → 有 ID 时直接拼出来，无需任何请求。 */
+        function normalizeStreamUrl(url) {
+            const u = String(url || '').trim();
+            return /^http:\/\/[^/]*\.music\.126\.net\//i.test(u) ? u.replace(/^http:/i, 'https:') : u;
+        }
+
+        function isExpiredNeteaseCdnUrl(url) {
+            const m = String(url || '').match(/\.music\.126\.net\/(\d{14})\//i);
+            if (!m) return false;
+            const s = m[1];
+            const expireAt = Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8),
+                +s.slice(8, 10) - 8, +s.slice(10, 12), +s.slice(12, 14));
+            // 留 1 分钟余量：快过期的链即便能起播也会在中途 403 断流
+            return !Number.isFinite(expireAt) || Date.now() > expireAt - 60000;
+        }
+
+        function metingNeteaseUrlById(id) {
+            return `${METING_ENDPOINTS[0].base}?server=netease&type=url&id=${encodeURIComponent(id)}`;
+        }
 
         /* ================= GD Studio(仅搜索用) =================
            2026-11-10 采集链实测:GD 实际可播 9/30(search 超时为主),未进前三,已从播放采集链砍除。
@@ -3870,12 +3898,18 @@
             const task = (async () => {
                 const query = `${String(song.title || '').replace(/\(.*?\)|（.*?）/g, '').trim()} ${String(song.artist || '').split(/[\/&,、]/)[0].trim()}`.trim();
                 if (!query) return null;
+                // 实测实例冷启动首次搜索 ~10s、热态 0.6s;原 5s 超时冷启动必败。
+                // 采集已支持提前返回,放宽超时不会拖慢起播。
                 const payload = await privateFetchJSON(privateApiUrl('netease', '/search', {
                     keywords: query, type: 1, limit: 8, timestamp: Date.now()
-                }), {}, 5000);
+                }), {}, 9000);
                 const match = getNeteaseSearchTracks(payload).find(item => strictPrivateTrackMatch(song, item, 'netease'));
                 return match ? { id: match.id, track: match } : null;
-            })().catch(() => null);
+            })().catch(() => {
+                // 网络失败/超时不缓存(否则本次会话内这首歌永远补不上 ID),只缓存「确实没匹配」
+                neteaseIdLookupCache.delete(fp);
+                return null;
+            });
 
             neteaseIdLookupCache.set(fp, task);
             return task;
@@ -5857,15 +5891,23 @@
             const favMatch = favorites.find(f => isSameSong(f, song));
             const favoriteSources = favMatch && Array.isArray(favMatch.sources) ? favMatch.sources : [];
             const songSources = Array.isArray(song.sources) ? song.sources : [];
+            // 直连阶段只试「还活着」的链:网易云 CDN 直链 20 分钟过期(实测 expi=1200,过期 403),
+            // 收藏里存的官方直链基本都是死链,以前每次都要先白试一轮。
+            // 有网易云 ID 时追加永久 302 链(聚合·网易云 type=url),收藏歌几乎都能秒播。
+            const knownId = song.platformId ?? song.platformTrack?.id ?? favMatch?.platformId;
+            const seenDirect = new Set();
             const combinedSources = [
                 ...favoriteSources,
-                ...songSources
-            ];
+                ...songSources,
+                ...(knownId != null ? [{ url: metingNeteaseUrlById(knownId), label: '聚合·网易云' }] : [])
+            ].map(s => s && s.url ? { ...s, url: normalizeStreamUrl(s.url) } : s)
+             .filter(s => s && s.url && !isExpiredNeteaseCdnUrl(s.url)
+                 && !seenDirect.has(s.url) && seenDirect.add(s.url));
 
             if (!skipDirectLinks && combinedSources.length > 0) {
                 for (let srcObj of combinedSources) {
                     if (myToken !== activePlayToken) return;
-                    if (!srcObj.url) continue;
+                    if (!srcObj.url || triedSourceUrls.has(srcObj.url)) continue;
                     npStatus.innerText = `直连 [${chainDisplayName(srcObj.label) || '收藏链'}]…`;
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
                     const check = await verifyAndPlayStream(srcObj.url, myToken, 8000);
@@ -5906,14 +5948,16 @@
 
             penetrationPhase('校验', totalCand);
             let tried = 0;
-            for (let cand of activePenetrationCandidates) {
+            // 候选池在后台仍可能增长(采集提前返回),逐条动态取最优未试候选
+            while (true) {
+                const cand = await nextPenetrationCandidate(activePenetrationCandidates, myToken);
                 if (myToken !== activePlayToken) return;
-                if (!cand.url || triedSourceUrls.has(cand.url)) continue;
+                if (!cand) break;
                 triedSourceUrls.add(cand.url);
                 tried++;
 
                 const shortLabel = chainDisplayName(cand.label) || String(cand.label || '未知链');
-                penetrationTry(shortLabel, tried, totalCand);
+                penetrationTry(shortLabel, tried, Math.max(tried, activePenetrationCandidates.length));
                 const check = await verifyAndPlayStream(cand.url, myToken, 8000);
                 penetrationResult(shortLabel, check.ok, check.reason);
                 if (!check.ok) {
@@ -6043,6 +6087,8 @@
             const label = chainDisplayName(cand.label);
             if (label === '官方·网易云') return 5;
             if (label === '官方·网易云2') return 8;
+            // 按 ID 拼出的 302 链:不过期、会员歌给完整版,排在搜索结果之前
+            if (cand.byId) return 9;
             if (label === '聚合·网易云') return 10;
             return 50;
         }
@@ -6053,15 +6099,47 @@
             const query = `${cleanTitle} ${cleanArtist}`.trim();
             if (!query) return [];
 
-            // 采集阶段：每个源一返回就刷新状态行
+            // 歌名/歌手匹配度：用于排序，并在入池时直接丢掉歌名对不上的搜索结果（翻唱/同名歌）。
+            const targetTitle = normalizeMatchText(cleanTitle);
+            const targetArtist = normalizeMatchText(cleanArtist);
+            const matchScore = c => {
+                const title = normalizeMatchText(c.title || '');
+                const artist = normalizeMatchText(c.artist || '');
+                let score = 0;
+                if (title && title === targetTitle) score += 100;
+                else if (title && targetTitle && (title.includes(targetTitle) || targetTitle.includes(title))) score += 50;
+                if (artist && artist === targetArtist) score += 35;
+                else if (artist && targetArtist && (artist.includes(targetArtist) || targetArtist.includes(artist))) score += 15;
+                return score;
+            };
+            const compareCand = (a, b) => {
+                const pa = a.priority || 0, pb = b.priority || 0;
+                if (pa !== pb) return pb - pa;
+                const ra = getSourceRank(a), rb = getSourceRank(b);
+                if (ra !== rb) return ra - rb;
+                return matchScore(b) - matchScore(a);
+            };
+
+            // 候选池「边采集边可用」：每条按顺位有序插入，校验循环每次取最优的未试候选，
+            // 采集提前返回后，晚到的候选仍会进入同一个数组被后续循环用上。
             const candidates = [];
             const seenUrls = new Set();
             const pushAll = (arr) => {
                 arr.forEach(c => {
-                    if (!c || !c.url || seenUrls.has(c.url)) return;
+                    if (!c || !c.url) return;
+                    c.url = normalizeStreamUrl(c.url);
+                    if (seenUrls.has(c.url)) return;
                     seenUrls.add(c.url);
-                    candidates.push(c);
+                    let pos = candidates.findIndex(x => compareCand(c, x) < 0);
+                    if (pos < 0) pos = candidates.length;
+                    candidates.splice(pos, 0, c);
                 });
+            };
+            // 有网易云 ID 时零请求拼出永久 302 链（不过期、会员歌也给完整版），立即入池。
+            const pushById = (id) => {
+                if (id == null) return;
+                pushAll([{ url: metingNeteaseUrlById(id), label: '聚合·网易云', byId: true,
+                           title: song.title || '', artist: song.artist || '' }]);
             };
 
             // 采集专用：状态显示。链名统一使用 CHAIN_DISPLAY_NAMES 的显示名。
@@ -6095,6 +6173,7 @@
                             collectState.unshift({ key: '官方·网易云', state: 'wait' });
                             collectState.splice(1, 0, { key: '官方·网易云2', state: 'wait' });
                             renderCollect();
+                            pushById(found.id);
                             launchOfficialChains();
                         } else {
                             settle('补ID', false, '未匹配');
@@ -6176,62 +6255,78 @@
                 if (!Array.isArray(list)) return;
                 list.slice(0, 5).forEach(m => {
                     if (!m || !m.url) return;
-                    pushAll([{
+                    const c = {
                         url: m.url,
                         label: label,
                         pic: m.pic,
                         title: m.name || m.title || '',
                         artist: m.artist || m.author || ''
-                    }]);
+                    };
+                    // 歌名完全对不上的(同关键词的别的歌)不入池:以前会被逐条校验、
+                    // 每条 1~8s,而且「校验通过」反而会播错歌。
+                    if (targetTitle && matchScore(c) < 50) return;
+                    pushAll([c]);
                 });
             }
 
             renderCollect();
 
-            // 有 ID 的歌(私人推荐/FM/已回写的收藏):官方两链立即发起。
-            if (hasNativeNeteaseId) launchOfficialChains();
+            // 有 ID 的歌(私人推荐/FM/已回写的收藏):永久 302 链立即入池,官方两链立即发起。
+            if (hasNativeNeteaseId) {
+                pushById(song.platformId ?? song.platformTrack?.id);
+                launchOfficialChains();
+            }
 
-            // 采集阶段硬上限 12 秒:实例响应 0.4~3.6s 波动 + 重试/三档,v1 补位需要时间。
-            // 宁可多等几秒拿到可用音源,也不要 7.5s 一到就判"暂无音源"。
-            // 官方链为 fire-and-forget(补 ID 命中后异步发起),落定信号用状态表:
-            // 所有「已加入状态表的链」全部离开 wait 即视为采集完成,12s 硬上限兜底。
-            const collectGuard = new Promise(resolve => setTimeout(resolve, 12000));
-            const allSettled = new Promise(resolve => {
+            // ---------- 落定 / 提前返回 ----------
+            // 旧实现:等「所有链落定」或 12s 硬上限后才开始校验——最慢的链决定起播时间,
+            // 实测补ID冷启动 10s、聚合搜索 4s,官方链早在 0.7s 就拿到了直链却要干等。
+            // 现在:出现「可靠候选」(ID 直取/官方链/歌名歌手全中的搜索结果)立即返回,
+            // 采集在后台继续往同一个数组里塞,校验循环用 nextPenetrationCandidate 动态取。
+            let collectFinished = false;
+            const waiters = new Set();
+            const wakeAll = () => { waiters.forEach(w => w()); waiters.clear(); };
+            candidates.isDone = () => collectFinished;
+            candidates.waitMore = () => collectFinished
+                ? Promise.resolve()
+                : new Promise(r => waiters.add(r));
+            const isStrong = c => c.byId || getSourceRank(c) < 10 || matchScore(c) >= 115;
+
+            await new Promise(resolve => {
+                const finish = () => {
+                    if (collectFinished) return;
+                    collectFinished = true;
+                    clearInterval(poll);
+                    clearTimeout(guard);
+                    wakeAll();
+                    resolve();
+                };
+                // 12s 兜底:慢链最多拖到这里,但已不再阻塞起播
+                const guard = setTimeout(finish, 12000);
+                let lastLen = 0;
                 const poll = setInterval(() => {
-                    if (token !== activePlayToken) { clearInterval(poll); resolve(); return; }
-                    const pending = collectState.filter(s => s.state === 'wait');
+                    if (token !== activePlayToken) return finish();
+                    if (candidates.length !== lastLen) { lastLen = candidates.length; wakeAll(); }
                     // 补ID 完成后官方两链会动态入表;未入表说明补ID还在路上,继续等
-                    if (pending.length === 0) { clearInterval(poll); resolve(); }
-                }, 150);
-                // 12s 兜底到达时也要清掉轮询
-                collectGuard.then(() => { clearInterval(poll); resolve(); });
+                    if (collectState.every(s => s.state !== 'wait')) return finish();
+                    if (candidates.some(isStrong)) resolve();   // 提前返回,采集继续
+                }, 100);
             });
-            await Promise.race([allSettled, collectGuard]);
 
             if (token !== activePlayToken) return [];
+            return candidates;
+        }
 
-            // 先按采集链顺位，再按标题/歌手匹配度
-            const targetTitle = normalizeMatchText(cleanTitle);
-            const targetArtist = normalizeMatchText(cleanArtist);
-            const matchScore = c => {
-                const title = normalizeMatchText(c.title || '');
-                const artist = normalizeMatchText(c.artist || '');
-                let score = 0;
-                if (title && title === targetTitle) score += 100;
-                else if (title && targetTitle && (title.includes(targetTitle) || targetTitle.includes(title))) score += 50;
-                if (artist && artist === targetArtist) score += 35;
-                else if (artist && targetArtist && (artist.includes(targetArtist) || targetArtist.includes(artist))) score += 15;
-                return score;
-            };
-
-            return candidates.sort((a, b) => {
-                // priority 高的先试（用户点的就是 GD 搜索结果时，直取候选优先）
-                const pa = a.priority || 0, pb = b.priority || 0;
-                if (pa !== pb) return pb - pa;
-                const ra = getSourceRank(a), rb = getSourceRank(b);
-                if (ra !== rb) return ra - rb;
-                return matchScore(b) - matchScore(a);
-            });
+        // 从「实时候选池」取下一条最优的未试候选。池子已按顺位有序插入;
+        // 取空但采集还没结束时,等新候选到达或采集落定再看。
+        async function nextPenetrationCandidate(cands, token) {
+            while (true) {
+                if (token !== activePlayToken) return null;
+                const c = (cands || []).find(x => x && x.url
+                    && !triedSourceUrls.has(x.url) && !isExpiredNeteaseCdnUrl(x.url));
+                if (c) return c;
+                if (!cands || typeof cands.isDone !== 'function' || cands.isDone()) return null;
+                await cands.waitMore();
+            }
         }
 
         async function continuePenetration(event) {
@@ -6257,9 +6352,10 @@
 
                 // 当前链与之前失败过的链接均跳过，手动按钮只尝试尚未验证的候选。
                 let attempted = 0;
-                for (const cand of candidates) {
+                while (true) {
+                    const cand = await nextPenetrationCandidate(candidates, token);
                     if (token !== activePlayToken) return;
-                    if (!cand.url || triedSourceUrls.has(cand.url)) continue;
+                    if (!cand) break;
                     triedSourceUrls.add(cand.url);
                     attempted++;
                     const shortLabel = chainDisplayName(cand.label) || String(cand.label || '未知链');
@@ -6397,9 +6493,14 @@
             try {
                 // 用 Range 只取前 32KB：避免为了判断码率而拉整首歌。
                 // 服务端不支持 Range 时会返回 200 全量，此时靠读到目标字节后主动 cancel 收手。
+                // 关键(2026-11-23 实测):Range 不是 CORS 安全请求头,带上它浏览器会先发 OPTIONS 预检。
+                // 网易云 CDN 预检 200,但 Meting 网关(qijieya)对 OPTIONS 回 405 →
+                // fetch 直接 TypeError → probe_error,「聚合·网易云」整条链在码率闸门被全部误杀。
+                // 所以只对确认支持预检的 CDN 带 Range;网关链走简单请求,读够 32KB 后主动 cancel。
+                const canRange = /^https?:\/\/[^/]*\.music\.126\.net\//i.test(url);
                 const res = await fetch(url, {
                     signal: controller.signal,
-                    headers: { Range: `bytes=0-${BITRATE_PROBE_BYTES - 1}` }
+                    headers: canRange ? { Range: `bytes=0-${BITRATE_PROBE_BYTES - 1}` } : undefined
                 });
                 // 200（全量）和 206（分段）都可用；其余状态视为不可探测
                 if (!res.ok && res.status !== 206) {
@@ -6478,15 +6579,20 @@
         //   2) 通过后再做码率闸门。此时浏览器已缓存开头数据，探测通常几十毫秒完成，
         //      不会像「先探测」那样把首字节延迟（实测最高 15.9s）扛在播放链路上。
         // 码率不达标会撤销已开始的播放，继续尝试下一个候选。
+        // 2026-11-23 调整:探测与 <audio> 加载并行发起,总耗时从「起播 + 探测」降为二者取大;
+        // 起播失败时直接放弃探测结果,不再白等。
         async function verifyAndPlayStream(url, token, timeoutMs = 8000) {
             if (!url) return { ok: false, reason: 'empty' };
+            url = normalizeStreamUrl(url);
+            if (isExpiredNeteaseCdnUrl(url)) return { ok: false, reason: 'expired' };
 
+            const probeTask = probeStreamBitrate(url);
             // 第一步：可播性
             const playResult = await playStreamOnAudioElement(url, token, timeoutMs);
             if (!playResult.ok) return playResult;
 
-            // 第二步：码率闸门（缓存命中，通常很快）
-            const probe = await probeStreamBitrate(url);
+            // 第二步：码率闸门（与加载并行，此时通常已出结果）
+            const probe = await probeTask;
             if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
             if (!probe.ok) {
                 // 音质不达标：停掉刚起的播放，交给上层换下一条候选
