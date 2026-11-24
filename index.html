@@ -4111,11 +4111,12 @@
                 }
 
                 // ============================================================
-                // 合并策略：云端权威
-                //   - 只在本地有 -> 保留本地（本机新收藏，尚未上传）
-                //   - 只在云端有 -> 加入
-                //   - 两边都有   -> 云端整条覆盖本地（含 sources/徽章/ID），不比时间戳
-                // 不做字段级合并。
+                // 合并策略：云端权威 + 三段排序
+                //   内容：两边都有时，云端整条覆盖本地（含 sources/徽章/ID），不比时间戳，不做字段级合并。
+                //   顺序（即收藏栏显示顺序）：
+                //     ① 本机有、云端没有 -> 最前面（本机新增/本机加了还没上传）
+                //     ② 两边都有         -> 中间，按本机原顺序
+                //     ③ 云端有、本机没有 -> 最后面，按云端顺序
                 // ============================================================
                 // 云下行规整：只丢「旧链」sources（B站/GD 等已下线链），现役链原样保留。
                 // BUG 修复(2026-11-23)：旧实现这里写死 sources: []，本地与云端条目都过一遍，
@@ -4141,36 +4142,44 @@
                     return fav;
                 };
 
-                const mergedMap = new Map();
-
-                // 1) 先放入本地
-                favorites.forEach(item => {
-                    if (!item || !item.title) return;
-                    const fp = getSongFingerprint(item.title, item.artist);
-                    if (!mergedMap.has(fp)) mergedMap.set(fp, normalizeFav(item));
-                });
-
-                // 2) 云端逐个比对，新时间整条覆盖
-                let localOnly = 0, remoteWon = 0, addedNew = 0;
+                // 1) 云端索引：按云端文件顺序保留首次出现的条目（同指纹重复只认第一条）
+                const remoteByFp = new Map();
                 remoteList.forEach(item => {
                     if (!item || !item.title) return;
                     const fp = getSongFingerprint(item.title, item.artist);
-                    const local = mergedMap.get(fp);
-                    if (!local) {
-                        mergedMap.set(fp, normalizeFav(item));
-                        addedNew++;
-                        return;
-                    }
-
-                    // 规则(2026-11-23 用户确认)：两边都有的歌，云端整条覆盖本地，不比时间戳、不做字段合并。
-                    // 依据：上传只在下行合并后开放，云端是经过整合的权威数据；
-                    // 本地因设备不同可能残留过期/错误信息，不可信。
-                    mergedMap.set(fp, normalizeFav(item));
-                    remoteWon++;
+                    if (!remoteByFp.has(fp)) remoteByFp.set(fp, normalizeFav(item));
                 });
 
-                favorites = Array.from(mergedMap.values());
-                localOnly = favorites.length - remoteWon - addedNew;
+                // 2) 三段拼装
+                const localOnlyFavs = [];   // ① 本机有、云端没有
+                const bothFavs = [];        // ② 两边都有（内容取云端）
+                const localFpSeen = new Set();
+                let localOnly = 0, remoteWon = 0, addedNew = 0;
+
+                favorites.forEach(item => {
+                    if (!item || !item.title) return;
+                    const fp = getSongFingerprint(item.title, item.artist);
+                    if (localFpSeen.has(fp)) return;        // 本地同指纹重复只保留第一条
+                    localFpSeen.add(fp);
+                    const cloud = remoteByFp.get(fp);
+                    if (cloud) {
+                        // 规则(2026-11-23 用户确认)：两边都有的歌，云端整条覆盖本地。
+                        // 依据：上传只在下行合并后开放，云端是经过整合的权威数据；
+                        // 本地因设备不同可能残留过期/错误信息，不可信。
+                        bothFavs.push(cloud);
+                        remoteByFp.delete(fp);              // 标记已被本机消费
+                        remoteWon++;
+                    } else {
+                        localOnlyFavs.push(normalizeFav(item));
+                        localOnly++;
+                    }
+                });
+
+                // ③ 云端剩下没被本机消费的，就是「云端有、本机没有」，按云端顺序排最后
+                const cloudOnlyFavs = Array.from(remoteByFp.values());
+                addedNew = cloudOnlyFavs.length;
+
+                favorites = [...localOnlyFavs, ...bothFavs, ...cloudOnlyFavs];
                 saveFavorites();
                 if (currentTab === 'fav') {
                     viewList = [...favorites];
