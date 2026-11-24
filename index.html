@@ -3901,7 +3901,7 @@
             if (neteaseIdLookupCache.has(fp)) return neteaseIdLookupCache.get(fp);
 
             const task = (async () => {
-                const query = `${String(song.title || '').replace(/\(.*?\)|（.*?）/g, '').trim()} ${String(song.artist || '').split(/[\/&,、]/)[0].trim()}`.trim();
+                const query = `${String(song.title || '').replace(/\(.*?\)|（.*?）/g, '').trim()} ${String(song.artist || '').split(/[\/&,、]/)[0].replace(/\(.*?\)|（.*?）/g, '').trim()}`.trim();
                 if (!query) return null;
                 // 实测实例冷启动首次搜索 ~10s、热态 0.6s;原 5s 超时冷启动必败。
                 // 采集已支持提前返回,放宽超时不会拖慢起播。
@@ -4351,7 +4351,7 @@
             renderLyricsDOM([{ time: 0, text: `正在加载《${song.title}》歌词...` }]);
 
             const cleanTitle = song.title.replace(/\(.*?\)|（.*?）/g, '').trim();
-            const cleanArtist = song.artist.split(/[\/&,、]/)[0].trim();
+            const cleanArtist = song.artist.split(/[\/&,、]/)[0].replace(/\(.*?\)|（.*?）/g, '').trim();
             const query = `${cleanTitle} ${cleanArtist}`.trim();
 
             try {
@@ -5851,7 +5851,10 @@
                     if (!srcObj.url || triedSourceUrls.has(srcObj.url)) continue;
                     npStatus.innerText = `直连 [${chainDisplayName(srcObj.label) || '收藏链'}]…`;
                     if (srcObj.url) triedSourceUrls.add(srcObj.url);
-                    const check = await verifyAndPlayStream(srcObj.url, myToken, 8000);
+                    const directName = chainDisplayName(srcObj.label) || '收藏链';
+                    const check = await verifyStreamWithRetry(srcObj.url, myToken, 8000, (n, why) => {
+                        npStatus.innerText = `直连 [${directName}] 重试 ${n}/2(${why})…`;
+                    });
                     if (check.ok) {
                         song.verifiedFull = true;
                         const directLabel = chainDisplayName(srcObj.label) || '收藏链';
@@ -5899,7 +5902,9 @@
 
                 const shortLabel = chainDisplayName(cand.label) || String(cand.label || '未知链');
                 penetrationTry(shortLabel, tried, Math.max(tried, activePenetrationCandidates.length));
-                const check = await verifyAndPlayStream(cand.url, myToken, 8000);
+                const check = await verifyStreamWithRetry(cand.url, myToken, 8000, (n, why) => {
+                    npStatus.innerText = `校验 [${shortLabel}] 重试 ${n}/2(${why})…`;
+                });
                 penetrationResult(shortLabel, check.ok, check.reason);
                 if (!check.ok) {
                     const d = song._diag || (song._diag = {});
@@ -6037,7 +6042,7 @@
 
         async function collectPenetrationCandidates(song, token) {
             const cleanTitle = String(song.title || '').replace(/\(.*?\)|（.*?）/g, '').trim();
-            const cleanArtist = String(song.artist || '').split(/[\/&,、]/)[0].trim();
+            const cleanArtist = String(song.artist || '').split(/[\/&,、]/)[0].replace(/\(.*?\)|（.*?）/g, '').trim();
             const query = `${cleanTitle} ${cleanArtist}`.trim();
             if (!query) return [];
 
@@ -6295,7 +6300,7 @@
                     attempted++;
                     const shortLabel = chainDisplayName(cand.label) || String(cand.label || '未知链');
                     penetrationTry(shortLabel);
-                    const check = await verifyAndPlayStream(cand.url, token, 8000);
+                    const check = await verifyStreamWithRetry(cand.url, token, 8000);
                     penetrationResult(shortLabel, check.ok, check.reason);
                     if (!check.ok) continue;
 
@@ -6509,6 +6514,44 @@
             }
         }
 
+        // ---------- 偶发失败重试(2026-11-24) ----------
+        // 现象:推荐歌第一首自动播放失败,手动点几次又成功。
+        // 原因:每条候选在一次播放里只试一次(triedSourceUrls),有 ID 的歌实际只有「ID 直拼」一条可用链
+        // (采集阶段 pushById 是同一个 URL 会被跳过,官方链对会员歌只给试听),
+        // 一次超时/网络抖动/探测请求失败就整首判「暂无音源」并自动切歌;手动点击重置已试集合才又成功。
+        // 对策:区分「偶发失败」与「确定性失败」,偶发的同链重试,确定性的(低码率/试听/403/过期)立即换链。
+        const TRANSIENT_FAIL_REASONS = new Set([
+            'timeout', 'network_error', 'probe_timeout', 'probe_error', 'play_error', 'http_429'
+        ]);
+        function isTransientFailure(reason) {
+            const r = String(reason || '');
+            return TRANSIENT_FAIL_REASONS.has(r) || /^http_5\d\d$/.test(r);
+        }
+        // 重试时给网关链加防缓存参数(实测 qijieya 忽略未知参数,仍正常 302),避免浏览器复用失败响应;
+        // 网易云 CDN 签名直链不动。
+        function withCacheBuster(url, n) {
+            const u = String(url || '');
+            if (!n || /\.music\.126\.net\//i.test(u)) return u;
+            const base = u.replace(/[?&]_=[^&]*$/, '');
+            return base + (base.includes('?') ? '&' : '?') + '_=' + Date.now().toString(36) + n;
+        }
+        // 同一条链:偶发失败最多再试 2 次,间隔递增、超时放宽;确定性失败立即返回。
+        async function verifyStreamWithRetry(url, token, timeoutMs = 8000, onRetry) {
+            const MAX_ATTEMPTS = 3;
+            let last = { ok: false, reason: 'empty' };
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+                if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+                if (i > 0) {
+                    if (typeof onRetry === 'function') { try { onRetry(i, last.reason); } catch (e) {} }
+                    await new Promise(r => setTimeout(r, 500 * i));
+                    if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+                }
+                last = await verifyAndPlayStream(withCacheBuster(url, i), token, timeoutMs + i * 2000);
+                if (last.ok || last.reason === 'cancelled' || !isTransientFailure(last.reason)) break;
+            }
+            return last;
+        }
+
         // 校验一条音源并播放。两步，顺序很关键：
         //   1) 先用 <audio> 验证「能不能播」（快，且能在 6s 内判死链）
         //   2) 通过后再做码率闸门。此时浏览器已缓存开头数据，探测通常几十毫秒完成，
@@ -6527,8 +6570,16 @@
             if (!playResult.ok) return playResult;
 
             // 第二步：码率闸门（与加载并行，此时通常已出结果）
-            const probe = await probeTask;
+            let probe = await probeTask;
             if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+            // 已能播、只是探测请求偶发失败(超时/网络):只重试探测,不停播放、不判整条链失败。
+            // 以前这里直接 pause + 返回失败,一次抖动就把正常在播的歌掐掉。
+            for (let i = 1; i <= 2 && !probe.ok && (probe.reason === 'probe_timeout' || probe.reason === 'probe_error'); i++) {
+                await new Promise(r => setTimeout(r, 400 * i));
+                if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+                probe = await probeStreamBitrate(withCacheBuster(url, i));
+                if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+            }
             if (!probe.ok) {
                 // 音质不达标：停掉刚起的播放，交给上层换下一条候选
                 try {
