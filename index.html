@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>OneMusic</title>
+    <!-- 首播提速:提前与播放网关、网易云 CDN 建连(crossorigin 与 fetch / anonymous 音频同属一个连接池) -->
+    <link rel="preconnect" href="https://api.qijieya.cn" crossorigin>
+    <link rel="preconnect" href="https://m701.music.126.net" crossorigin>
+    <link rel="preconnect" href="https://m801.music.126.net" crossorigin>
     <style>
         /* ============================================================
            OneMusic · 设计令牌（Design Tokens）
@@ -3241,6 +3245,115 @@
             return `${METING_ENDPOINTS[0].base}?server=netease&type=url&id=${encodeURIComponent(id)}`;
         }
 
+        // ---------- 首播提速(2026-11-27) ----------
+        // 网关 type=url 链:返回 302 到网易云 CDN 签名直链(每次主机 m701/m801 与签名都不同)。
+        function isMetingGatewayUrl(u) {
+            const s = String(u || '');
+            return s.startsWith(METING_ENDPOINTS[0].base) && /[?&]type=url(&|$)/i.test(s);
+        }
+        function isNeteaseCdnUrl(u) {
+            try {
+                const x = new URL(String(u || ''));
+                return x.protocol === 'https:' && x.hostname.endsWith('.music.126.net');
+            } catch (e) { return false; }
+        }
+        // ---------- 首播提速 v2(2026-11-27 冷启动实测后重做) ----------
+        // 实测:网关 302 0.4~3.6s;网易云 CDN 对「没人听过的冷对象」首字节 2~8s(边缘节点回源),
+        // 同一首第二次只要 0.4~0.8s —— 「首播慢、播过一次后秒播」的主因是 CDN 冷缓存,不只是连接握手。
+        // v1 的毛病:直链要等 CDN 响应头才拿得到,却只等 5s,超时就让 <audio> 另起一路网关链冷启动;
+        // <audio> 又只给 5s,一首约 13s 就能起播的歌被反复掐掉、换签名从头再来,3 轮共 33s 后判失败 →「暂无音源」。
+        // v2:
+        //   ① 网关链统一先解析成 CDN 直链,同一首的并发请求合并成一次,结果缓存 12 分钟(签名 20 分钟过期);
+        //   ② 解析给足 15s,中途不再另起一路;解析时顺带读开头 32KB 完成码率探测,不重复请求;
+        //   ③ 歌单前几首、队列下一首提前解析,让 CDN 边缘先回源,真正点播时直接走热缓存;
+        //   ④ <audio> 在持续收数据时超时自动宽限一次,不掐掉慢但正常的加载。
+        const GATEWAY_RESOLVE_TIMEOUT_MS = 15000;
+        const RESOLVED_CDN_TTL_MS = 12 * 60 * 1000;
+        const AUDIO_PROGRESS_GRACE_MS = 6000;
+        // 已解析出 CDN 直链时 <audio> 的硬等待上限(只要没报错就一直等到这里)
+        const AUDIO_MAX_WAIT_DIRECT_MS = 22000;
+        // 当前 <audio> 实际在播的地址(可能是网关解析出的 CDN 直链,20 分钟后签名过期)
+        let activePlayUrl = null;
+        const resolvedCdnCache = new Map();   // 网关链(去掉防缓存参数) -> { url, at, probe }
+        const resolvingGateway = new Map();   // 正在解析的网关链 -> Promise
+        const warmAttemptAt = new Map();      // 预解析节流:同一首 30s 内不重复预解析
+
+        function gatewayKey(u) {
+            return String(u || '').replace(/[?&]_=[^&]*$/, '');
+        }
+        function getCachedCdnEntry(u) {
+            const key = gatewayKey(u);
+            const e = resolvedCdnCache.get(key);
+            if (!e) return null;
+            if (Date.now() - e.at > RESOLVED_CDN_TTL_MS || isExpiredNeteaseCdnUrl(e.url)) {
+                resolvedCdnCache.delete(key);
+                return null;
+            }
+            return e;
+        }
+        function dropCachedCdnUrl(u) {
+            resolvedCdnCache.delete(gatewayKey(u));
+        }
+        // 解析网关链,返回 { url, probe }:url 是 302 后的 CDN 直链(失败为 null);
+        // probe 是同一请求顺带完成的码率探测(读满 32KB 后主动断开)。
+        function resolveGatewayUrl(u, timeoutMs = GATEWAY_RESOLVE_TIMEOUT_MS) {
+            const key = gatewayKey(u);
+            const hit = getCachedCdnEntry(key);
+            if (hit) return Promise.resolve(hit);
+            if (resolvingGateway.has(key)) return resolvingGateway.get(key);
+            let probeP = null;
+            const task = new Promise(done => {
+                probeP = probeStreamBitrate(u, timeoutMs, {
+                    onResponse: fin => {
+                        if (fin && isNeteaseCdnUrl(fin)) {
+                            const entry = { url: normalizeStreamUrl(fin), at: Date.now(), probe: probeP };
+                            resolvedCdnCache.set(key, entry);
+                            done(entry);
+                        } else {
+                            done({ url: null, probe: probeP });
+                        }
+                    }
+                });
+                probeP.then(() => done({ url: null, probe: probeP }), () => done({ url: null, probe: probeP }));
+            });
+            resolvingGateway.set(key, task);
+            task.then(() => resolvingGateway.delete(key));
+            return task;
+        }
+
+        function songGatewayUrl(song) {
+            const id = song ? (song.platformId ?? song.platformTrack?.id) : null;
+            return id == null ? null : metingNeteaseUrlById(id);
+        }
+        // 预解析:串行进行,避免和用户马上发起的播放抢带宽;用户点到正在预解析的歌会直接复用同一请求
+        let warmQueue = Promise.resolve();
+        function prefetchSongs(songs, count = 3) {
+            const now = Date.now();
+            let n = 0;
+            for (const s of (songs || [])) {
+                if (n >= count) break;
+                const u = songGatewayUrl(s);
+                if (!u) continue;
+                n++;
+                const key = gatewayKey(u);
+                if (getCachedCdnEntry(key) || resolvingGateway.has(key)) continue;
+                if (now - (warmAttemptAt.get(key) || 0) < 30000) continue;
+                warmAttemptAt.set(key, now);
+                warmQueue = warmQueue.then(() => resolveGatewayUrl(u)).catch(() => {});
+            }
+        }
+        // 歌单出现 / 鼠标移入 / 窗口获得焦点:预解析列表前 3 首
+        function warmPlaybackPath(list) {
+            prefetchSongs(list, 3);
+        }
+        // 当前歌起播后 3s,预解析队列下一首(随机、单曲循环模式下一首不确定,跳过)
+        function prefetchNextInQueue() {
+            try {
+                if (isShuffleMode || playMode === 'single' || !playingQueue.length) return;
+                const next = playingQueue[(playingIndex + 1) % playingQueue.length];
+                setTimeout(() => prefetchSongs([next], 1), 3000);
+            } catch (e) {}
+        }
         /* ================= GD Studio(仅搜索用) =================
            2026-11-10 采集链实测:GD 实际可播 9/30(search 超时为主),未进前三,已从播放采集链砍除。
            以下函数仅供「搜索聚合」的 GD 来源使用;GD 搜索条目播放时按歌名走前三链采集。
@@ -5127,6 +5240,7 @@
                 }).filter(song => song.title && song.artist);
                 if (!viewList.length) throw new Error('接口返回了数据，但没识别到有效歌曲。');
                 renderList(); setPrivateMessage('');
+                warmPlaybackPath(viewList);
             } catch (error) {
                 console.warn('[OneMusic] 网易云私人推荐失败', error);
                 songListEl.innerHTML = `<div style="text-align:center;padding:30px 18px;color:var(--fav-red);line-height:1.8;">网易云私人推荐读取失败：${escapePrivateText(error.message || String(error))}</div>`;
@@ -5816,6 +5930,7 @@
             const song = playingQueue[idx];
             currentPlayingSong = song;
             activeWorkingChain = null;
+            activePlayUrl = null;
 
             renderList();
             renderNowPlaying(song);
@@ -5866,6 +5981,8 @@
                     });
                     if (check.ok) {
                         song.verifiedFull = true;
+                        // 直链签名过期后重新解析:回到原播放位置
+                        if (opts.resumeAt > 0) { try { audio.currentTime = opts.resumeAt; } catch (e) {} }
                         const directLabel = chainDisplayName(srcObj.label) || '收藏链';
                         activeWorkingChain = { url: srcObj.url, label: directLabel, br: srcObj.br };
                         // 徽章只写链名，如实反映实际在播链
@@ -6435,7 +6552,7 @@
 
         // 探测一个直链的实际码率。返回 { ok, bitrate, reason }。
         // ok=false 时 reason 说明原因（low_bitrate / probe_failed / not_mp3）。
-        async function probeStreamBitrate(url, timeoutMs = BITRATE_PROBE_TIMEOUT_MS) {
+        async function probeStreamBitrate(url, timeoutMs = BITRATE_PROBE_TIMEOUT_MS, opts = {}) {
             if (!url) return { ok: false, reason: 'empty', bitrate: null };
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -6451,6 +6568,10 @@
                     signal: controller.signal,
                     headers: canRange ? { Range: `bytes=0-${BITRATE_PROBE_BYTES - 1}` } : undefined
                 });
+                // 响应头一到就把 302 之后的最终直链交出去,让 <audio> 直接打 CDN,复用本请求刚建好的连接
+                if (typeof opts.onResponse === 'function') {
+                    try { opts.onResponse((res.ok || res.status === 206) ? res.url : null); } catch (e) {}
+                }
                 // 200（全量）和 206（分段）都可用；其余状态视为不可探测
                 if (!res.ok && res.status !== 206) {
                     return { ok: false, reason: 'http_' + res.status, bitrate: null };
@@ -6557,6 +6678,7 @@
                 }
                 last = await verifyAndPlayStream(withCacheBuster(url, i), token, timeoutMs + i * 2000);
                 if (last.ok || last.reason === 'cancelled' || !isTransientFailure(last.reason)) break;
+                if (last.reason === 'timeout' && i >= 1) break;
             }
             return last;
         }
@@ -6573,10 +6695,42 @@
             url = normalizeStreamUrl(url);
             if (isExpiredNeteaseCdnUrl(url)) return { ok: false, reason: 'expired' };
 
-            const probeTask = probeStreamBitrate(url);
-            // 第一步：可播性
-            const playResult = await playStreamOnAudioElement(url, token, timeoutMs);
-            if (!playResult.ok) return playResult;
+            // 网关链:先解析成 CDN 直链(见「首播提速 v2」),<audio> 以 anonymous 直接播直链,
+            // 复用解析请求刚建好的连接,且此时 CDN 边缘已回源,首字节很快。
+            let playUrl = url;
+            let probeTask;
+            if (isMetingGatewayUrl(url)) {
+                const t0 = Date.now();
+                const entry = await resolveGatewayUrl(url);
+                if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+                if (entry && entry.url) {
+                    playUrl = entry.url;
+                    // 解析时已顺带探测码率;只有探测偶发失败才对直链补测(直链支持 Range,走热连接很快)
+                    probeTask = Promise.resolve(entry.probe).then(pr =>
+                        (pr && (pr.ok || !isTransientFailure(pr.reason))) ? pr : probeStreamBitrate(playUrl));
+                    timeoutMs = Math.max(6000, timeoutMs - (Date.now() - t0));
+                } else {
+                    const pr = entry && entry.probe ? await entry.probe : { ok: false, reason: 'probe_error' };
+                    if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
+                    // probe_error 可能是跨域被拦等 fetch 特有问题:回退为 <audio> 直接播网关链(旧逻辑)。
+                    // 其余(超时 / http 状态码)直接上报,由上层决定同链重试还是换链,不在这里再干等一轮。
+                    if (pr.reason !== 'probe_error') {
+                        return { ok: false, reason: pr.reason === 'probe_timeout' ? 'timeout' : (pr.reason || 'resolve_failed'), bitrate: pr.bitrate };
+                    }
+                    probeTask = Promise.resolve(pr);
+                }
+            } else {
+                probeTask = probeStreamBitrate(url);
+            }            // 第一步：可播性
+            const playResult = await playStreamOnAudioElement(playUrl, token, timeoutMs, {
+                anonymous: playUrl !== url,
+                maxWaitMs: playUrl !== url ? AUDIO_MAX_WAIT_DIRECT_MS : timeoutMs + AUDIO_PROGRESS_GRACE_MS,
+                onSlow: ms => { if (token === activePlayToken) npStatus.innerText = `音源首次加载较慢，继续等待… ${Math.round(ms / 1000)}s`; }
+            });
+            if (!playResult.ok) {
+                if (playUrl !== url) dropCachedCdnUrl(url);
+                return playResult;
+            }
 
             // 第二步：码率闸门（与加载并行，此时通常已出结果）
             let probe = await probeTask;
@@ -6586,10 +6740,11 @@
             for (let i = 1; i <= 2 && !probe.ok && (probe.reason === 'probe_timeout' || probe.reason === 'probe_error'); i++) {
                 await new Promise(r => setTimeout(r, 400 * i));
                 if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
-                probe = await probeStreamBitrate(withCacheBuster(url, i));
+                probe = await probeStreamBitrate(playUrl !== url ? playUrl : withCacheBuster(url, i));
                 if (token !== activePlayToken) return { ok: false, reason: 'cancelled' };
             }
             if (!probe.ok) {
+                if (playUrl !== url) dropCachedCdnUrl(url);
                 // 音质不达标：停掉刚起的播放，交给上层换下一条候选
                 try {
                     audio.pause();
@@ -6600,10 +6755,12 @@
             }
 
             playResult.bitrate = probe.bitrate;
+            activePlayUrl = playUrl;
+            prefetchNextInQueue();
             return playResult;
         }
 
-        function playStreamOnAudioElement(url, token, timeoutMs = 6000) {
+        function playStreamOnAudioElement(url, token, timeoutMs = 6000, opts = {}) {
             return new Promise((resolve) => {
                 if (!url) return resolve({ ok: false, reason: 'empty' });
                 let settled = false;
@@ -6614,7 +6771,25 @@
                     resolve(res);
                 };
 
-                const timer = setTimeout(() => finish({ ok: false, reason: 'timeout' }), timeoutMs);
+                // 冷启动实测:一首冷门歌的 CDN 首字节可达 10s+,而且 loadedmetadata 往往在「超时重来」之后几秒才到 ——
+                // 旧逻辑超时就换签名从头再来,每次都重新排队回源,永远追不上。
+                // 现在:到了软超时,只要 <audio> 仍在加载(没报错)就继续等,直到硬上限 maxWaitMs;真正报错才放弃。
+                const startedAt = Date.now();
+                const maxWaitMs = Math.max(timeoutMs, opts.maxWaitMs || 0);
+                let sawData = false;
+                let timer = null;
+                const onProgress = () => { sawData = true; };
+                const stillLoading = () => sawData || audio.networkState === HTMLMediaElement.NETWORK_LOADING;
+                const arm = (ms) => {
+                    timer = setTimeout(() => {
+                        if (token === activePlayToken && Date.now() - startedAt < maxWaitMs && stillLoading()) {
+                            if (typeof opts.onSlow === 'function') { try { opts.onSlow(Date.now() - startedAt); } catch (e) {} }
+                            return arm(1500);
+                        }
+                        finish({ ok: false, reason: 'timeout' });
+                    }, ms);
+                };
+                arm(timeoutMs);
 
                 const onLoadedMetadata = () => {
                     if (token !== activePlayToken) return finish({ ok: false, reason: 'cancelled' });
@@ -6649,11 +6824,17 @@
                     clearTimeout(timer);
                     audio.removeEventListener('loadedmetadata', onLoadedMetadata);
                     audio.removeEventListener('error', onError);
+                    audio.removeEventListener('progress', onProgress);
                 };
 
                 audio.pause();
+                // anonymous:与 fetch 同属「不带凭据」连接池,才能复用探测刚建好的 CDN 连接。
+                // 只对确认带 CORS 头的网易云 CDN 直链开启;其他音源保持默认,避免无 CORS 头时被浏览器拦截。
+                if (opts.anonymous) audio.crossOrigin = 'anonymous';
+                else audio.removeAttribute('crossorigin');
                 audio.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
                 audio.addEventListener('error', onError, { once: true });
+                audio.addEventListener('progress', onProgress);
                 audio.src = url;
                 audio.load();
             });
@@ -6880,6 +7061,19 @@
             const now = Date.now();
             if (song._recoverAt && now - song._recoverAt < 1500) return;   // 同一 error 连发节流
             song._recoverAt = now;
+            // 网关解析出的 CDN 直链 20 分钟后签名过期(长时间暂停后再播会 403)。这不是链坏了:
+            // 不记坏链、不计恢复次数,从原位置重新走一次网关解析。
+            if (activePlayUrl && activePlayUrl !== activeWorkingChain.url && isExpiredNeteaseCdnUrl(activePlayUrl)) {
+                const resumeAt = audio.currentTime || 0;
+                dropCachedCdnUrl(activeWorkingChain.url);
+                npStatus.innerText = '直链签名过期，重新解析…';
+                activeWorkingChain = null;
+                activePlayUrl = null;
+                setTimeout(() => {
+                    if (song === currentPlayingSong) playSongInQueue(idx, { resumeAt });
+                }, 300);
+                return;
+            }
             song._recoverCount = (song._recoverCount || 0) + 1;
             if (song._recoverCount > 2) {
                 npStatus.innerText = '音源连续中断，请点"继续找音源"或换歌';
@@ -6887,7 +7081,7 @@
             }
             npStatus.innerText = '音源中断，自动重新查找…';
             // 把刚断流的坏链记入已试集合:本次重播不再直连它,直接穿透找新链
-            if (activeWorkingChain.url) triedSourceUrls.add(activeWorkingChain.url);
+            if (activeWorkingChain.url) { triedSourceUrls.add(activeWorkingChain.url); dropCachedCdnUrl(activeWorkingChain.url); }
             activeWorkingChain = null;
             activePenetrationCandidates = [];
             setTimeout(() => {
@@ -6919,6 +7113,10 @@
         initVolume();
         initPlayMode();
         switchTab('private');
+        // 首播提速:启动即预热播放链路;鼠标移到歌单、窗口重新获得焦点时再续热(20s 节流)
+        warmPlaybackPath(favorites);
+        songListEl.addEventListener('pointerover', () => warmPlaybackPath(viewList.length ? viewList : favorites), { passive: true });
+        window.addEventListener('focus', () => warmPlaybackPath(viewList.length ? viewList : favorites));
     </script>
 </body>
 </html>
